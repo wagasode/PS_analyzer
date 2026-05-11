@@ -30,6 +30,18 @@ SHADOWVERSE_TERMS = (
 )
 
 
+class ApiError(RuntimeError):
+    def __init__(self, status_code: int, url: str, body: str):
+        self.status_code = status_code
+        self.url = url
+        self.body = body
+        try:
+            self.payload = json.loads(body)
+        except json.JSONDecodeError:
+            self.payload = None
+        super().__init__(f"HTTP {status_code} for {url}: {body}")
+
+
 def utc_now() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
@@ -68,7 +80,7 @@ def http_json(url: str, *, method: str = "GET", headers: dict[str, str] | None =
             return json.loads(resp.read().decode("utf-8"))
     except urllib.error.HTTPError as exc:
         detail = exc.read().decode("utf-8", errors="replace")
-        raise RuntimeError(f"HTTP {exc.code} for {url}: {detail}") from exc
+        raise ApiError(exc.code, url, detail) from exc
 
 
 def youtube_api(path: str, params: dict[str, Any], api_key: str) -> dict[str, Any]:

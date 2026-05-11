@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 import argparse
+import csv
 import json
+import os
 import sqlite3
 from pathlib import Path
 
 from common import (
+    ApiError,
     DEFAULT_DB_PATH,
+    ROOT_DIR,
     classify_shadowverse,
     connect,
     create_run,
@@ -16,6 +20,9 @@ from common import (
     require_env,
     youtube_api,
 )
+
+
+SKIPPED_CHANNELS_REPORT = ROOT_DIR / "reports" / "youtube_skipped_channels.csv"
 
 
 def youtube_channels(conn: sqlite3.Connection, player_name: str | None = None) -> list[sqlite3.Row]:
@@ -81,6 +88,71 @@ def list_playlist_video_ids(uploads_playlist_id: str, api_key: str, max_pages: i
         if not page_token:
             break
     return video_ids
+
+
+def youtube_error_reason(exc: ApiError) -> str:
+    payload = exc.payload if isinstance(exc.payload, dict) else {}
+    error = payload.get("error", {})
+    errors = error.get("errors", [])
+    if errors and isinstance(errors[0], dict):
+        return errors[0].get("reason", "")
+    return ""
+
+
+def is_skippable_playlist_error(exc: Exception) -> bool:
+    return isinstance(exc, ApiError) and exc.status_code == 404 and youtube_error_reason(exc) == "playlistNotFound"
+
+
+def action_escape(value: str) -> str:
+    return value.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+
+
+def warn_skipped_channel(skip: dict[str, str]) -> None:
+    message = (
+        f"{skip['player_name']} ({skip['team']}) was skipped: "
+        f"{skip['reason']} playlist_id={skip['uploads_playlist_id']} identifier={skip['platform_identifier']}"
+    )
+    print(f"::warning title=Skipped YouTube channel::{action_escape(message)}")
+
+
+def write_skipped_channels_report(skipped_channels: list[dict[str, str]]) -> None:
+    SKIPPED_CHANNELS_REPORT.parent.mkdir(parents=True, exist_ok=True)
+    fieldnames = [
+        "team",
+        "player_name",
+        "platform_identifier",
+        "external_channel_id",
+        "uploads_playlist_id",
+        "reason",
+        "detail",
+    ]
+    with SKIPPED_CHANNELS_REPORT.open("w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(skipped_channels)
+
+
+def append_github_step_summary(skipped_channels: list[dict[str, str]], channels_checked: int, items_seen: int, items_upserted: int) -> None:
+    summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
+    if not summary_path:
+        return
+    with open(summary_path, "a", encoding="utf-8") as f:
+        f.write("## YouTube archive fetch\n\n")
+        f.write(f"- Channels checked: {channels_checked}\n")
+        f.write(f"- Videos seen: {items_seen}\n")
+        f.write(f"- Rows upserted: {items_upserted}\n")
+        f.write(f"- Skipped channels: {len(skipped_channels)}\n\n")
+        if not skipped_channels:
+            return
+        f.write("| Team | Player | Identifier | Reason | Detail |\n")
+        f.write("| --- | --- | --- | --- | --- |\n")
+        for skip in skipped_channels:
+            detail = skip["detail"].replace("|", "\\|")
+            f.write(
+                f"| {skip['team']} | {skip['player_name']} | {skip['platform_identifier']} | "
+                f"{skip['reason']} | {detail} |\n"
+            )
+        f.write("\n")
 
 
 def fetch_videos(video_ids: list[str], api_key: str) -> list[dict]:
@@ -170,13 +242,32 @@ def main() -> None:
     init_schema(conn)
     run_id = create_run(conn, "youtube", Path(__file__).name)
     channels_checked = items_seen = items_upserted = 0
+    skipped_channels: list[dict[str, str]] = []
     try:
         for channel in youtube_channels(conn, args.player):
             channels_checked += 1
             uploads_playlist_id = channel["uploads_playlist_id"]
             if not uploads_playlist_id:
-                _, uploads_playlist_id = resolve_channel(conn, channel, api_key)
-            video_ids = list_playlist_video_ids(uploads_playlist_id, api_key, args.max_pages)
+                external_channel_id, uploads_playlist_id = resolve_channel(conn, channel, api_key)
+            else:
+                external_channel_id = channel["external_channel_id"] or ""
+            try:
+                video_ids = list_playlist_video_ids(uploads_playlist_id, api_key, args.max_pages)
+            except Exception as exc:
+                if not is_skippable_playlist_error(exc):
+                    raise
+                skip = {
+                    "team": channel["team"],
+                    "player_name": channel["player_name"],
+                    "platform_identifier": channel["platform_identifier"],
+                    "external_channel_id": external_channel_id,
+                    "uploads_playlist_id": uploads_playlist_id,
+                    "reason": "playlistNotFound",
+                    "detail": "YouTube uploads playlist was returned by channels.list but cannot be read by playlistItems.list.",
+                }
+                skipped_channels.append(skip)
+                warn_skipped_channel(skip)
+                continue
             videos = fetch_videos(video_ids, api_key)
             items_seen += len(videos)
             for video in videos:
@@ -184,6 +275,8 @@ def main() -> None:
                     continue
                 items_upserted += upsert_video(conn, channel, video)
             conn.commit()
+        write_skipped_channels_report(skipped_channels)
+        append_github_step_summary(skipped_channels, channels_checked, items_seen, items_upserted)
         finish_run(
             conn,
             run_id,
@@ -191,9 +284,15 @@ def main() -> None:
             channels_checked=channels_checked,
             items_seen=items_seen,
             items_upserted=items_upserted,
+            error_message=f"skipped_youtube_channels={len(skipped_channels)}" if skipped_channels else None,
         )
-        print(f"youtube channels={channels_checked} videos={items_seen} upserts={items_upserted}")
+        print(
+            f"youtube channels={channels_checked} videos={items_seen} "
+            f"upserts={items_upserted} skipped_channels={len(skipped_channels)}"
+        )
     except Exception as exc:
+        write_skipped_channels_report(skipped_channels)
+        append_github_step_summary(skipped_channels, channels_checked, items_seen, items_upserted)
         finish_run(conn, run_id, status="failed", channels_checked=channels_checked, items_seen=items_seen, error_message=str(exc))
         raise
 

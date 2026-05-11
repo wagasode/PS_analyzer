@@ -37,6 +37,9 @@ export TWITCH_CLIENT_SECRET="..."
 Fetch one page per YouTube channel, up to 50 recent uploads each.
 Normal uploads are skipped by default; only videos with YouTube `liveStreamingDetails`
 are stored for streaming-time analysis.
+If a channel's uploads playlist cannot be read by YouTube Data API, that channel
+is skipped and reported as a GitHub Actions warning and in
+`reports/youtube_skipped_channels.csv`.
 
 ```bash
 python3 scripts/fetch_youtube_archives.py --max-pages 1
@@ -88,3 +91,4 @@ The artifact contains:
 - `data/streams.sqlite`
 - `reports/streaming_by_player.csv`
 - `reports/streaming_by_team.csv`
+- `reports/youtube_skipped_channels.csv`
