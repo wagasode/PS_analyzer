@@ -1,0 +1,71 @@
+name: Collect streaming data
+
+on:
+  workflow_dispatch:
+    inputs:
+      youtube_max_pages:
+        description: "YouTube upload pages per channel. 1 page = up to 50 videos."
+        required: true
+        default: "1"
+      twitch_max_pages:
+        description: "Twitch VOD pages per channel. 1 page = up to 100 VODs."
+        required: true
+        default: "1"
+
+permissions:
+  contents: read
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+
+    env:
+      YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+      TWITCH_CLIENT_ID: ${{ secrets.TWITCH_CLIENT_ID }}
+      TWITCH_CLIENT_SECRET: ${{ secrets.TWITCH_CLIENT_SECRET }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Check secrets
+        run: |
+          test -n "$YOUTUBE_API_KEY"
+          test -n "$TWITCH_CLIENT_ID"
+          test -n "$TWITCH_CLIENT_SECRET"
+
+      - name: Compile scripts
+        run: |
+          python3 -m py_compile \
+            scripts/common.py \
+            scripts/init_db.py \
+            scripts/fetch_youtube_archives.py \
+            scripts/fetch_twitch_vods.py \
+            scripts/build_streaming_report.py
+
+      - name: Initialize database
+        run: python3 scripts/init_db.py
+
+      - name: Fetch YouTube archives
+        run: python3 scripts/fetch_youtube_archives.py --max-pages "${{ inputs.youtube_max_pages }}"
+
+      - name: Fetch Twitch VODs
+        run: python3 scripts/fetch_twitch_vods.py --max-pages "${{ inputs.twitch_max_pages }}"
+
+      - name: Build reports
+        run: python3 scripts/build_streaming_report.py
+
+      - name: Upload SQLite database and reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: streaming-data
+          path: |
+            data/streams.sqlite
+            reports/*.csv
+          if-no-files-found: warn
