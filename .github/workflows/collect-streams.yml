@@ -68,7 +68,7 @@ jobs:
         run: python3 scripts/fetch_twitch_vods.py --max-pages "${{ inputs.twitch_max_pages }}"
 
       - name: Build reports
-        run: python3 scripts/build_streaming_report.py
+        run: python3 scripts/build_streaming_report.py --summary
 
       - name: Upload SQLite database and reports
         if: always()

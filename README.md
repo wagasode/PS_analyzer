@@ -64,6 +64,10 @@ python3 scripts/fetch_twitch_vods.py --player Toby --max-pages 1
 python3 scripts/build_streaming_report.py
 ```
 
+When running in GitHub Actions, the workflow also writes team and player tables
+to the run summary, so the latest aggregate result can be checked without
+downloading the artifact.
+
 Outputs:
 
 - `reports/streaming_by_player.csv`
