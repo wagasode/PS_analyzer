@@ -73,6 +73,12 @@ Outputs:
 - `reports/streaming_by_player.csv`
 - `reports/streaming_by_team.csv`
 
+`streaming_by_player.csv` includes every player from the master CSV, even when
+no stream archive was collected. Zero-archive players have `stream_count=0` and
+`total_hours=0.0`. Channel collection state is exposed with fields such as
+`youtube_channel_status`, `twitch_channel_status`, and `youtube_skipped_reason`
+so skipped channels can be distinguished from valid zero-result channels.
+
 ## GitHub Actions
 
 Repository secrets required:

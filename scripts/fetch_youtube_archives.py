@@ -115,6 +115,24 @@ def warn_skipped_channel(skip: dict[str, str]) -> None:
     print(f"::warning title=Skipped YouTube channel::{action_escape(message)}")
 
 
+def update_channel_status(conn: sqlite3.Connection, channel_id: int, status: str, reason: str, detail: str, items_seen: int) -> None:
+    conn.execute(
+        """
+        INSERT INTO channel_collection_status(
+            channel_id, last_checked_at, last_status, last_reason, last_detail, last_items_seen
+        )
+        VALUES (?, datetime('now'), ?, ?, ?, ?)
+        ON CONFLICT(channel_id) DO UPDATE SET
+            last_checked_at = datetime('now'),
+            last_status = excluded.last_status,
+            last_reason = excluded.last_reason,
+            last_detail = excluded.last_detail,
+            last_items_seen = excluded.last_items_seen
+        """,
+        (channel_id, status, reason, detail, items_seen),
+    )
+
+
 def write_skipped_channels_report(skipped_channels: list[dict[str, str]]) -> None:
     SKIPPED_CHANNELS_REPORT.parent.mkdir(parents=True, exist_ok=True)
     fieldnames = [
@@ -266,6 +284,15 @@ def main() -> None:
                     "detail": "YouTube uploads playlist was returned by channels.list but cannot be read by playlistItems.list.",
                 }
                 skipped_channels.append(skip)
+                update_channel_status(
+                    conn,
+                    channel["channel_id"],
+                    "skipped",
+                    skip["reason"],
+                    skip["detail"],
+                    0,
+                )
+                conn.commit()
                 warn_skipped_channel(skip)
                 continue
             videos = fetch_videos(video_ids, api_key)
@@ -274,6 +301,7 @@ def main() -> None:
                 if not args.include_non_live and not video.get("liveStreamingDetails"):
                     continue
                 items_upserted += upsert_video(conn, channel, video)
+            update_channel_status(conn, channel["channel_id"], "ok", "", "", len(videos))
             conn.commit()
         write_skipped_channels_report(skipped_channels)
         append_github_step_summary(skipped_channels, channels_checked, items_seen, items_upserted)
