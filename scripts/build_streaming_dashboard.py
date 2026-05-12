@@ -318,8 +318,8 @@ HTML = """<!doctype html>
 
     .workspace {
       display: grid;
-      grid-template-columns: minmax(640px, 1.55fr) minmax(360px, 0.95fr);
-      gap: 18px;
+      grid-template-columns: minmax(0, 1fr) clamp(320px, 34vw, 440px);
+      gap: 16px;
       align-items: start;
     }
 
@@ -367,6 +367,10 @@ HTML = """<!doctype html>
 
     .player-table-wrap {
       max-height: calc(100vh - 250px);
+    }
+
+    .player-table-wrap table {
+      min-width: 520px;
     }
 
     table {
@@ -595,7 +599,7 @@ HTML = """<!doctype html>
       justify-self: start;
     }
 
-    @media (max-width: 1100px) {
+    @media (max-width: 820px) {
       .workspace,
       .workspace.team-mode {
         grid-template-columns: 1fr;
@@ -733,13 +737,7 @@ HTML = """<!doctype html>
         ["timeline", "Timeline"],
         ["stream_count", "Streams"],
         ["total_hours", "Total hours"],
-        ["shadowverse_hours", "SV hours"],
-        ["youtube_hours", "YouTube hours"],
-        ["twitch_hours", "Twitch hours"],
-        ["youtube_channel_status", "YouTube"],
-        ["twitch_channel_status", "Twitch"],
-        ["youtube_skipped_reason", "YouTube reason"],
-        ["twitch_skipped_reason", "Twitch reason"]
+        ["shadowverse_hours", "SV hours"]
       ]
     };
 
