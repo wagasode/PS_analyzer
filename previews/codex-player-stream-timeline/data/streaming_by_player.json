@@ -135,6 +135,21 @@
     "twitch_skipped_reason": ""
   },
   {
+    "team": "REJECT",
+    "player_name": "拓海",
+    "stream_count": 50,
+    "total_hours": 188.94,
+    "shadowverse_hours": 188.94,
+    "youtube_hours": 188.94,
+    "twitch_hours": 0.0,
+    "has_youtube_channel": 1,
+    "has_twitch_channel": 0,
+    "youtube_channel_status": "ok",
+    "twitch_channel_status": "no_channel",
+    "youtube_skipped_reason": "",
+    "twitch_skipped_reason": ""
+  },
+  {
     "team": "レバンガ北海道",
     "player_name": "だーよね",
     "stream_count": 50,
@@ -156,21 +171,6 @@
     "total_hours": 186.16,
     "shadowverse_hours": 186.16,
     "youtube_hours": 186.16,
-    "twitch_hours": 0.0,
-    "has_youtube_channel": 1,
-    "has_twitch_channel": 0,
-    "youtube_channel_status": "ok",
-    "twitch_channel_status": "no_channel",
-    "youtube_skipped_reason": "",
-    "twitch_skipped_reason": ""
-  },
-  {
-    "team": "REJECT",
-    "player_name": "拓海",
-    "stream_count": 50,
-    "total_hours": 184.89,
-    "shadowverse_hours": 184.89,
-    "youtube_hours": 184.89,
     "twitch_hours": 0.0,
     "has_youtube_channel": 1,
     "has_twitch_channel": 0,
