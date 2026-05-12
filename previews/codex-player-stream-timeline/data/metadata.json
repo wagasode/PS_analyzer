@@ -1,0 +1,13 @@
+{
+  "generated_at": "2026-05-12T17:06:36Z",
+  "workflow": "Collect streaming data",
+  "run_number": "11",
+  "run_id": "25749855064",
+  "run_url": "https://github.com/wagasode/PS_analyzer/actions/runs/25749855064",
+  "commit_sha": "daa408289066ffca4674c417f49609374b085915",
+  "player_count": 25,
+  "team_count": 8,
+  "total_streams": 1034,
+  "total_hours": 4445.08,
+  "shadowverse_hours": 4133.83
+}
