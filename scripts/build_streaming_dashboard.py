@@ -1,0 +1,655 @@
+from __future__ import annotations
+
+import argparse
+import csv
+import json
+import os
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
+
+from common import ROOT_DIR
+
+
+REPORTS_DIR = ROOT_DIR / "reports"
+PUBLIC_DIR = ROOT_DIR / "public"
+
+INT_FIELDS = {"stream_count", "has_youtube_channel", "has_twitch_channel"}
+FLOAT_FIELDS = {"total_hours", "shadowverse_hours", "youtube_hours", "twitch_hours"}
+
+
+def utc_now() -> str:
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def parse_value(field: str, value: str) -> Any:
+    if field in INT_FIELDS:
+        return int(value or 0)
+    if field in FLOAT_FIELDS:
+        return float(value or 0)
+    return value
+
+
+def read_csv(path: Path) -> list[dict[str, Any]]:
+    with path.open(encoding="utf-8", newline="") as f:
+        reader = csv.DictReader(f)
+        return [{field: parse_value(field, value) for field, value in row.items()} for row in reader]
+
+
+def write_json(path: Path, payload: Any) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+def github_run_url() -> str:
+    explicit = os.environ.get("GITHUB_RUN_URL")
+    if explicit:
+        return explicit
+    server_url = os.environ.get("GITHUB_SERVER_URL")
+    repository = os.environ.get("GITHUB_REPOSITORY")
+    run_id = os.environ.get("GITHUB_RUN_ID")
+    if server_url and repository and run_id:
+        return f"{server_url}/{repository}/actions/runs/{run_id}"
+    return ""
+
+
+def build_metadata(player_rows: list[dict[str, Any]], team_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    total_streams = sum(row["stream_count"] for row in player_rows)
+    total_hours = round(sum(row["total_hours"] for row in player_rows), 2)
+    shadowverse_hours = round(sum(row["shadowverse_hours"] for row in player_rows), 2)
+    return {
+        "generated_at": utc_now(),
+        "workflow": os.environ.get("GITHUB_WORKFLOW", ""),
+        "run_number": os.environ.get("GITHUB_RUN_NUMBER", ""),
+        "run_id": os.environ.get("GITHUB_RUN_ID", ""),
+        "run_url": github_run_url(),
+        "commit_sha": os.environ.get("GITHUB_SHA", ""),
+        "player_count": len(player_rows),
+        "team_count": len(team_rows),
+        "total_streams": total_streams,
+        "total_hours": total_hours,
+        "shadowverse_hours": shadowverse_hours,
+    }
+
+
+HTML = """<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Streaming Report</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --text: #1f2937;
+      --muted: #64748b;
+      --border: #d7dde6;
+      --accent: #0f766e;
+      --accent-soft: #dff7f3;
+      --warn: #9a3412;
+      --warn-soft: #ffedd5;
+      --bad: #991b1b;
+      --bad-soft: #fee2e2;
+      --none: #475569;
+      --none-soft: #e2e8f0;
+      --shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.5;
+    }
+
+    header {
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .shell {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 28px 0 22px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 28px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .meta {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    a.button {
+      display: inline-flex;
+      align-items: center;
+      min-height: 36px;
+      padding: 0 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--panel);
+      color: var(--text);
+      text-decoration: none;
+      font-size: 14px;
+      box-shadow: var(--shadow);
+    }
+
+    main {
+      padding: 24px 0 40px;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .stat {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      box-shadow: var(--shadow);
+    }
+
+    .stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+
+    .stat strong {
+      display: block;
+      margin-top: 4px;
+      font-size: 22px;
+      line-height: 1.2;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin: 18px 0;
+    }
+
+    .tabs {
+      display: inline-flex;
+      padding: 3px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    .tab {
+      min-height: 34px;
+      border: 0;
+      border-radius: 6px;
+      padding: 0 14px;
+      background: transparent;
+      color: var(--muted);
+      font: inherit;
+      cursor: pointer;
+    }
+
+    .tab.active {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .search {
+      width: min(380px, 100%);
+      min-height: 40px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0 12px;
+      color: var(--text);
+      font: inherit;
+      box-shadow: var(--shadow);
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.3;
+      letter-spacing: 0;
+    }
+
+    .count {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .table-wrap {
+      overflow: auto;
+      max-height: calc(100vh - 300px);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      min-width: 980px;
+      font-size: 14px;
+    }
+
+    th,
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: #eef2f7;
+      color: #334155;
+      font-weight: 700;
+      user-select: none;
+    }
+
+    th.sortable {
+      cursor: pointer;
+    }
+
+    th.sortable::after {
+      content: "↕";
+      margin-left: 6px;
+      color: #94a3b8;
+      font-size: 12px;
+    }
+
+    th.sorted-asc::after {
+      content: "↑";
+      color: var(--accent);
+    }
+
+    th.sorted-desc::after {
+      content: "↓";
+      color: var(--accent);
+    }
+
+    tbody tr:hover {
+      background: #f8fafc;
+    }
+
+    td.num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      padding: 0 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .status.ok {
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    .status.skipped {
+      background: var(--warn-soft);
+      color: var(--warn);
+    }
+
+    .status.failed {
+      background: var(--bad-soft);
+      color: var(--bad);
+    }
+
+    .status.no_channel,
+    .status.not_checked {
+      background: var(--none-soft);
+      color: var(--none);
+    }
+
+    .empty {
+      padding: 28px 16px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    @media (max-width: 760px) {
+      .shell {
+        width: min(100% - 20px, 1180px);
+      }
+
+      .topbar,
+      .toolbar,
+      .panel-head {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .actions {
+        justify-content: flex-start;
+      }
+
+      .summary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      h1 {
+        font-size: 24px;
+      }
+
+      .table-wrap {
+        max-height: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="shell topbar">
+      <div>
+        <h1>Streaming Report</h1>
+        <div class="meta" id="metadata">Loading...</div>
+      </div>
+      <div class="actions">
+        <a class="button" href="data/streaming_by_team.json">Team JSON</a>
+        <a class="button" href="data/streaming_by_player.json">Player JSON</a>
+        <a class="button" id="run-link" href="#" hidden>Workflow run</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="shell">
+      <section class="summary" aria-label="Summary">
+        <div class="stat"><span>Teams</span><strong id="team-count">-</strong></div>
+        <div class="stat"><span>Players</span><strong id="player-count">-</strong></div>
+        <div class="stat"><span>Streams</span><strong id="stream-count">-</strong></div>
+        <div class="stat"><span>Total hours</span><strong id="total-hours">-</strong></div>
+        <div class="stat"><span>SV hours</span><strong id="sv-hours">-</strong></div>
+      </section>
+
+      <div class="toolbar">
+        <div class="tabs" role="tablist" aria-label="Report views">
+          <button class="tab active" type="button" data-view="team">By team</button>
+          <button class="tab" type="button" data-view="player">By player</button>
+        </div>
+        <input class="search" id="search" type="search" placeholder="Filter by team, player, or status" autocomplete="off">
+      </div>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2 id="table-title">By team</h2>
+          <div class="count" id="row-count">0 rows</div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead id="table-head"></thead>
+            <tbody id="table-body"></tbody>
+          </table>
+          <div class="empty" id="empty" hidden>No matching rows.</div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const numberFields = new Set(["stream_count", "total_hours", "shadowverse_hours", "youtube_hours", "twitch_hours"]);
+    const statusFields = new Set(["youtube_channel_status", "twitch_channel_status"]);
+    const state = {
+      view: "team",
+      query: "",
+      sortKey: "total_hours",
+      sortDirection: "desc",
+      team: [],
+      player: [],
+      metadata: {}
+    };
+
+    const columns = {
+      team: [
+        ["team", "Team"],
+        ["stream_count", "Streams"],
+        ["total_hours", "Total hours"],
+        ["shadowverse_hours", "SV hours"],
+        ["youtube_hours", "YouTube hours"],
+        ["twitch_hours", "Twitch hours"]
+      ],
+      player: [
+        ["team", "Team"],
+        ["player_name", "Player"],
+        ["stream_count", "Streams"],
+        ["total_hours", "Total hours"],
+        ["shadowverse_hours", "SV hours"],
+        ["youtube_hours", "YouTube hours"],
+        ["twitch_hours", "Twitch hours"],
+        ["youtube_channel_status", "YouTube"],
+        ["twitch_channel_status", "Twitch"],
+        ["youtube_skipped_reason", "YouTube reason"],
+        ["twitch_skipped_reason", "Twitch reason"]
+      ]
+    };
+
+    function formatNumber(value) {
+      return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(value ?? 0);
+    }
+
+    function formatDate(value) {
+      if (!value) return "Unknown";
+      return new Intl.DateTimeFormat("ja-JP", {
+        dateStyle: "medium",
+        timeStyle: "short"
+      }).format(new Date(value));
+    }
+
+    function statusLabel(value) {
+      return String(value || "unknown").replaceAll("_", " ");
+    }
+
+    function rowMatches(row) {
+      if (!state.query) return true;
+      const haystack = Object.values(row).join(" ").toLowerCase();
+      return haystack.includes(state.query);
+    }
+
+    function compareRows(left, right) {
+      const key = state.sortKey;
+      const a = left[key];
+      const b = right[key];
+      let result;
+      if (numberFields.has(key)) {
+        result = Number(a || 0) - Number(b || 0);
+      } else {
+        result = String(a || "").localeCompare(String(b || ""), "ja");
+      }
+      return state.sortDirection === "asc" ? result : -result;
+    }
+
+    function cellHtml(row, key) {
+      const value = row[key] ?? "";
+      if (numberFields.has(key)) {
+        return `<td class="num">${formatNumber(value)}</td>`;
+      }
+      if (statusFields.has(key)) {
+        const className = String(value || "unknown").replaceAll("_", "-");
+        return `<td><span class="status ${String(value || "unknown")}">${statusLabel(value)}</span></td>`;
+      }
+      return `<td>${escapeHtml(value)}</td>`;
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function render() {
+      const rows = state[state.view].filter(rowMatches).sort(compareRows);
+      const activeColumns = columns[state.view];
+      document.getElementById("table-title").textContent = state.view === "team" ? "By team" : "By player";
+      document.getElementById("row-count").textContent = `${rows.length} rows`;
+      document.getElementById("empty").hidden = rows.length > 0;
+
+      document.getElementById("table-head").innerHTML = `<tr>${activeColumns.map(([key, label]) => {
+        const sortClass = key === state.sortKey ? ` sorted-${state.sortDirection}` : "";
+        return `<th class="sortable${sortClass}" data-key="${key}" scope="col">${label}</th>`;
+      }).join("")}</tr>`;
+
+      document.getElementById("table-body").innerHTML = rows.map(row => (
+        `<tr>${activeColumns.map(([key]) => cellHtml(row, key)).join("")}</tr>`
+      )).join("");
+
+      document.querySelectorAll("th.sortable").forEach(th => {
+        th.addEventListener("click", () => {
+          const key = th.dataset.key;
+          if (state.sortKey === key) {
+            state.sortDirection = state.sortDirection === "asc" ? "desc" : "asc";
+          } else {
+            state.sortKey = key;
+            state.sortDirection = numberFields.has(key) ? "desc" : "asc";
+          }
+          render();
+        });
+      });
+    }
+
+    function renderMetadata() {
+      const meta = state.metadata;
+      document.getElementById("metadata").textContent = `Updated ${formatDate(meta.generated_at)}${meta.run_number ? ` · Run #${meta.run_number}` : ""}`;
+      document.getElementById("team-count").textContent = formatNumber(meta.team_count);
+      document.getElementById("player-count").textContent = formatNumber(meta.player_count);
+      document.getElementById("stream-count").textContent = formatNumber(meta.total_streams);
+      document.getElementById("total-hours").textContent = formatNumber(meta.total_hours);
+      document.getElementById("sv-hours").textContent = formatNumber(meta.shadowverse_hours);
+      if (meta.run_url) {
+        const link = document.getElementById("run-link");
+        link.href = meta.run_url;
+        link.hidden = false;
+      }
+    }
+
+    async function loadData() {
+      const [team, player, metadata] = await Promise.all([
+        fetch("data/streaming_by_team.json").then(response => response.json()),
+        fetch("data/streaming_by_player.json").then(response => response.json()),
+        fetch("data/metadata.json").then(response => response.json())
+      ]);
+      state.team = team;
+      state.player = player;
+      state.metadata = metadata;
+      renderMetadata();
+      render();
+    }
+
+    document.querySelectorAll(".tab").forEach(tab => {
+      tab.addEventListener("click", () => {
+        document.querySelectorAll(".tab").forEach(item => item.classList.remove("active"));
+        tab.classList.add("active");
+        state.view = tab.dataset.view;
+        state.sortKey = "total_hours";
+        state.sortDirection = "desc";
+        render();
+      });
+    });
+
+    document.getElementById("search").addEventListener("input", event => {
+      state.query = event.target.value.trim().toLowerCase();
+      render();
+    });
+
+    loadData().catch(error => {
+      document.getElementById("metadata").textContent = "Failed to load report data.";
+      document.getElementById("empty").hidden = false;
+      document.getElementById("empty").textContent = error.message;
+    });
+  </script>
+</body>
+</html>
+"""
+
+
+def write_html(path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(HTML, encoding="utf-8")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Build a static dashboard for streaming reports.")
+    parser.add_argument("--reports-dir", type=Path, default=REPORTS_DIR)
+    parser.add_argument("--out-dir", type=Path, default=PUBLIC_DIR)
+    args = parser.parse_args()
+
+    player_rows = read_csv(args.reports_dir / "streaming_by_player.csv")
+    team_rows = read_csv(args.reports_dir / "streaming_by_team.csv")
+    metadata = build_metadata(player_rows, team_rows)
+
+    write_html(args.out_dir / "index.html")
+    write_json(args.out_dir / "data" / "streaming_by_player.json", player_rows)
+    write_json(args.out_dir / "data" / "streaming_by_team.json", team_rows)
+    write_json(args.out_dir / "data" / "metadata.json", metadata)
+
+    print(f"wrote {args.out_dir / 'index.html'}")
+    print(f"wrote {args.out_dir / 'data' / 'streaming_by_player.json'}")
+    print(f"wrote {args.out_dir / 'data' / 'streaming_by_team.json'}")
+    print(f"wrote {args.out_dir / 'data' / 'metadata.json'}")
+
+
+if __name__ == "__main__":
+    main()
