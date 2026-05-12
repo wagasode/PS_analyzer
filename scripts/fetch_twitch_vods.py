@@ -88,6 +88,24 @@ def fetch_archives(user_id: str, client_id: str, token: str, max_pages: int) -> 
     return videos
 
 
+def update_channel_status(conn: sqlite3.Connection, channel_id: int, status: str, reason: str, detail: str, items_seen: int) -> None:
+    conn.execute(
+        """
+        INSERT INTO channel_collection_status(
+            channel_id, last_checked_at, last_status, last_reason, last_detail, last_items_seen
+        )
+        VALUES (?, datetime('now'), ?, ?, ?, ?)
+        ON CONFLICT(channel_id) DO UPDATE SET
+            last_checked_at = datetime('now'),
+            last_status = excluded.last_status,
+            last_reason = excluded.last_reason,
+            last_detail = excluded.last_detail,
+            last_items_seen = excluded.last_items_seen
+        """,
+        (channel_id, status, reason, detail, items_seen),
+    )
+
+
 def upsert_video(conn: sqlite3.Connection, channel: sqlite3.Row, video: dict) -> int:
     title = video.get("title", "")
     game_or_category = video.get("game_name", "") or video.get("type", "")
@@ -168,6 +186,7 @@ def main() -> None:
             items_seen += len(videos)
             for video in videos:
                 items_upserted += upsert_video(conn, channel, video)
+            update_channel_status(conn, channel["channel_id"], "ok", "", "", len(videos))
             conn.commit()
         finish_run(
             conn,

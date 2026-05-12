@@ -60,6 +60,15 @@ CREATE TABLE IF NOT EXISTS collection_runs (
     error_message TEXT
 );
 
+CREATE TABLE IF NOT EXISTS channel_collection_status (
+    channel_id INTEGER PRIMARY KEY REFERENCES channels(channel_id) ON DELETE CASCADE,
+    last_checked_at TEXT NOT NULL DEFAULT (datetime('now')),
+    last_status TEXT NOT NULL CHECK (last_status IN ('ok', 'skipped', 'failed')),
+    last_reason TEXT,
+    last_detail TEXT,
+    last_items_seen INTEGER NOT NULL DEFAULT 0
+);
+
 CREATE INDEX IF NOT EXISTS idx_channels_player_platform
     ON channels(player_id, platform);
 
