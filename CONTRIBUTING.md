@@ -49,7 +49,25 @@
    python3 scripts/build_streaming_dashboard.py
    ```
 
-5. Pull Request を作成する
+5. ブランチの dashboard preview を確認する
+
+   GitHub の `Actions` から `Collect streaming data` を手動実行し、対象ブランチを選ぶ。
+   成功後に `Publish dashboard` workflow が自動実行され、次の形式の URL に preview が公開される。
+   この preview 公開の仕組みは、`publish-dashboard.yml` が default branch に merge された後に利用できる。
+
+   ```text
+   https://wagasode.github.io/PS_analyzer/previews/<branch-slug>/
+   ```
+
+   例:
+
+   ```text
+   https://wagasode.github.io/PS_analyzer/previews/codex-issue-branch-workflow/
+   ```
+
+   merge 前にこの Web UI で表示、検索、ソート、集計値を確認する。
+
+6. Pull Request を作成する
 
    PR 本文には、対応 issue、変更内容、検証結果を書く。
 

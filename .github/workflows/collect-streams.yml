@@ -14,8 +14,6 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -76,6 +74,26 @@ jobs:
       - name: Build dashboard
         run: python3 scripts/build_streaming_dashboard.py
 
+      - name: Write dashboard URL summary
+        run: |
+          set -euo pipefail
+          slug="$(printf '%s' "$GITHUB_REF_NAME" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9._-]+/-/g; s/^-+//; s/-+$//')"
+          if [ -z "$slug" ]; then
+            slug="branch"
+          fi
+          if [ "$GITHUB_REF_NAME" = "main" ]; then
+            dashboard_url="https://wagasode.github.io/PS_analyzer/"
+          else
+            dashboard_url="https://wagasode.github.io/PS_analyzer/previews/${slug}/"
+          fi
+          {
+            echo "## Dashboard"
+            echo
+            echo "The dashboard will be published by the \`Publish dashboard\` workflow:"
+            echo
+            echo "- ${dashboard_url}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Upload SQLite database, reports, and dashboard
         if: always()
         uses: actions/upload-artifact@v4
@@ -87,25 +105,9 @@ jobs:
             public/**
           if-no-files-found: warn
 
-      - name: Configure GitHub Pages
-        if: github.ref == 'refs/heads/main'
-        uses: actions/configure-pages@v5
-
-      - name: Upload dashboard Pages artifact
-        if: github.ref == 'refs/heads/main'
-        uses: actions/upload-pages-artifact@v3
+      - name: Upload dashboard site artifact
+        uses: actions/upload-artifact@v4
         with:
+          name: dashboard-site
           path: public
-
-  deploy-pages:
-    needs: collect
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
-    steps:
-      - name: Deploy dashboard to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          retention-days: 7

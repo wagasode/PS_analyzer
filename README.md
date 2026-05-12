@@ -103,13 +103,24 @@ The dashboard is a static table UI for the latest generated reports. It supports
 team/player views, filtering, sorting, channel status checks, and links back to
 the GitHub Actions run when built in CI.
 
-After the `Collect streaming data` workflow completes successfully, GitHub Pages
-publishes the latest dashboard at:
+After the `Collect streaming data` workflow completes successfully, the
+`Publish dashboard` workflow publishes the dashboard to GitHub Pages.
+
+The `main` branch dashboard is published at:
 
 - https://wagasode.github.io/PS_analyzer/
 
+Feature branch previews are published under `previews/<branch-slug>/`.
+For example, `codex/issue-branch-workflow` is published at:
+
+- https://wagasode.github.io/PS_analyzer/previews/codex-issue-branch-workflow/
+
 For the first deployment, configure the repository's Pages source to
 `GitHub Actions` in `Settings` -> `Pages`.
+
+Branch previews require `.github/workflows/publish-dashboard.yml` to exist on
+the default branch. The first PR that adds this workflow must be merged before
+preview publishing is available for later issue branches.
 
 ## GitHub Actions
 
@@ -125,9 +136,11 @@ Manual run:
 2. Go to `Actions`.
 3. Select `Collect streaming data`.
 4. Click `Run workflow`.
-5. Keep `youtube_max_pages=1` and `twitch_max_pages=1` for the first run.
-6. Download the `streaming-data` artifact from the completed workflow run.
-7. Open the GitHub Pages dashboard to inspect the latest aggregate result.
+5. Select the branch to collect data for.
+6. Keep `youtube_max_pages=1` and `twitch_max_pages=1` for the first run.
+7. Wait for `Collect streaming data` to finish.
+8. Wait for the automatically triggered `Publish dashboard` workflow to finish.
+9. Open the GitHub Pages dashboard or branch preview URL from the workflow summary.
 
 The artifact contains:
 
@@ -135,5 +148,9 @@ The artifact contains:
 - `reports/streaming_by_player.csv`
 - `reports/streaming_by_team.csv`
 - `reports/youtube_skipped_channels.csv`
+- `public/index.html`
+- `public/data/*.json`
 
-The workflow also deploys the static dashboard in `public/` to GitHub Pages.
+The `Publish dashboard` workflow deploys the static dashboard in `public/` to
+GitHub Pages. `main` updates the root dashboard, and feature branches update
+their own preview directories.
