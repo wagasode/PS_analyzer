@@ -316,8 +316,27 @@ HTML = """<!doctype html>
       overflow: hidden;
     }
 
-    .detail-panel {
-      margin-top: 18px;
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(640px, 1.55fr) minmax(360px, 0.95fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .timeline-panel {
+      display: none;
+    }
+
+    .workspace.player-mode .timeline-panel {
+      display: block;
+    }
+
+    .workspace.team-mode {
+      grid-template-columns: 1fr;
+    }
+
+    .workspace.team-mode .timeline-panel {
+      display: none;
     }
 
     .panel-head {
@@ -344,6 +363,10 @@ HTML = """<!doctype html>
     .table-wrap {
       overflow: auto;
       max-height: calc(100vh - 300px);
+    }
+
+    .player-table-wrap {
+      max-height: calc(100vh - 250px);
     }
 
     table {
@@ -473,13 +496,14 @@ HTML = """<!doctype html>
     .timeline-list {
       display: grid;
       gap: 0;
+      max-height: calc(100vh - 300px);
+      overflow: auto;
     }
 
     .timeline-item {
       display: grid;
-      grid-template-columns: minmax(170px, 210px) minmax(0, 1fr) auto;
-      gap: 16px;
-      align-items: center;
+      gap: 12px;
+      align-items: start;
       padding: 16px;
       border-bottom: 1px solid var(--border);
     }
@@ -568,6 +592,19 @@ HTML = """<!doctype html>
       text-decoration: none;
       box-shadow: var(--shadow);
       white-space: nowrap;
+      justify-self: start;
+    }
+
+    @media (max-width: 1100px) {
+      .workspace,
+      .workspace.team-mode {
+        grid-template-columns: 1fr;
+      }
+
+      .timeline-list,
+      .player-table-wrap {
+        max-height: none;
+      }
     }
 
     @media (max-width: 760px) {
@@ -598,13 +635,6 @@ HTML = """<!doctype html>
         max-height: none;
       }
 
-      .timeline-item {
-        grid-template-columns: 1fr;
-      }
-
-      .timeline-link {
-        justify-self: start;
-      }
     }
   </style>
 </head>
@@ -642,31 +672,33 @@ HTML = """<!doctype html>
         <input class="search" id="search" type="search" placeholder="Filter by team, player, or status" autocomplete="off">
       </div>
 
-      <section class="panel">
-        <div class="panel-head">
-          <h2 id="table-title">By team</h2>
-          <div class="count" id="row-count">0 rows</div>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead id="table-head"></thead>
-            <tbody id="table-body"></tbody>
-          </table>
-          <div class="empty" id="empty" hidden>No matching rows.</div>
-        </div>
-      </section>
-
-      <section class="panel detail-panel" id="timeline-panel" hidden>
-        <div class="panel-head">
-          <div>
-            <h2 id="timeline-title">Player timeline</h2>
-            <div class="timeline-summary" id="timeline-summary"></div>
+      <div class="workspace team-mode" id="workspace">
+        <section class="panel">
+          <div class="panel-head">
+            <h2 id="table-title">By team</h2>
+            <div class="count" id="row-count">0 rows</div>
           </div>
-          <div class="count" id="timeline-count">0 streams</div>
-        </div>
-        <div class="timeline-list" id="timeline-list"></div>
-        <div class="empty" id="timeline-empty" hidden>No stream archives collected.</div>
-      </section>
+          <div class="table-wrap" id="table-wrap">
+            <table>
+              <thead id="table-head"></thead>
+              <tbody id="table-body"></tbody>
+            </table>
+            <div class="empty" id="empty" hidden>No matching rows.</div>
+          </div>
+        </section>
+
+        <section class="panel timeline-panel" id="timeline-panel">
+          <div class="panel-head">
+            <div>
+              <h2 id="timeline-title">Player timeline</h2>
+              <div class="timeline-summary" id="timeline-summary"></div>
+            </div>
+            <div class="count" id="timeline-count">0 streams</div>
+          </div>
+          <div class="timeline-list" id="timeline-list"></div>
+          <div class="empty" id="timeline-empty" hidden>No stream archives collected.</div>
+        </section>
+      </div>
     </div>
   </main>
 
@@ -795,6 +827,11 @@ HTML = """<!doctype html>
     function render() {
       const rows = state[state.view].filter(rowMatches).sort(compareRows);
       const activeColumns = columns[state.view];
+      const workspace = document.getElementById("workspace");
+      const tableWrap = document.getElementById("table-wrap");
+      workspace.classList.toggle("player-mode", state.view === "player");
+      workspace.classList.toggle("team-mode", state.view !== "player");
+      tableWrap.classList.toggle("player-table-wrap", state.view === "player");
       if (state.view === "player") {
         const visibleKeys = new Set(rows.map(playerKey));
         if (!visibleKeys.has(state.selectedPlayerKey)) {
@@ -838,13 +875,10 @@ HTML = """<!doctype html>
     }
 
     function renderTimeline() {
-      const panel = document.getElementById("timeline-panel");
       if (state.view !== "player") {
-        panel.hidden = true;
         return;
       }
 
-      panel.hidden = false;
       const timeline = state.timelineByPlayer.get(state.selectedPlayerKey);
       const title = document.getElementById("timeline-title");
       const summary = document.getElementById("timeline-summary");
