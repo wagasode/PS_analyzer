@@ -56,7 +56,8 @@ jobs:
             scripts/init_db.py \
             scripts/fetch_youtube_archives.py \
             scripts/fetch_twitch_vods.py \
-            scripts/build_streaming_report.py
+            scripts/build_streaming_report.py \
+            scripts/build_streaming_dashboard.py
 
       - name: Initialize database
         run: python3 scripts/init_db.py
@@ -70,7 +71,30 @@ jobs:
       - name: Build reports
         run: python3 scripts/build_streaming_report.py --summary
 
-      - name: Upload SQLite database and reports
+      - name: Build dashboard
+        run: python3 scripts/build_streaming_dashboard.py
+
+      - name: Write dashboard URL summary
+        run: |
+          set -euo pipefail
+          slug="$(printf '%s' "$GITHUB_REF_NAME" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9._-]+/-/g; s/^-+//; s/-+$//')"
+          if [ -z "$slug" ]; then
+            slug="branch"
+          fi
+          if [ "$GITHUB_REF_NAME" = "main" ]; then
+            dashboard_url="https://wagasode.github.io/PS_analyzer/"
+          else
+            dashboard_url="https://wagasode.github.io/PS_analyzer/previews/${slug}/"
+          fi
+          {
+            echo "## Dashboard"
+            echo
+            echo "The dashboard will be published by the \`Publish dashboard\` workflow:"
+            echo
+            echo "- ${dashboard_url}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload SQLite database, reports, and dashboard
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -78,4 +102,12 @@ jobs:
           path: |
             data/streams.sqlite
             reports/*.csv
+            public/**
           if-no-files-found: warn
+
+      - name: Upload dashboard site artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dashboard-site
+          path: public
+          retention-days: 7
