@@ -97,11 +97,12 @@ Outputs:
 - `public/index.html`
 - `public/data/streaming_by_player.json`
 - `public/data/streaming_by_team.json`
+- `public/data/streaming_timeline_by_player.json`
 - `public/data/metadata.json`
 
 The dashboard is a static table UI for the latest generated reports. It supports
-team/player views, filtering, sorting, channel status checks, and links back to
-the GitHub Actions run when built in CI.
+team/player views, filtering, sorting, channel status checks, player-level
+archive timelines, and links back to the GitHub Actions run when built in CI.
 
 After the `Collect streaming data` workflow completes successfully, the
 `Publish dashboard` workflow publishes the dashboard to GitHub Pages.

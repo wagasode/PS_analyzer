@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from common import ROOT_DIR
+from common import DEFAULT_DB_PATH, ROOT_DIR, connect, init_schema
 
 
 REPORTS_DIR = ROOT_DIR / "reports"
@@ -70,6 +70,73 @@ def build_metadata(player_rows: list[dict[str, Any]], team_rows: list[dict[str, 
         "total_hours": total_hours,
         "shadowverse_hours": shadowverse_hours,
     }
+
+
+def build_player_timelines(db_path: Path) -> list[dict[str, Any]]:
+    conn = connect(db_path)
+    init_schema(conn)
+    rows = conn.execute(
+        """
+        SELECT
+            p.team,
+            p.player_name,
+            s.platform,
+            s.title,
+            s.url,
+            s.started_at,
+            s.published_at,
+            COALESCE(s.started_at, s.published_at, '') AS occurred_at,
+            s.duration_sec,
+            s.is_shadowverse_related
+        FROM players p
+        LEFT JOIN stream_sessions s
+          ON s.player_id = p.player_id
+         AND s.is_live_archive = 1
+        ORDER BY
+            p.team,
+            p.player_name,
+            CASE WHEN COALESCE(s.started_at, s.published_at, '') = '' THEN 1 ELSE 0 END,
+            COALESCE(s.started_at, s.published_at, '') DESC,
+            s.stream_session_id DESC
+        """
+    ).fetchall()
+
+    timelines: list[dict[str, Any]] = []
+    current_key: tuple[str, str] | None = None
+    current_timeline: dict[str, Any] | None = None
+
+    for row in rows:
+        team = row["team"]
+        player_name = row["player_name"]
+        key = (team, player_name)
+        if key != current_key:
+            current_timeline = {
+                "team": team,
+                "player_name": player_name,
+                "streams": [],
+            }
+            timelines.append(current_timeline)
+            current_key = key
+
+        if row["url"] is None:
+            continue
+
+        assert current_timeline is not None
+        current_timeline["streams"].append(
+            {
+                "platform": row["platform"],
+                "title": row["title"],
+                "url": row["url"],
+                "started_at": row["started_at"],
+                "published_at": row["published_at"],
+                "occurred_at": row["occurred_at"],
+                "duration_sec": int(row["duration_sec"] or 0),
+                "is_shadowverse_related": int(row["is_shadowverse_related"] or 0),
+            }
+        )
+
+    conn.close()
+    return timelines
 
 
 HTML = """<!doctype html>
@@ -249,6 +316,29 @@ HTML = """<!doctype html>
       overflow: hidden;
     }
 
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) clamp(320px, 34vw, 440px);
+      gap: 16px;
+      align-items: start;
+    }
+
+    .timeline-panel {
+      display: none;
+    }
+
+    .workspace.player-mode .timeline-panel {
+      display: block;
+    }
+
+    .workspace.team-mode {
+      grid-template-columns: 1fr;
+    }
+
+    .workspace.team-mode .timeline-panel {
+      display: none;
+    }
+
     .panel-head {
       display: flex;
       align-items: center;
@@ -256,6 +346,29 @@ HTML = """<!doctype html>
       gap: 12px;
       padding: 14px 16px;
       border-bottom: 1px solid var(--border);
+    }
+
+    .panel-actions {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    .toggle input {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--accent);
     }
 
     h2 {
@@ -273,6 +386,18 @@ HTML = """<!doctype html>
     .table-wrap {
       overflow: auto;
       max-height: calc(100vh - 300px);
+    }
+
+    .player-table-wrap {
+      max-height: calc(100vh - 250px);
+    }
+
+    .player-table-wrap table {
+      min-width: 520px;
+    }
+
+    .player-detail-table-wrap table {
+      min-width: 980px;
     }
 
     table {
@@ -331,6 +456,28 @@ HTML = """<!doctype html>
       font-variant-numeric: tabular-nums;
     }
 
+    td.action {
+      text-align: center;
+    }
+
+    .detail-button {
+      min-height: 30px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0 10px;
+      background: var(--panel);
+      color: var(--text);
+      font: inherit;
+      cursor: pointer;
+    }
+
+    .detail-button.active {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 700;
+    }
+
     .status {
       display: inline-flex;
       align-items: center;
@@ -368,6 +515,129 @@ HTML = """<!doctype html>
       text-align: center;
     }
 
+    .timeline-summary {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 14px;
+      flex-wrap: wrap;
+    }
+
+    .timeline-list {
+      display: grid;
+      gap: 0;
+      max-height: calc(100vh - 300px);
+      overflow: auto;
+    }
+
+    .timeline-item {
+      display: grid;
+      gap: 12px;
+      align-items: start;
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .timeline-item:last-child {
+      border-bottom: 0;
+    }
+
+    .timeline-date {
+      display: grid;
+      gap: 4px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .timeline-date strong {
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .timeline-date span,
+    .timeline-meta {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .timeline-main {
+      min-width: 0;
+      display: grid;
+      gap: 8px;
+    }
+
+    .timeline-title {
+      color: var(--text);
+      text-decoration: none;
+      font-weight: 700;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    .timeline-title:hover {
+      text-decoration: underline;
+    }
+
+    .timeline-tags {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      border-radius: 999px;
+      padding: 0 8px;
+      background: var(--none-soft);
+      color: var(--none);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .pill.youtube {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+
+    .pill.twitch {
+      background: #ede9fe;
+      color: #6d28d9;
+    }
+
+    .pill.related {
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    .timeline-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 36px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0 12px;
+      color: var(--text);
+      text-decoration: none;
+      box-shadow: var(--shadow);
+      white-space: nowrap;
+      justify-self: start;
+    }
+
+    @media (max-width: 820px) {
+      .workspace,
+      .workspace.team-mode {
+        grid-template-columns: 1fr;
+      }
+
+      .timeline-list,
+      .player-table-wrap {
+        max-height: none;
+      }
+    }
+
     @media (max-width: 760px) {
       .shell {
         width: min(100% - 20px, 1180px);
@@ -395,6 +665,7 @@ HTML = """<!doctype html>
       .table-wrap {
         max-height: none;
       }
+
     }
   </style>
 </head>
@@ -408,6 +679,7 @@ HTML = """<!doctype html>
       <div class="actions">
         <a class="button" href="data/streaming_by_team.json">Team JSON</a>
         <a class="button" href="data/streaming_by_player.json">Player JSON</a>
+        <a class="button" href="data/streaming_timeline_by_player.json">Timeline JSON</a>
         <a class="button" id="run-link" href="#" hidden>Workflow run</a>
       </div>
     </div>
@@ -431,19 +703,39 @@ HTML = """<!doctype html>
         <input class="search" id="search" type="search" placeholder="Filter by team, player, or status" autocomplete="off">
       </div>
 
-      <section class="panel">
-        <div class="panel-head">
-          <h2 id="table-title">By team</h2>
-          <div class="count" id="row-count">0 rows</div>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead id="table-head"></thead>
-            <tbody id="table-body"></tbody>
-          </table>
-          <div class="empty" id="empty" hidden>No matching rows.</div>
-        </div>
-      </section>
+      <div class="workspace team-mode" id="workspace">
+        <section class="panel">
+          <div class="panel-head">
+            <h2 id="table-title">By team</h2>
+            <div class="panel-actions">
+              <label class="toggle" id="player-details-control" hidden>
+                <input id="show-player-details" type="checkbox">
+                Show details
+              </label>
+              <div class="count" id="row-count">0 rows</div>
+            </div>
+          </div>
+          <div class="table-wrap" id="table-wrap">
+            <table>
+              <thead id="table-head"></thead>
+              <tbody id="table-body"></tbody>
+            </table>
+            <div class="empty" id="empty" hidden>No matching rows.</div>
+          </div>
+        </section>
+
+        <section class="panel timeline-panel" id="timeline-panel">
+          <div class="panel-head">
+            <div>
+              <h2 id="timeline-title">Player timeline</h2>
+              <div class="timeline-summary" id="timeline-summary"></div>
+            </div>
+            <div class="count" id="timeline-count">0 streams</div>
+          </div>
+          <div class="timeline-list" id="timeline-list"></div>
+          <div class="empty" id="timeline-empty" hidden>No stream archives collected.</div>
+        </section>
+      </div>
     </div>
   </main>
 
@@ -457,6 +749,10 @@ HTML = """<!doctype html>
       sortDirection: "desc",
       team: [],
       player: [],
+      timelines: [],
+      timelineByPlayer: new Map(),
+      selectedPlayerKey: "",
+      showPlayerDetails: false,
       metadata: {}
     };
 
@@ -469,9 +765,18 @@ HTML = """<!doctype html>
         ["youtube_hours", "YouTube hours"],
         ["twitch_hours", "Twitch hours"]
       ],
-      player: [
+      playerCompact: [
         ["team", "Team"],
         ["player_name", "Player"],
+        ["timeline", "Timeline"],
+        ["stream_count", "Streams"],
+        ["total_hours", "Total hours"],
+        ["shadowverse_hours", "SV hours"]
+      ],
+      playerDetail: [
+        ["team", "Team"],
+        ["player_name", "Player"],
+        ["timeline", "Timeline"],
         ["stream_count", "Streams"],
         ["total_hours", "Total hours"],
         ["shadowverse_hours", "SV hours"],
@@ -483,6 +788,13 @@ HTML = """<!doctype html>
         ["twitch_skipped_reason", "Twitch reason"]
       ]
     };
+
+    function activeColumns() {
+      if (state.view === "player") {
+        return state.showPlayerDetails ? columns.playerDetail : columns.playerCompact;
+      }
+      return columns[state.view];
+    }
 
     function formatNumber(value) {
       return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(value ?? 0);
@@ -498,6 +810,26 @@ HTML = """<!doctype html>
 
     function statusLabel(value) {
       return String(value || "unknown").replaceAll("_", " ");
+    }
+
+    function playerKey(row) {
+      return JSON.stringify([row.team, row.player_name]);
+    }
+
+    function formatDuration(totalSeconds) {
+      const seconds = Math.max(Number(totalSeconds || 0), 0);
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      if (hours > 0) {
+        return `${hours}h ${String(minutes).padStart(2, "0")}m`;
+      }
+      return `${minutes}m`;
+    }
+
+    function platformLabel(value) {
+      if (value === "youtube") return "YouTube";
+      if (value === "twitch") return "Twitch";
+      return statusLabel(value);
     }
 
     function rowMatches(row) {
@@ -521,6 +853,11 @@ HTML = """<!doctype html>
 
     function cellHtml(row, key) {
       const value = row[key] ?? "";
+      if (key === "timeline") {
+        const keyValue = playerKey(row);
+        const active = keyValue === state.selectedPlayerKey ? " active" : "";
+        return `<td class="action"><button class="detail-button${active}" type="button" data-player-key="${escapeHtml(keyValue)}">View</button></td>`;
+      }
       if (numberFields.has(key)) {
         return `<td class="num">${formatNumber(value)}</td>`;
       }
@@ -541,19 +878,38 @@ HTML = """<!doctype html>
     }
 
     function render() {
+      let activeTableColumns = activeColumns();
+      if (!activeTableColumns.some(([key]) => key === state.sortKey)) {
+        state.sortKey = "total_hours";
+        state.sortDirection = "desc";
+        activeTableColumns = activeColumns();
+      }
       const rows = state[state.view].filter(rowMatches).sort(compareRows);
-      const activeColumns = columns[state.view];
+      const workspace = document.getElementById("workspace");
+      const tableWrap = document.getElementById("table-wrap");
+      const playerDetailsControl = document.getElementById("player-details-control");
+      workspace.classList.toggle("player-mode", state.view === "player");
+      workspace.classList.toggle("team-mode", state.view !== "player");
+      tableWrap.classList.toggle("player-table-wrap", state.view === "player");
+      tableWrap.classList.toggle("player-detail-table-wrap", state.view === "player" && state.showPlayerDetails);
+      playerDetailsControl.hidden = state.view !== "player";
+      if (state.view === "player") {
+        const visibleKeys = new Set(rows.map(playerKey));
+        if (!visibleKeys.has(state.selectedPlayerKey)) {
+          state.selectedPlayerKey = rows[0] ? playerKey(rows[0]) : "";
+        }
+      }
       document.getElementById("table-title").textContent = state.view === "team" ? "By team" : "By player";
       document.getElementById("row-count").textContent = `${rows.length} rows`;
       document.getElementById("empty").hidden = rows.length > 0;
 
-      document.getElementById("table-head").innerHTML = `<tr>${activeColumns.map(([key, label]) => {
+      document.getElementById("table-head").innerHTML = `<tr>${activeTableColumns.map(([key, label]) => {
         const sortClass = key === state.sortKey ? ` sorted-${state.sortDirection}` : "";
         return `<th class="sortable${sortClass}" data-key="${key}" scope="col">${label}</th>`;
       }).join("")}</tr>`;
 
       document.getElementById("table-body").innerHTML = rows.map(row => (
-        `<tr>${activeColumns.map(([key]) => cellHtml(row, key)).join("")}</tr>`
+        `<tr>${activeTableColumns.map(([key]) => cellHtml(row, key)).join("")}</tr>`
       )).join("");
 
       document.querySelectorAll("th.sortable").forEach(th => {
@@ -568,6 +924,67 @@ HTML = """<!doctype html>
           render();
         });
       });
+
+      document.querySelectorAll(".detail-button").forEach(button => {
+        button.addEventListener("click", () => {
+          state.selectedPlayerKey = button.dataset.playerKey || "";
+          render();
+        });
+      });
+
+      renderTimeline();
+    }
+
+    function renderTimeline() {
+      if (state.view !== "player") {
+        return;
+      }
+
+      const timeline = state.timelineByPlayer.get(state.selectedPlayerKey);
+      const title = document.getElementById("timeline-title");
+      const summary = document.getElementById("timeline-summary");
+      const count = document.getElementById("timeline-count");
+      const list = document.getElementById("timeline-list");
+      const empty = document.getElementById("timeline-empty");
+
+      if (!timeline) {
+        title.textContent = "Player timeline";
+        summary.textContent = "";
+        count.textContent = "0 streams";
+        list.innerHTML = "";
+        empty.hidden = false;
+        return;
+      }
+
+      const streams = timeline.streams || [];
+      title.textContent = `${timeline.player_name} timeline`;
+      summary.textContent = timeline.team;
+      count.textContent = `${streams.length} streams`;
+      empty.hidden = streams.length > 0;
+      list.innerHTML = streams.map(stream => {
+        const timestamp = stream.occurred_at || stream.started_at || stream.published_at || "";
+        const timestampKind = stream.started_at ? "Started" : stream.published_at ? "Published" : "Date unknown";
+        const related = Number(stream.is_shadowverse_related || 0) === 1
+          ? `<span class="pill related">Shadowverse</span>`
+          : "";
+        return `
+          <article class="timeline-item">
+            <div class="timeline-date">
+              <strong>${escapeHtml(formatDate(timestamp))}</strong>
+              <span>${escapeHtml(timestampKind)}</span>
+            </div>
+            <div class="timeline-main">
+              <a class="timeline-title" href="${escapeHtml(stream.url)}" target="_blank" rel="noreferrer">${escapeHtml(stream.title || "Untitled stream")}</a>
+              <div class="timeline-tags">
+                <span class="pill ${escapeHtml(stream.platform || "")}">${escapeHtml(platformLabel(stream.platform))}</span>
+                <span class="pill">${escapeHtml(formatDuration(stream.duration_sec))}</span>
+                ${related}
+              </div>
+            </div>
+            <a class="timeline-link" href="${escapeHtml(stream.url)}" target="_blank" rel="noreferrer">Open archive</a>
+          </article>
+        `;
+      }).join("");
     }
 
     function renderMetadata() {
@@ -586,13 +1003,16 @@ HTML = """<!doctype html>
     }
 
     async function loadData() {
-      const [team, player, metadata] = await Promise.all([
+      const [team, player, timelines, metadata] = await Promise.all([
         fetch("data/streaming_by_team.json").then(response => response.json()),
         fetch("data/streaming_by_player.json").then(response => response.json()),
+        fetch("data/streaming_timeline_by_player.json").then(response => response.json()),
         fetch("data/metadata.json").then(response => response.json())
       ]);
       state.team = team;
       state.player = player;
+      state.timelines = timelines;
+      state.timelineByPlayer = new Map(timelines.map(timeline => [playerKey(timeline), timeline]));
       state.metadata = metadata;
       renderMetadata();
       render();
@@ -614,6 +1034,11 @@ HTML = """<!doctype html>
       render();
     });
 
+    document.getElementById("show-player-details").addEventListener("change", event => {
+      state.showPlayerDetails = event.target.checked;
+      render();
+    });
+
     loadData().catch(error => {
       document.getElementById("metadata").textContent = "Failed to load report data.";
       document.getElementById("empty").hidden = false;
@@ -632,22 +1057,26 @@ def write_html(path: Path) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Build a static dashboard for streaming reports.")
+    parser.add_argument("--db", type=Path, default=DEFAULT_DB_PATH)
     parser.add_argument("--reports-dir", type=Path, default=REPORTS_DIR)
     parser.add_argument("--out-dir", type=Path, default=PUBLIC_DIR)
     args = parser.parse_args()
 
     player_rows = read_csv(args.reports_dir / "streaming_by_player.csv")
     team_rows = read_csv(args.reports_dir / "streaming_by_team.csv")
+    timelines = build_player_timelines(args.db)
     metadata = build_metadata(player_rows, team_rows)
 
     write_html(args.out_dir / "index.html")
     write_json(args.out_dir / "data" / "streaming_by_player.json", player_rows)
     write_json(args.out_dir / "data" / "streaming_by_team.json", team_rows)
+    write_json(args.out_dir / "data" / "streaming_timeline_by_player.json", timelines)
     write_json(args.out_dir / "data" / "metadata.json", metadata)
 
     print(f"wrote {args.out_dir / 'index.html'}")
     print(f"wrote {args.out_dir / 'data' / 'streaming_by_player.json'}")
     print(f"wrote {args.out_dir / 'data' / 'streaming_by_team.json'}")
+    print(f"wrote {args.out_dir / 'data' / 'streaming_timeline_by_player.json'}")
     print(f"wrote {args.out_dir / 'data' / 'metadata.json'}")
 
 
