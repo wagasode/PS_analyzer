@@ -1,0 +1,8 @@
+name = "ps-analyzer-save-deck-links"
+main = "worker.mjs"
+compatibility_date = "2026-05-13"
+
+[vars]
+ALLOWED_REPOSITORY = "wagasode/PS_analyzer"
+ALLOWED_BRANCHES = "codex/issue-11-save-deck-edits"
+ALLOWED_ORIGINS = "https://wagasode.github.io"
