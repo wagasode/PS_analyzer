@@ -10,8 +10,11 @@ All repository changes should be made on an issue-specific branch. See
 ## Files
 
 - `data/players_channels.csv`: player/channel master.
+- `data/decks.csv`: deck definition master.
+- `data/stream_session_decks.csv`: stream archive to deck links.
 - `sql/schema.sql`: SQLite schema.
 - `scripts/init_db.py`: imports the master CSV into SQLite.
+- `scripts/import_deck_links.py`: imports deck definitions and stream archive links.
 - `scripts/fetch_youtube_archives.py`: fetches recent YouTube upload/archive metadata.
 - `scripts/fetch_twitch_vods.py`: fetches Twitch archive VOD metadata.
 - `scripts/build_streaming_report.py`: writes aggregate CSV reports.
@@ -65,6 +68,23 @@ python3 scripts/fetch_youtube_archives.py --player Toby --max-pages 1
 python3 scripts/fetch_twitch_vods.py --player Toby --max-pages 1
 ```
 
+## Import Deck Links
+
+Deck usage is managed as repository data:
+
+- `data/decks.csv` defines decks with a stable `deck_key`.
+- `data/stream_session_decks.csv` links decks to stream archives by
+  `platform`, `external_stream_id`, and `deck_key`.
+
+Import deck links after fetching archives:
+
+```bash
+python3 scripts/import_deck_links.py
+```
+
+Links whose target archive has not been collected yet are skipped, so the
+dashboard can still be built when deck link data is empty or partially matched.
+
 ## Build Reports
 
 ```bash
@@ -98,11 +118,13 @@ Outputs:
 - `public/data/streaming_by_player.json`
 - `public/data/streaming_by_team.json`
 - `public/data/streaming_timeline_by_player.json`
+- `public/data/streaming_deck_usage.json`
 - `public/data/metadata.json`
 
 The dashboard is a static table UI for the latest generated reports. It supports
 team/player views, filtering, sorting, channel status checks, player-level
-archive timelines, and links back to the GitHub Actions run when built in CI.
+archive timelines, deck usage lookup, and links back to the GitHub Actions run
+when built in CI.
 
 After the `Collect streaming data` workflow completes successfully, the
 `Publish dashboard` workflow publishes the dashboard to GitHub Pages.
