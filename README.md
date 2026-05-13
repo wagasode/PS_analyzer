@@ -85,6 +85,27 @@ python3 scripts/import_deck_links.py
 Links whose target archive has not been collected yet are skipped, so the
 dashboard can still be built when deck link data is empty or partially matched.
 
+## Save Deck Links from Dashboard
+
+The dashboard can draft deck edits in the browser and save them back to:
+
+- `data/decks.csv`
+- `data/stream_session_decks.csv`
+
+To save from the published dashboard:
+
+1. Open the branch dashboard preview.
+2. Edit deck links with `Edit decks`.
+3. Click `Save changes`.
+4. Enter a GitHub token with repository contents write access.
+5. Confirm the repository and branch, then click `Save to GitHub`.
+6. Run `Collect streaming data` for the same branch to rebuild and publish the
+   updated dashboard.
+
+For a fine-grained GitHub token, grant `Contents: Read and write` access to this
+repository. The token is used only for the save request in the browser and is
+not stored by the dashboard.
+
 ## Build Reports
 
 ```bash

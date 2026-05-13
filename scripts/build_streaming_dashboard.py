@@ -89,6 +89,8 @@ def build_metadata(player_rows: list[dict[str, Any]], team_rows: list[dict[str, 
         "run_id": os.environ.get("GITHUB_RUN_ID", ""),
         "run_url": github_run_url(),
         "commit_sha": os.environ.get("GITHUB_SHA", ""),
+        "repository": os.environ.get("GITHUB_REPOSITORY", ""),
+        "branch_name": os.environ.get("GITHUB_REF_NAME", ""),
         "player_count": len(player_rows),
         "team_count": len(team_rows),
         "total_streams": total_streams,
@@ -942,6 +944,22 @@ HTML = """<!doctype html>
       justify-content: flex-end;
     }
 
+    .save-status {
+      color: var(--muted);
+      font-size: 13px;
+      overflow-wrap: anywhere;
+    }
+
+    .save-status.ok {
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .save-status.error {
+      color: var(--bad);
+      font-weight: 700;
+    }
+
     .draft-panel {
       margin: -6px 0 18px;
       border: 1px solid var(--border);
@@ -982,6 +1000,10 @@ HTML = """<!doctype html>
       place-items: center;
       padding: 20px;
       background: rgba(15, 23, 42, 0.42);
+    }
+
+    #save-modal {
+      z-index: 30;
     }
 
     .modal {
@@ -1231,6 +1253,7 @@ HTML = """<!doctype html>
       <section class="change-bar" id="change-bar" hidden>
         <div id="change-summary">No unsaved changes.</div>
         <div class="change-actions">
+          <button class="primary-button open-save-modal-button" id="open-save-modal" type="button">Save changes</button>
           <button class="secondary-button" id="toggle-draft-panel" type="button">Review changes</button>
           <button class="danger-button" id="clear-draft" type="button">Clear draft</button>
         </div>
@@ -1277,6 +1300,40 @@ HTML = """<!doctype html>
     </div>
   </main>
 
+  <div class="modal-backdrop" id="save-modal" hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="save-modal-title">
+      <div class="modal-head">
+        <div>
+          <h2 id="save-modal-title">Save deck edits</h2>
+          <div class="timeline-summary" id="save-modal-summary"></div>
+        </div>
+        <div class="modal-actions">
+          <button class="secondary-button" id="close-save-modal" type="button">Close</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <section class="editor-section">
+          <h3>GitHub target</h3>
+          <div class="form-grid">
+            <label class="field">Repository
+              <input id="save-repository" type="text" placeholder="owner/repo" autocomplete="off">
+            </label>
+            <label class="field">Branch
+              <input id="save-branch" type="text" placeholder="branch-name" autocomplete="off">
+            </label>
+            <label class="field full">GitHub token
+              <input id="save-token" type="password" autocomplete="off" placeholder="Fine-grained token with Contents: Read and write">
+            </label>
+          </div>
+          <div class="save-status" id="save-status"></div>
+          <div class="modal-actions">
+            <button class="primary-button" id="save-to-github" type="button">Save to GitHub</button>
+          </div>
+        </section>
+      </div>
+    </section>
+  </div>
+
   <div class="modal-backdrop" id="deck-editor-modal" hidden>
     <section class="modal" role="dialog" aria-modal="true" aria-labelledby="deck-editor-title">
       <div class="modal-head">
@@ -1285,6 +1342,7 @@ HTML = """<!doctype html>
           <div class="timeline-summary" id="deck-editor-summary"></div>
         </div>
         <div class="modal-actions">
+          <button class="primary-button open-save-modal-button" type="button">Save changes</button>
           <button class="secondary-button" id="close-deck-editor" type="button">Close</button>
         </div>
       </div>
@@ -1364,6 +1422,9 @@ HTML = """<!doctype html>
       showDraftPanel: false,
       showNewDeckAdvanced: false,
       newDeckClassManual: false,
+      saving: false,
+      saveStatus: "",
+      saveStatusKind: "",
       newDeckDraft: {
         deck_key: "",
         deck_name: "",
@@ -1734,6 +1795,197 @@ HTML = """<!doctype html>
         ...changes.updatedLinks.map(link => changeDescription("Updated link", link))
       ];
       list.innerHTML = items.map(item => `<div class="draft-item">${escapeHtml(item)}</div>`).join("");
+    }
+
+    function csvEscape(value) {
+      const text = String(value ?? "");
+      if (/[",\\n\\r]/.test(text)) {
+        return `"${text.replaceAll('"', '""')}"`;
+      }
+      return text;
+    }
+
+    function csvLine(values) {
+      return values.map(csvEscape).join(",");
+    }
+
+    function serializeDecksCsv() {
+      const fields = ["deck_key", "deck_name", "class_name", "archetype", "deck_url", "deck_code", "notes"];
+      const rows = Array.from(state.decksByKey.values())
+        .sort((a, b) => a.deck_key.localeCompare(b.deck_key, "ja"))
+        .map(deck => fields.map(field => deck[field] || ""));
+      return [csvLine(fields), ...rows.map(csvLine)].join("\\n") + "\\n";
+    }
+
+    function serializeStreamSessionDecksCsv() {
+      const fields = ["platform", "external_stream_id", "deck_key", "confidence", "source_note", "display_order"];
+      const rows = Array.from(state.linksByKey.values()).map(link => {
+        const stream = state.streamsByKey.get(link.stream_key);
+        if (!stream) return null;
+        return {
+          platform: stream.platform || "",
+          external_stream_id: stream.external_stream_id || "",
+          deck_key: link.deck_key,
+          confidence: link.confidence || "",
+          source_note: link.source_note || "",
+          display_order: String(normalizeInt(link.display_order))
+        };
+      }).filter(Boolean)
+        .sort((a, b) => a.platform.localeCompare(b.platform)
+          || a.external_stream_id.localeCompare(b.external_stream_id)
+          || normalizeInt(a.display_order) - normalizeInt(b.display_order)
+          || a.deck_key.localeCompare(b.deck_key, "ja"))
+        .map(row => fields.map(field => row[field] || ""));
+      return [csvLine(fields), ...rows.map(csvLine)].join("\\n") + "\\n";
+    }
+
+    function validateSavePayload() {
+      const errors = [];
+      const deckKeys = new Set();
+      state.decksByKey.forEach(deck => {
+        if (!deck.deck_key) errors.push("Deck key is required.");
+        if (!deck.deck_name) errors.push(`Deck name is required for ${deck.deck_key || "a deck"}.`);
+        if (deckKeys.has(deck.deck_key)) errors.push(`Duplicate deck key: ${deck.deck_key}`);
+        deckKeys.add(deck.deck_key);
+      });
+
+      const linkKeys = new Set();
+      state.linksByKey.forEach(link => {
+        const stream = state.streamsByKey.get(link.stream_key);
+        if (!deckKeys.has(link.deck_key)) errors.push(`Linked deck is missing: ${link.deck_key}`);
+        if (!stream) {
+          errors.push(`Linked stream is missing for ${link.deck_key}.`);
+          return;
+        }
+        if (!["youtube", "twitch"].includes(stream.platform)) errors.push(`Invalid platform: ${stream.platform || "empty"}`);
+        if (!stream.external_stream_id) errors.push(`External stream id is required for ${stream.title || "a stream"}.`);
+        const keyValue = `${stream.platform}/${stream.external_stream_id}/${link.deck_key}`;
+        if (linkKeys.has(keyValue)) errors.push(`Duplicate stream deck link: ${keyValue}`);
+        linkKeys.add(keyValue);
+      });
+      return Array.from(new Set(errors));
+    }
+
+    function utf8ToBase64(value) {
+      const bytes = new TextEncoder().encode(value);
+      let binary = "";
+      bytes.forEach(byte => {
+        binary += String.fromCharCode(byte);
+      });
+      return btoa(binary);
+    }
+
+    function setSaveStatus(message, kind = "") {
+      state.saveStatus = message;
+      state.saveStatusKind = kind;
+      const status = document.getElementById("save-status");
+      status.textContent = message;
+      status.className = kind ? `save-status ${kind}` : "save-status";
+    }
+
+    function openSaveModal() {
+      const changes = pendingChanges();
+      document.getElementById("save-modal-summary").textContent = `${changeCount(changes)} pending changes will update data/decks.csv and data/stream_session_decks.csv.`;
+      document.getElementById("save-repository").value = state.metadata.repository || "";
+      document.getElementById("save-branch").value = state.metadata.branch_name || "";
+      document.getElementById("save-token").value = "";
+      setSaveStatus(state.metadata.repository && state.metadata.branch_name
+        ? "Token is used only for this save and is not stored."
+        : "Repository or branch metadata is missing. Fill both fields before saving.");
+      document.getElementById("save-modal").hidden = false;
+    }
+
+    function closeSaveModal() {
+      if (state.saving) return;
+      document.getElementById("save-modal").hidden = true;
+    }
+
+    async function githubJson(url, options = {}) {
+      const response = await fetch(url, {
+        ...options,
+        headers: {
+          "Accept": "application/vnd.github+json",
+          "X-GitHub-Api-Version": "2022-11-28",
+          ...(options.headers || {})
+        }
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const message = payload.message || `GitHub API request failed with status ${response.status}.`;
+        throw new Error(message);
+      }
+      return payload;
+    }
+
+    async function updateGitHubFile({ repo, branch, token, path, content, message }) {
+      const encodedPath = path.split("/").map(encodeURIComponent).join("/");
+      const url = `https://api.github.com/repos/${repo}/contents/${encodedPath}`;
+      const current = await githubJson(`${url}?ref=${encodeURIComponent(branch)}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      await githubJson(url, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          message,
+          content: utf8ToBase64(content),
+          sha: current.sha,
+          branch
+        })
+      });
+    }
+
+    function markDraftSaved() {
+      state.originalDecksByKey = new Map(Array.from(state.decksByKey, ([key, value]) => [key, cloneJson(value)]));
+      state.originalLinksByKey = new Map(Array.from(state.linksByKey, ([key, value]) => [key, cloneJson(value)]));
+      state.showDraftPanel = false;
+      render();
+    }
+
+    async function saveChangesToGitHub() {
+      if (state.saving) return;
+      const repo = normalizeText(document.getElementById("save-repository").value);
+      const branch = normalizeText(document.getElementById("save-branch").value);
+      const token = normalizeText(document.getElementById("save-token").value);
+      const errors = validateSavePayload();
+      if (!repo || !repo.includes("/")) errors.push("Repository must be owner/repo.");
+      if (!branch) errors.push("Branch is required.");
+      if (!token) errors.push("GitHub token is required.");
+      if (changeCount() === 0) errors.push("There are no draft changes to save.");
+      if (errors.length > 0) {
+        setSaveStatus(errors.join(" "), "error");
+        return;
+      }
+
+      state.saving = true;
+      document.getElementById("save-to-github").disabled = true;
+      setSaveStatus("Saving data/decks.csv...", "");
+      try {
+        await updateGitHubFile({
+          repo,
+          branch,
+          token,
+          path: "data/decks.csv",
+          content: serializeDecksCsv(),
+          message: "Update deck definitions from dashboard"
+        });
+        setSaveStatus("Saving data/stream_session_decks.csv...", "");
+        await updateGitHubFile({
+          repo,
+          branch,
+          token,
+          path: "data/stream_session_decks.csv",
+          content: serializeStreamSessionDecksCsv(),
+          message: "Update stream deck links from dashboard"
+        });
+        markDraftSaved();
+        setSaveStatus("Saved. Run Collect streaming data for this branch to rebuild the dashboard.", "ok");
+      } catch (error) {
+        setSaveStatus(`Save failed: ${error.message}`, "error");
+      } finally {
+        state.saving = false;
+        document.getElementById("save-to-github").disabled = false;
+      }
     }
 
     function rowMatches(row) {
@@ -2303,7 +2555,18 @@ HTML = """<!doctype html>
     });
 
     document.getElementById("clear-draft").addEventListener("click", clearDraft);
+    document.querySelectorAll(".open-save-modal-button").forEach(button => {
+      button.addEventListener("click", openSaveModal);
+    });
+    document.getElementById("close-save-modal").addEventListener("click", closeSaveModal);
+    document.getElementById("save-to-github").addEventListener("click", saveChangesToGitHub);
     document.getElementById("close-deck-editor").addEventListener("click", closeDeckEditor);
+
+    document.getElementById("save-modal").addEventListener("click", event => {
+      if (event.target.id === "save-modal") {
+        closeSaveModal();
+      }
+    });
 
     document.getElementById("deck-editor-modal").addEventListener("click", event => {
       if (event.target.id === "deck-editor-modal") {
