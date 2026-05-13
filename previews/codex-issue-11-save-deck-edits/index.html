@@ -973,21 +973,11 @@
       </div>
       <div class="modal-body">
         <section class="editor-section">
-          <h3>GitHub target</h3>
-          <div class="form-grid">
-            <label class="field">Repository
-              <input id="save-repository" type="text" placeholder="owner/repo" autocomplete="off">
-            </label>
-            <label class="field">Branch
-              <input id="save-branch" type="text" placeholder="branch-name" autocomplete="off">
-            </label>
-            <label class="field full">GitHub token
-              <input id="save-token" type="password" autocomplete="off" placeholder="Fine-grained token with Contents: Read and write">
-            </label>
-          </div>
+          <h3>Save target</h3>
+          <div class="timeline-summary" id="save-target-summary"></div>
           <div class="save-status" id="save-status"></div>
           <div class="modal-actions">
-            <button class="primary-button" id="save-to-github" type="button">Save to GitHub</button>
+            <button class="primary-button" id="save-to-api" type="button">Save changes</button>
           </div>
         </section>
       </div>
@@ -1526,15 +1516,6 @@
       return Array.from(new Set(errors));
     }
 
-    function utf8ToBase64(value) {
-      const bytes = new TextEncoder().encode(value);
-      let binary = "";
-      bytes.forEach(byte => {
-        binary += String.fromCharCode(byte);
-      });
-      return btoa(binary);
-    }
-
     function setSaveStatus(message, kind = "") {
       state.saveStatus = message;
       state.saveStatusKind = kind;
@@ -1545,13 +1526,17 @@
 
     function openSaveModal() {
       const changes = pendingChanges();
+      const endpoint = normalizeText(state.metadata.save_api_endpoint || "");
+      const repository = normalizeText(state.metadata.repository || "");
+      const branch = normalizeText(state.metadata.branch_name || "");
       document.getElementById("save-modal-summary").textContent = `${changeCount(changes)} pending changes will update data/decks.csv and data/stream_session_decks.csv.`;
-      document.getElementById("save-repository").value = state.metadata.repository || "";
-      document.getElementById("save-branch").value = state.metadata.branch_name || "";
-      document.getElementById("save-token").value = "";
-      setSaveStatus(state.metadata.repository && state.metadata.branch_name
-        ? "Token is used only for this save and is not stored."
-        : "Repository or branch metadata is missing. Fill both fields before saving.");
+      document.getElementById("save-target-summary").textContent = repository && branch
+        ? `${repository} / ${branch}`
+        : "Repository or branch metadata is missing.";
+      document.getElementById("save-to-api").disabled = !endpoint;
+      setSaveStatus(endpoint
+        ? "Changes will be sent to the configured save API. No GitHub token is entered in this browser."
+        : "Save API endpoint is not configured for this dashboard.", endpoint ? "" : "error");
       document.getElementById("save-modal").hidden = false;
     }
 
@@ -1560,39 +1545,38 @@
       document.getElementById("save-modal").hidden = true;
     }
 
-    async function githubJson(url, options = {}) {
+    async function saveApiJson(url, options = {}) {
       const response = await fetch(url, {
         ...options,
+        credentials: "include",
         headers: {
-          "Accept": "application/vnd.github+json",
-          "X-GitHub-Api-Version": "2022-11-28",
+          "Accept": "application/json",
           ...(options.headers || {})
         }
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
-        const message = payload.message || `GitHub API request failed with status ${response.status}.`;
+        const message = payload.message || payload.error || `Save API request failed with status ${response.status}.`;
         throw new Error(message);
       }
       return payload;
     }
 
-    async function updateGitHubFile({ repo, branch, token, path, content, message }) {
-      const encodedPath = path.split("/").map(encodeURIComponent).join("/");
-      const url = `https://api.github.com/repos/${repo}/contents/${encodedPath}`;
-      const current = await githubJson(`${url}?ref=${encodeURIComponent(branch)}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      await githubJson(url, {
-        method: "PUT",
-        headers: { Authorization: `Bearer ${token}` },
-        body: JSON.stringify({
-          message,
-          content: utf8ToBase64(content),
-          sha: current.sha,
-          branch
-        })
-      });
+    function buildSavePayload() {
+      const changes = pendingChanges();
+      return {
+        repository: state.metadata.repository || "",
+        branch: state.metadata.branch_name || "",
+        decks_csv: serializeDecksCsv(),
+        stream_session_decks_csv: serializeStreamSessionDecksCsv(),
+        changes: {
+          added_decks: changes.addedDecks.length,
+          added_links: changes.addedLinks.length,
+          updated_links: changes.updatedLinks.length,
+          removed_links: changes.removedLinks.length,
+          total: changeCount(changes)
+        }
+      };
     }
 
     function markDraftSaved() {
@@ -1602,15 +1586,15 @@
       render();
     }
 
-    async function saveChangesToGitHub() {
+    async function saveChangesToApi() {
       if (state.saving) return;
-      const repo = normalizeText(document.getElementById("save-repository").value);
-      const branch = normalizeText(document.getElementById("save-branch").value);
-      const token = normalizeText(document.getElementById("save-token").value);
+      const endpoint = normalizeText(state.metadata.save_api_endpoint || "");
+      const repo = normalizeText(state.metadata.repository || "");
+      const branch = normalizeText(state.metadata.branch_name || "");
       const errors = validateSavePayload();
       if (!repo || !repo.includes("/")) errors.push("Repository must be owner/repo.");
       if (!branch) errors.push("Branch is required.");
-      if (!token) errors.push("GitHub token is required.");
+      if (!endpoint) errors.push("Save API endpoint is not configured.");
       if (changeCount() === 0) errors.push("There are no draft changes to save.");
       if (errors.length > 0) {
         setSaveStatus(errors.join(" "), "error");
@@ -1618,33 +1602,22 @@
       }
 
       state.saving = true;
-      document.getElementById("save-to-github").disabled = true;
-      setSaveStatus("Saving data/decks.csv...", "");
+      document.getElementById("save-to-api").disabled = true;
+      setSaveStatus("Saving changes...", "");
       try {
-        await updateGitHubFile({
-          repo,
-          branch,
-          token,
-          path: "data/decks.csv",
-          content: serializeDecksCsv(),
-          message: "Update deck definitions from dashboard"
-        });
-        setSaveStatus("Saving data/stream_session_decks.csv...", "");
-        await updateGitHubFile({
-          repo,
-          branch,
-          token,
-          path: "data/stream_session_decks.csv",
-          content: serializeStreamSessionDecksCsv(),
-          message: "Update stream deck links from dashboard"
+        const result = await saveApiJson(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(buildSavePayload())
         });
         markDraftSaved();
-        setSaveStatus("Saved. Run Collect streaming data for this branch to rebuild the dashboard.", "ok");
+        const detail = result.commit_url ? ` Commit: ${result.commit_url}` : "";
+        setSaveStatus(`Saved. Run Collect streaming data for this branch to rebuild the dashboard.${detail}`, "ok");
       } catch (error) {
         setSaveStatus(`Save failed: ${error.message}`, "error");
       } finally {
         state.saving = false;
-        document.getElementById("save-to-github").disabled = false;
+        document.getElementById("save-to-api").disabled = !normalizeText(state.metadata.save_api_endpoint || "");
       }
     }
 
@@ -2219,7 +2192,7 @@
       button.addEventListener("click", openSaveModal);
     });
     document.getElementById("close-save-modal").addEventListener("click", closeSaveModal);
-    document.getElementById("save-to-github").addEventListener("click", saveChangesToGitHub);
+    document.getElementById("save-to-api").addEventListener("click", saveChangesToApi);
     document.getElementById("close-deck-editor").addEventListener("click", closeDeckEditor);
 
     document.getElementById("save-modal").addEventListener("click", event => {
