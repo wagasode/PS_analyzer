@@ -19,19 +19,6 @@
       },
       {
         "platform": "youtube",
-        "external_stream_id": "GEIxIziDt0k",
-        "title": "【シャドバWB】　OCSに向けて2デッキBO1対戦会",
-        "url": "https://www.youtube.com/watch?v=GEIxIziDt0k",
-        "thumbnail_url": "https://i.ytimg.com/vi/GEIxIziDt0k/maxresdefault_live.jpg",
-        "started_at": "2026-05-13T11:06:57Z",
-        "published_at": "2026-05-04T16:45:26Z",
-        "occurred_at": "2026-05-13T11:06:57Z",
-        "duration_sec": 9282,
-        "is_shadowverse_related": 1,
-        "decks": []
-      },
-      {
-        "platform": "youtube",
         "external_stream_id": "yt8L11grUwM",
         "title": "【シャドバWB】　秘術ウィッチ研究",
         "url": "https://www.youtube.com/watch?v=yt8L11grUwM",
@@ -651,6 +638,19 @@
         "published_at": "2026-01-12T17:48:43Z",
         "occurred_at": "2026-01-12T13:27:07Z",
         "duration_sec": 14748,
+        "is_shadowverse_related": 1,
+        "decks": []
+      },
+      {
+        "platform": "youtube",
+        "external_stream_id": "34HT3sVsEOc",
+        "title": "【シャドバWB】財宝ロイヤル←人形ネメシス研究←まずはドラゴンでビヨンドへ",
+        "url": "https://www.youtube.com/watch?v=34HT3sVsEOc",
+        "thumbnail_url": "https://i.ytimg.com/vi/34HT3sVsEOc/maxresdefault.jpg",
+        "started_at": "2026-01-11T12:11:49Z",
+        "published_at": "2026-01-11T18:14:31Z",
+        "occurred_at": "2026-01-11T12:11:49Z",
+        "duration_sec": 20430,
         "is_shadowverse_related": 1,
         "decks": []
       }
@@ -4536,7 +4536,20 @@
         "occurred_at": "2026-05-13T02:50:22Z",
         "duration_sec": 0,
         "is_shadowverse_related": 1,
-        "decks": []
+        "decks": [
+          {
+            "deck_key": "deck-r-1778681117704",
+            "deck_name": "連携R",
+            "class_name": "R",
+            "archetype": "",
+            "deck_url": "",
+            "deck_code": "",
+            "notes": "",
+            "confidence": "",
+            "source_note": "",
+            "display_order": 1
+          }
+        ]
       },
       {
         "platform": "youtube",
@@ -8541,7 +8554,7 @@
         "started_at": "2026-05-13T12:41:27Z",
         "published_at": "2026-05-13T12:41:27Z",
         "occurred_at": "2026-05-13T12:41:27Z",
-        "duration_sec": 4563,
+        "duration_sec": 5140,
         "is_shadowverse_related": 0,
         "decks": []
       },

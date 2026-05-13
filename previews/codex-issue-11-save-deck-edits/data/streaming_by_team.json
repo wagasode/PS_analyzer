@@ -24,19 +24,19 @@
     "twitch_hours": 0.76
   },
   {
+    "team": "Crazy Raccoon",
+    "stream_count": 113,
+    "total_hours": 415.35,
+    "shadowverse_hours": 415.35,
+    "youtube_hours": 415.35,
+    "twitch_hours": 0.0
+  },
+  {
     "team": "DetonatioN FocusMe",
     "stream_count": 127,
     "total_hours": 413.28,
     "shadowverse_hours": 411.81,
     "youtube_hours": 413.28,
-    "twitch_hours": 0.0
-  },
-  {
-    "team": "Crazy Raccoon",
-    "stream_count": 113,
-    "total_hours": 412.26,
-    "shadowverse_hours": 412.26,
-    "youtube_hours": 412.26,
     "twitch_hours": 0.0
   },
   {
@@ -50,10 +50,10 @@
   {
     "team": "RIDDLE ORDER",
     "stream_count": 90,
-    "total_hours": 382.37,
+    "total_hours": 382.53,
     "shadowverse_hours": 175.4,
     "youtube_hours": 155.55,
-    "twitch_hours": 226.82
+    "twitch_hours": 226.98
   },
   {
     "team": "VARREL",

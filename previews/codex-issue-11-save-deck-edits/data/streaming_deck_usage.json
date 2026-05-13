@@ -1,1 +1,35 @@
-[]
+[
+  {
+    "deck_key": "deck-r-1778681117704",
+    "deck_name": "連携R",
+    "class_name": "R",
+    "archetype": "",
+    "deck_url": "",
+    "deck_code": "",
+    "notes": "",
+    "stream_count": 1,
+    "player_count": 1,
+    "players": [
+      "glory"
+    ],
+    "streams": [
+      {
+        "team": "MURASH GAMING",
+        "player_name": "glory",
+        "platform": "youtube",
+        "external_stream_id": "eqOEUv01ceU",
+        "title": "マジの朝活【シャドバWB/Shadowverse: Worlds Beyond】",
+        "url": "https://www.youtube.com/watch?v=eqOEUv01ceU",
+        "thumbnail_url": "https://i.ytimg.com/vi/eqOEUv01ceU/maxresdefault_live.jpg",
+        "started_at": "2026-05-13T02:50:22Z",
+        "published_at": "2026-05-13T02:50:22Z",
+        "occurred_at": "2026-05-13T02:50:22Z",
+        "duration_sec": 0,
+        "is_shadowverse_related": 1,
+        "confidence": "",
+        "source_note": "",
+        "display_order": 1
+      }
+    ]
+  }
+]
