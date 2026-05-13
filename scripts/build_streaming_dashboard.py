@@ -344,7 +344,7 @@ HTML = """<!doctype html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Streaming Report</title>
+  <title>配信レポート</title>
   <style>
     :root {
       color-scheme: light;
@@ -1219,36 +1219,36 @@ HTML = """<!doctype html>
   <header>
     <div class="shell topbar">
       <div>
-        <h1>Streaming Report</h1>
-        <div class="meta" id="metadata">Loading...</div>
+        <h1>配信レポート</h1>
+        <div class="meta" id="metadata">読み込み中...</div>
       </div>
       <div class="actions">
-        <a class="button" href="data/streaming_by_team.json">Team JSON</a>
-        <a class="button" href="data/streaming_by_player.json">Player JSON</a>
-        <a class="button" href="data/streaming_timeline_by_player.json">Timeline JSON</a>
-        <a class="button" href="data/streaming_deck_usage.json">Deck JSON</a>
-        <a class="button" id="run-link" href="#" hidden>Workflow run</a>
+        <a class="button" href="data/streaming_by_team.json">チームJSON</a>
+        <a class="button" href="data/streaming_by_player.json">選手JSON</a>
+        <a class="button" href="data/streaming_timeline_by_player.json">タイムラインJSON</a>
+        <a class="button" href="data/streaming_deck_usage.json">デッキJSON</a>
+        <a class="button" id="run-link" href="#" hidden>ワークフロー実行</a>
       </div>
     </div>
   </header>
 
   <main>
     <div class="shell">
-      <section class="summary" aria-label="Summary">
-        <div class="stat"><span>Teams</span><strong id="team-count">-</strong></div>
-        <div class="stat"><span>Players</span><strong id="player-count">-</strong></div>
-        <div class="stat"><span>Streams</span><strong id="stream-count">-</strong></div>
-        <div class="stat"><span>Total hours</span><strong id="total-hours">-</strong></div>
-        <div class="stat"><span>SV hours</span><strong id="sv-hours">-</strong></div>
+      <section class="summary" aria-label="概要">
+        <div class="stat"><span>チーム数</span><strong id="team-count">-</strong></div>
+        <div class="stat"><span>選手数</span><strong id="player-count">-</strong></div>
+        <div class="stat"><span>配信数</span><strong id="stream-count">-</strong></div>
+        <div class="stat"><span>総配信時間</span><strong id="total-hours">-</strong></div>
+        <div class="stat"><span>SV時間</span><strong id="sv-hours">-</strong></div>
       </section>
 
       <div class="toolbar">
-        <div class="tabs" role="tablist" aria-label="Report views">
-          <button class="tab active" type="button" data-view="team">By team</button>
-          <button class="tab" type="button" data-view="player">By player</button>
-          <button class="tab" type="button" data-view="deck">By deck</button>
+        <div class="tabs" role="tablist" aria-label="表示切り替え">
+          <button class="tab active" type="button" data-view="team">チーム別</button>
+          <button class="tab" type="button" data-view="player">選手別</button>
+          <button class="tab" type="button" data-view="deck">デッキ別</button>
         </div>
-        <input class="search" id="search" type="search" placeholder="Filter by team, player, deck, or status" autocomplete="off">
+        <input class="search" id="search" type="search" placeholder="チーム、選手、デッキ、ステータスで絞り込み" autocomplete="off">
       </div>
 
       <section class="change-bar" id="change-bar" hidden>
@@ -1268,13 +1268,13 @@ HTML = """<!doctype html>
       <div class="workspace team-mode" id="workspace">
         <section class="panel">
           <div class="panel-head">
-            <h2 id="table-title">By team</h2>
+            <h2 id="table-title">チーム別</h2>
             <div class="panel-actions">
               <label class="toggle" id="player-details-control" hidden>
                 <input id="show-player-details" type="checkbox">
-                Show details
+                詳細を表示
               </label>
-              <div class="count" id="row-count">0 rows</div>
+              <div class="count" id="row-count">0行</div>
             </div>
           </div>
           <div class="table-wrap" id="table-wrap">
@@ -1282,20 +1282,20 @@ HTML = """<!doctype html>
               <thead id="table-head"></thead>
               <tbody id="table-body"></tbody>
             </table>
-            <div class="empty" id="empty" hidden>No matching rows.</div>
+            <div class="empty" id="empty" hidden>一致する行はありません。</div>
           </div>
         </section>
 
         <section class="panel timeline-panel" id="timeline-panel">
           <div class="panel-head">
             <div>
-              <h2 id="timeline-title">Player timeline</h2>
+              <h2 id="timeline-title">選手タイムライン</h2>
               <div class="timeline-summary" id="timeline-summary"></div>
             </div>
-            <div class="count" id="timeline-count">0 streams</div>
+            <div class="count" id="timeline-count">0配信</div>
           </div>
           <div class="timeline-list" id="timeline-list"></div>
-          <div class="empty" id="timeline-empty" hidden>No stream archives collected.</div>
+          <div class="empty" id="timeline-empty" hidden>収集済みの配信アーカイブはありません。</div>
         </section>
       </div>
     </div>
@@ -1431,43 +1431,58 @@ HTML = """<!doctype html>
 
     const columns = {
       team: [
-        ["team", "Team"],
-        ["stream_count", "Streams"],
-        ["total_hours", "Total hours"],
-        ["shadowverse_hours", "SV hours"],
-        ["youtube_hours", "YouTube hours"],
-        ["twitch_hours", "Twitch hours"]
+        ["team", "チーム"],
+        ["stream_count", "配信数"],
+        ["total_hours", "総配信時間"],
+        ["shadowverse_hours", "SV時間"],
+        ["youtube_hours", "YouTube時間"],
+        ["twitch_hours", "Twitch時間"]
       ],
       playerCompact: [
-        ["team", "Team"],
-        ["player_name", "Player"],
-        ["timeline", "Timeline"],
-        ["stream_count", "Streams"],
-        ["total_hours", "Total hours"],
-        ["shadowverse_hours", "SV hours"]
+        ["team", "チーム"],
+        ["player_name", "選手"],
+        ["timeline", "タイムライン"],
+        ["stream_count", "配信数"],
+        ["total_hours", "総配信時間"],
+        ["shadowverse_hours", "SV時間"]
       ],
       playerDetail: [
-        ["team", "Team"],
-        ["player_name", "Player"],
-        ["timeline", "Timeline"],
-        ["stream_count", "Streams"],
-        ["total_hours", "Total hours"],
-        ["shadowverse_hours", "SV hours"],
-        ["youtube_hours", "YouTube hours"],
-        ["twitch_hours", "Twitch hours"],
+        ["team", "チーム"],
+        ["player_name", "選手"],
+        ["timeline", "タイムライン"],
+        ["stream_count", "配信数"],
+        ["total_hours", "総配信時間"],
+        ["shadowverse_hours", "SV時間"],
+        ["youtube_hours", "YouTube時間"],
+        ["twitch_hours", "Twitch時間"],
         ["youtube_channel_status", "YouTube"],
         ["twitch_channel_status", "Twitch"],
-        ["youtube_skipped_reason", "YouTube reason"],
-        ["twitch_skipped_reason", "Twitch reason"]
+        ["youtube_skipped_reason", "YouTube理由"],
+        ["twitch_skipped_reason", "Twitch理由"]
       ],
       deck: [
-        ["deck_name", "Deck"],
-        ["class_name", "Class"],
-        ["archetype", "Archetype"],
-        ["deck_usage", "Usage"],
-        ["stream_count", "Streams"],
-        ["player_count", "Players"]
+        ["deck_name", "デッキ"],
+        ["class_name", "クラス"],
+        ["archetype", "アーキタイプ"],
+        ["deck_usage", "利用状況"],
+        ["stream_count", "配信数"],
+        ["player_count", "選手数"]
       ]
+    };
+
+    const viewLabels = {
+      team: "チーム別",
+      player: "選手別",
+      deck: "デッキ別"
+    };
+
+    const statusLabels = {
+      ok: "正常",
+      skipped: "スキップ",
+      failed: "失敗",
+      no_channel: "チャンネルなし",
+      not_checked: "未確認",
+      unknown: "不明"
     };
 
     function activeColumns() {
@@ -1478,11 +1493,11 @@ HTML = """<!doctype html>
     }
 
     function formatNumber(value) {
-      return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(value ?? 0);
+      return new Intl.NumberFormat("ja-JP", { maximumFractionDigits: 2 }).format(value ?? 0);
     }
 
     function formatDate(value) {
-      if (!value) return "Unknown";
+      if (!value) return "不明";
       return new Intl.DateTimeFormat("ja-JP", {
         dateStyle: "medium",
         timeStyle: "short"
@@ -1490,7 +1505,8 @@ HTML = """<!doctype html>
     }
 
     function statusLabel(value) {
-      return String(value || "unknown").replaceAll("_", " ");
+      const key = String(value || "unknown");
+      return statusLabels[key] || key.replaceAll("_", " ");
     }
 
     function playerKey(row) {
@@ -1540,18 +1556,18 @@ HTML = """<!doctype html>
       return `
         <span class="${classes}">
           ${avatarHtml(row.player_name, row.player_icon_url)}
-          <span>${escapeHtml(row.player_name || "Unknown player")}</span>
+          <span>${escapeHtml(row.player_name || "不明な選手")}</span>
         </span>
       `;
     }
 
     function streamThumbnailHtml(stream) {
       if (!stream.thumbnail_url) {
-        return `<div class="timeline-thumbnail missing" aria-hidden="true">No thumbnail</div>`;
+        return `<div class="timeline-thumbnail missing" aria-hidden="true">サムネイルなし</div>`;
       }
       return `
-        <a class="timeline-thumbnail" href="${escapeHtml(stream.url)}" target="_blank" rel="noreferrer" aria-label="${escapeHtml(stream.title || "Open archive")}">
-          <img src="${escapeHtml(stream.thumbnail_url)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.closest('.timeline-thumbnail').classList.add('missing'); this.closest('.timeline-thumbnail').textContent='No thumbnail';">
+        <a class="timeline-thumbnail" href="${escapeHtml(stream.url)}" target="_blank" rel="noreferrer" aria-label="${escapeHtml(stream.title || "アーカイブを開く")}">
+          <img src="${escapeHtml(stream.thumbnail_url)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.closest('.timeline-thumbnail').classList.add('missing'); this.closest('.timeline-thumbnail').textContent='サムネイルなし';">
         </a>
       `;
     }
@@ -1561,15 +1577,23 @@ HTML = """<!doctype html>
       const hours = Math.floor(seconds / 3600);
       const minutes = Math.floor((seconds % 3600) / 60);
       if (hours > 0) {
-        return `${hours}h ${String(minutes).padStart(2, "0")}m`;
+        return `${hours}時間${String(minutes).padStart(2, "0")}分`;
       }
-      return `${minutes}m`;
+      return `${minutes}分`;
     }
 
     function platformLabel(value) {
       if (value === "youtube") return "YouTube";
       if (value === "twitch") return "Twitch";
       return statusLabel(value);
+    }
+
+    function streamCountLabel(countValue) {
+      return `${formatNumber(countValue)}配信`;
+    }
+
+    function rowCountLabel(countValue) {
+      return `${formatNumber(countValue)}行`;
     }
 
     function deckLabel(deck) {
@@ -1986,11 +2010,11 @@ HTML = """<!doctype html>
       if (key === "timeline") {
         const keyValue = playerKey(row);
         const active = keyValue === state.selectedPlayerKey ? " active" : "";
-        return `<td class="action"><button class="detail-button${active}" type="button" data-player-key="${escapeHtml(keyValue)}">View</button></td>`;
+        return `<td class="action"><button class="detail-button${active}" type="button" data-player-key="${escapeHtml(keyValue)}">表示</button></td>`;
       }
       if (key === "deck_usage") {
         const active = row.deck_key === state.selectedDeckKey ? " active" : "";
-        return `<td class="action"><button class="detail-button deck-detail-button${active}" type="button" data-deck-key="${escapeHtml(row.deck_key)}">View</button></td>`;
+        return `<td class="action"><button class="detail-button deck-detail-button${active}" type="button" data-deck-key="${escapeHtml(row.deck_key)}">表示</button></td>`;
       }
       if (key === "deck_name" && row.deck_url) {
         return `<td><a class="timeline-title" href="${escapeHtml(row.deck_url)}" target="_blank" rel="noreferrer">${escapeHtml(value)}</a></td>`;
@@ -2048,8 +2072,8 @@ HTML = """<!doctype html>
           state.selectedDeckKey = rows[0] ? rows[0].deck_key : "";
         }
       }
-      document.getElementById("table-title").textContent = state.view === "team" ? "By team" : state.view === "player" ? "By player" : "By deck";
-      document.getElementById("row-count").textContent = `${rows.length} rows`;
+      document.getElementById("table-title").textContent = viewLabels[state.view] || "";
+      document.getElementById("row-count").textContent = rowCountLabel(rows.length);
       document.getElementById("empty").hidden = rows.length > 0;
 
       document.getElementById("table-head").innerHTML = `<tr>${activeTableColumns.map(([key, label]) => {
@@ -2118,22 +2142,22 @@ HTML = """<!doctype html>
       const empty = document.getElementById("timeline-empty");
 
       if (!timeline) {
-        title.textContent = "Player timeline";
+        title.textContent = "選手タイムライン";
         summary.textContent = "";
-        count.textContent = "0 streams";
+        count.textContent = streamCountLabel(0);
         list.innerHTML = "";
         empty.hidden = false;
         return;
       }
 
       const streams = timeline.streams || [];
-      title.innerHTML = `${playerLabelHtml(timeline, "heading")} <span>timeline</span>`;
+      title.innerHTML = `${playerLabelHtml(timeline, "heading")} <span>タイムライン</span>`;
       summary.textContent = timeline.team;
-      count.textContent = `${streams.length} streams`;
+      count.textContent = streamCountLabel(streams.length);
       empty.hidden = streams.length > 0;
       list.innerHTML = streams.map(stream => {
         const timestamp = stream.occurred_at || stream.started_at || stream.published_at || "";
-        const timestampKind = stream.started_at ? "Started" : stream.published_at ? "Published" : "Date unknown";
+        const timestampKind = stream.started_at ? "開始" : stream.published_at ? "公開" : "日付不明";
         const related = Number(stream.is_shadowverse_related || 0) === 1
           ? `<span class="pill related">Shadowverse</span>`
           : "";
@@ -2146,7 +2170,7 @@ HTML = """<!doctype html>
             </div>
             ${streamThumbnailHtml(stream)}
             <div class="timeline-main">
-              <a class="timeline-title" href="${escapeHtml(stream.url)}" target="_blank" rel="noreferrer">${escapeHtml(stream.title || "Untitled stream")}</a>
+              <a class="timeline-title" href="${escapeHtml(stream.url)}" target="_blank" rel="noreferrer">${escapeHtml(stream.title || "無題の配信")}</a>
               <div class="timeline-tags">
                 <span class="pill ${escapeHtml(stream.platform || "")}">${escapeHtml(platformLabel(stream.platform))}</span>
                 <span class="pill">${escapeHtml(formatDuration(stream.duration_sec))}</span>
@@ -2155,8 +2179,8 @@ HTML = """<!doctype html>
               </div>
             </div>
             <div class="stream-actions">
-              <a class="timeline-link" href="${escapeHtml(stream.url)}" target="_blank" rel="noreferrer">Open archive</a>
-              <button class="secondary-button edit-stream-button" type="button" data-stream-key="${escapeHtml(streamKey(stream))}">Edit decks</button>
+              <a class="timeline-link" href="${escapeHtml(stream.url)}" target="_blank" rel="noreferrer">アーカイブを開く</a>
+              <button class="secondary-button edit-stream-button" type="button" data-stream-key="${escapeHtml(streamKey(stream))}">デッキ編集</button>
             </div>
           </article>
         `;
@@ -2172,24 +2196,24 @@ HTML = """<!doctype html>
       const empty = document.getElementById("timeline-empty");
 
       if (!deck) {
-        title.textContent = "Deck usage";
+        title.textContent = "デッキ利用状況";
         summary.textContent = "";
-        count.textContent = "0 streams";
+        count.textContent = streamCountLabel(0);
         list.innerHTML = "";
-        empty.textContent = "No deck selected.";
+        empty.textContent = "デッキが選択されていません。";
         empty.hidden = false;
         return;
       }
 
       const streams = deck.streams || [];
-      title.textContent = `${deck.deck_name} archives`;
+      title.textContent = `${deck.deck_name}のアーカイブ`;
       summary.textContent = [deck.class_name, deck.archetype, deck.notes].filter(Boolean).join(" · ");
-      count.textContent = `${streams.length} streams`;
-      empty.textContent = "No stream archives linked.";
+      count.textContent = streamCountLabel(streams.length);
+      empty.textContent = "紐づいた配信アーカイブはありません。";
       empty.hidden = streams.length > 0;
       list.innerHTML = streams.map(stream => {
         const timestamp = stream.occurred_at || stream.started_at || stream.published_at || "";
-        const timestampKind = stream.started_at ? "Started" : stream.published_at ? "Published" : "Date unknown";
+        const timestampKind = stream.started_at ? "開始" : stream.published_at ? "公開" : "日付不明";
         const related = Number(stream.is_shadowverse_related || 0) === 1
           ? `<span class="pill related">Shadowverse</span>`
           : "";
@@ -2207,8 +2231,8 @@ HTML = """<!doctype html>
             </div>
             ${streamThumbnailHtml(stream)}
             <div class="timeline-main">
-              <a class="timeline-title" href="${escapeHtml(stream.url)}" target="_blank" rel="noreferrer">${escapeHtml(stream.title || "Untitled stream")}</a>
-              <div class="timeline-meta">${escapeHtml(stream.team || "")} / ${escapeHtml(stream.player_name || "Unknown player")}</div>
+              <a class="timeline-title" href="${escapeHtml(stream.url)}" target="_blank" rel="noreferrer">${escapeHtml(stream.title || "無題の配信")}</a>
+              <div class="timeline-meta">${escapeHtml(stream.team || "")} / ${escapeHtml(stream.player_name || "不明な選手")}</div>
               <div class="timeline-tags">
                 <span class="pill ${escapeHtml(stream.platform || "")}">${escapeHtml(platformLabel(stream.platform))}</span>
                 <span class="pill">${escapeHtml(formatDuration(stream.duration_sec))}</span>
@@ -2218,8 +2242,8 @@ HTML = """<!doctype html>
               ${note}
             </div>
             <div class="stream-actions">
-              <a class="timeline-link" href="${escapeHtml(stream.url)}" target="_blank" rel="noreferrer">Open archive</a>
-              <button class="secondary-button edit-stream-button" type="button" data-stream-key="${escapeHtml(streamKey(stream))}">Edit decks</button>
+              <a class="timeline-link" href="${escapeHtml(stream.url)}" target="_blank" rel="noreferrer">アーカイブを開く</a>
+              <button class="secondary-button edit-stream-button" type="button" data-stream-key="${escapeHtml(streamKey(stream))}">デッキ編集</button>
             </div>
           </article>
         `;
@@ -2472,7 +2496,7 @@ HTML = """<!doctype html>
 
     function renderMetadata() {
       const meta = state.metadata;
-      document.getElementById("metadata").textContent = `Updated ${formatDate(meta.generated_at)}${meta.run_number ? ` · Run #${meta.run_number}` : ""}`;
+      document.getElementById("metadata").textContent = `更新: ${formatDate(meta.generated_at)}${meta.run_number ? ` · 実行 #${meta.run_number}` : ""}`;
       document.getElementById("team-count").textContent = formatNumber(meta.team_count);
       document.getElementById("player-count").textContent = formatNumber(meta.player_count);
       document.getElementById("stream-count").textContent = formatNumber(meta.total_streams);
@@ -2585,7 +2609,7 @@ HTML = """<!doctype html>
     document.getElementById("create-deck").addEventListener("click", createAndLinkDeck);
 
     loadData().catch(error => {
-      document.getElementById("metadata").textContent = "Failed to load report data.";
+      document.getElementById("metadata").textContent = "レポートデータの読み込みに失敗しました。";
       document.getElementById("empty").hidden = false;
       document.getElementById("empty").textContent = error.message;
     });
