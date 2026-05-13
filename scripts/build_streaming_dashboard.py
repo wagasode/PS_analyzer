@@ -108,6 +108,7 @@ def deck_payload(row) -> dict[str, Any]:
         "notes": row["notes"],
         "confidence": row["confidence"],
         "source_note": row["source_note"],
+        "display_order": int(row["display_order"] or 0),
     }
 
 
@@ -162,6 +163,7 @@ def build_player_timelines(db_path: Path) -> list[dict[str, Any]]:
             p.player_name,
             COALESCE(ci.player_icon_url, '') AS player_icon_url,
             s.platform,
+            s.external_stream_id,
             s.title,
             s.url,
             s.started_at,
@@ -210,6 +212,7 @@ def build_player_timelines(db_path: Path) -> list[dict[str, Any]]:
         current_timeline["streams"].append(
             {
                 "platform": row["platform"],
+                "external_stream_id": row["external_stream_id"],
                 "title": row["title"],
                 "url": row["url"],
                 "thumbnail_url": thumbnail_from_raw_json(row["platform"], row["raw_json"]),
@@ -241,6 +244,7 @@ def build_deck_usage(db_path: Path) -> list[dict[str, Any]]:
             d.notes,
             s.stream_session_id,
             s.platform,
+            s.external_stream_id,
             s.title,
             s.url,
             s.started_at,
@@ -252,7 +256,8 @@ def build_deck_usage(db_path: Path) -> list[dict[str, Any]]:
             p.team,
             p.player_name,
             ssd.confidence,
-            ssd.source_note
+            ssd.source_note,
+            ssd.display_order
         FROM decks d
         LEFT JOIN stream_session_decks ssd USING(deck_id)
         LEFT JOIN stream_sessions s USING(stream_session_id)
@@ -307,6 +312,7 @@ def build_deck_usage(db_path: Path) -> list[dict[str, Any]]:
                 "team": row["team"] or "",
                 "player_name": player_name,
                 "platform": row["platform"],
+                "external_stream_id": row["external_stream_id"],
                 "title": row["title"],
                 "url": row["url"],
                 "thumbnail_url": thumbnail_from_raw_json(row["platform"], row["raw_json"]),
@@ -317,6 +323,7 @@ def build_deck_usage(db_path: Path) -> list[dict[str, Any]]:
                 "is_shadowverse_related": int(row["is_shadowverse_related"] or 0),
                 "confidence": row["confidence"],
                 "source_note": row["source_note"],
+                "display_order": int(row["display_order"] or 0),
             }
         )
         current_deck["stream_count"] = len(current_deck["streams"])
@@ -904,6 +911,220 @@ HTML = """<!doctype html>
       justify-self: start;
     }
 
+    .stream-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .change-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin: 0 0 18px;
+      padding: 12px 14px;
+      border: 1px solid #bae6fd;
+      border-radius: 8px;
+      background: #f0f9ff;
+      color: #075985;
+      box-shadow: var(--shadow);
+      font-size: 14px;
+    }
+
+    .change-actions,
+    .modal-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .draft-panel {
+      margin: -6px 0 18px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .draft-panel h3 {
+      margin: 0;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      font-size: 15px;
+    }
+
+    .draft-list {
+      display: grid;
+      gap: 0;
+    }
+
+    .draft-item {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .draft-item:last-child {
+      border-bottom: 0;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: rgba(15, 23, 42, 0.42);
+    }
+
+    .modal {
+      width: min(920px, 100%);
+      max-height: min(820px, calc(100vh - 40px));
+      display: grid;
+      grid-template-rows: auto 1fr;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: 0 24px 80px rgba(15, 23, 42, 0.25);
+    }
+
+    .modal-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .modal-body {
+      display: grid;
+      gap: 18px;
+      padding: 16px;
+      overflow: auto;
+    }
+
+    .editor-section {
+      display: grid;
+      gap: 10px;
+    }
+
+    .editor-section h3 {
+      margin: 0;
+      font-size: 15px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .field {
+      display: grid;
+      gap: 5px;
+      min-width: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .field.full {
+      grid-column: 1 / -1;
+    }
+
+    .field input,
+    .field select,
+    .field textarea,
+    .editor-input {
+      width: 100%;
+      min-height: 36px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 7px 9px;
+      color: var(--text);
+      font: inherit;
+      background: var(--panel);
+    }
+
+    .field textarea {
+      min-height: 76px;
+      resize: vertical;
+    }
+
+    .linked-decks,
+    .search-results {
+      display: grid;
+      gap: 8px;
+    }
+
+    .linked-deck,
+    .search-result {
+      display: grid;
+      gap: 10px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #f8fafc;
+    }
+
+    .linked-deck-head,
+    .search-result {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .deck-heading {
+      display: grid;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .deck-heading strong,
+    .deck-heading span {
+      overflow-wrap: anywhere;
+    }
+
+    .deck-heading span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .primary-button,
+    .secondary-button,
+    .danger-button {
+      min-height: 34px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0 10px;
+      background: var(--panel);
+      color: var(--text);
+      font: inherit;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .primary-button {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .danger-button {
+      border-color: #fecaca;
+      background: #fff1f2;
+      color: #be123c;
+    }
+
     @media (max-width: 820px) {
       .workspace,
       .workspace.team-mode,
@@ -916,6 +1137,19 @@ HTML = """<!doctype html>
       .player-table-wrap {
         max-height: none;
       }
+
+      .modal-backdrop {
+        align-items: stretch;
+        padding: 10px;
+      }
+
+      .modal {
+        max-height: calc(100vh - 20px);
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
     }
 
     @media (max-width: 760px) {
@@ -925,6 +1159,7 @@ HTML = """<!doctype html>
 
       .topbar,
       .toolbar,
+      .change-bar,
       .panel-head {
         align-items: stretch;
         flex-direction: column;
@@ -985,6 +1220,19 @@ HTML = """<!doctype html>
         <input class="search" id="search" type="search" placeholder="Filter by team, player, deck, or status" autocomplete="off">
       </div>
 
+      <section class="change-bar" id="change-bar" hidden>
+        <div id="change-summary">No unsaved changes.</div>
+        <div class="change-actions">
+          <button class="secondary-button" id="toggle-draft-panel" type="button">Review changes</button>
+          <button class="danger-button" id="clear-draft" type="button">Clear draft</button>
+        </div>
+      </section>
+
+      <section class="draft-panel" id="draft-panel" hidden>
+        <h3>Pending changes</h3>
+        <div class="draft-list" id="draft-list"></div>
+      </section>
+
       <div class="workspace team-mode" id="workspace">
         <section class="panel">
           <div class="panel-head">
@@ -1021,6 +1269,62 @@ HTML = """<!doctype html>
     </div>
   </main>
 
+  <div class="modal-backdrop" id="deck-editor-modal" hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="deck-editor-title">
+      <div class="modal-head">
+        <div>
+          <h2 id="deck-editor-title">Edit archive decks</h2>
+          <div class="timeline-summary" id="deck-editor-summary"></div>
+        </div>
+        <div class="modal-actions">
+          <button class="secondary-button" id="close-deck-editor" type="button">Close</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <section class="editor-section">
+          <h3>Linked decks</h3>
+          <div class="linked-decks" id="linked-decks"></div>
+        </section>
+
+        <section class="editor-section">
+          <h3>Add existing deck</h3>
+          <input class="editor-input" id="deck-search-input" type="search" placeholder="Search decks" autocomplete="off">
+          <div class="search-results" id="deck-search-results"></div>
+        </section>
+
+        <section class="editor-section">
+          <h3>Create new deck</h3>
+          <div class="form-grid">
+            <label class="field">Deck key
+              <input id="new-deck-key" type="text" autocomplete="off">
+            </label>
+            <label class="field">Deck name
+              <input id="new-deck-name" type="text" autocomplete="off">
+            </label>
+            <label class="field">Class
+              <input id="new-deck-class" type="text" autocomplete="off">
+            </label>
+            <label class="field">Archetype
+              <input id="new-deck-archetype" type="text" autocomplete="off">
+            </label>
+            <label class="field">Deck URL
+              <input id="new-deck-url" type="url" autocomplete="off">
+            </label>
+            <label class="field">Deck code
+              <input id="new-deck-code" type="text" autocomplete="off">
+            </label>
+            <label class="field full">Notes
+              <textarea id="new-deck-notes"></textarea>
+            </label>
+          </div>
+          <div class="modal-actions">
+            <button class="primary-button" id="create-deck" type="button">Create and link</button>
+          </div>
+        </section>
+      </div>
+    </section>
+  </div>
+
   <script>
     const numberFields = new Set(["stream_count", "player_count", "total_hours", "shadowverse_hours", "youtube_hours", "twitch_hours"]);
     const statusFields = new Set(["youtube_channel_status", "twitch_channel_status"]);
@@ -1034,10 +1338,26 @@ HTML = """<!doctype html>
       deck: [],
       timelines: [],
       timelineByPlayer: new Map(),
-      deckUsage: [],
+      decksByKey: new Map(),
+      originalDecksByKey: new Map(),
+      linksByKey: new Map(),
+      originalLinksByKey: new Map(),
+      streamsByKey: new Map(),
       deckByKey: new Map(),
       selectedPlayerKey: "",
       selectedDeckKey: "",
+      editingStreamKey: "",
+      deckSearchQuery: "",
+      showDraftPanel: false,
+      newDeckDraft: {
+        deck_key: "",
+        deck_name: "",
+        class_name: "",
+        archetype: "",
+        deck_url: "",
+        deck_code: "",
+        notes: ""
+      },
       showPlayerDetails: false,
       metadata: {}
     };
@@ -1110,6 +1430,31 @@ HTML = """<!doctype html>
       return JSON.stringify([row.team, row.player_name]);
     }
 
+    function streamKey(stream) {
+      return JSON.stringify([stream.platform || "", stream.external_stream_id || ""]);
+    }
+
+    function linkKey(streamKeyValue, deckKey) {
+      return JSON.stringify([streamKeyValue, deckKey]);
+    }
+
+    function cloneJson(value) {
+      return JSON.parse(JSON.stringify(value));
+    }
+
+    function normalizeInt(value) {
+      const parsed = Number.parseInt(value, 10);
+      return Number.isFinite(parsed) ? parsed : 0;
+    }
+
+    function normalizeText(value) {
+      return String(value || "").trim();
+    }
+
+    function describeStream(stream) {
+      return [stream.team, stream.player_name, stream.title].filter(Boolean).join(" / ");
+    }
+
     function initials(value) {
       const name = String(value || "?").trim();
       return Array.from(name || "?").slice(0, 2).join("").toUpperCase();
@@ -1173,6 +1518,178 @@ HTML = """<!doctype html>
       return `<span class="pill deck">${label}</span>`;
     }
 
+    function deckMeta(deck) {
+      return {
+        deck_key: normalizeText(deck.deck_key),
+        deck_name: normalizeText(deck.deck_name) || normalizeText(deck.deck_key),
+        class_name: normalizeText(deck.class_name),
+        archetype: normalizeText(deck.archetype),
+        deck_url: normalizeText(deck.deck_url),
+        deck_code: normalizeText(deck.deck_code),
+        notes: normalizeText(deck.notes)
+      };
+    }
+
+    function linkMeta(streamKeyValue, deck) {
+      return {
+        stream_key: streamKeyValue,
+        deck_key: normalizeText(deck.deck_key),
+        confidence: normalizeText(deck.confidence),
+        source_note: normalizeText(deck.source_note),
+        display_order: normalizeInt(deck.display_order)
+      };
+    }
+
+    function initializeEditorState(timelines, deckUsage) {
+      state.decksByKey = new Map();
+      state.linksByKey = new Map();
+      state.streamsByKey = new Map();
+
+      deckUsage.forEach(deck => {
+        const normalized = deckMeta(deck);
+        if (normalized.deck_key) {
+          state.decksByKey.set(normalized.deck_key, normalized);
+        }
+      });
+
+      timelines.forEach(timeline => {
+        (timeline.streams || []).forEach(stream => {
+          stream.team = timeline.team;
+          stream.player_name = timeline.player_name;
+          stream.player_icon_url = timeline.player_icon_url;
+          const keyValue = streamKey(stream);
+          state.streamsByKey.set(keyValue, stream);
+          (stream.decks || []).forEach(deck => {
+            const normalizedDeck = deckMeta(deck);
+            if (normalizedDeck.deck_key && !state.decksByKey.has(normalizedDeck.deck_key)) {
+              state.decksByKey.set(normalizedDeck.deck_key, normalizedDeck);
+            }
+            const link = linkMeta(keyValue, deck);
+            if (link.deck_key) {
+              state.linksByKey.set(linkKey(keyValue, link.deck_key), link);
+            }
+          });
+        });
+      });
+
+      state.originalDecksByKey = new Map(Array.from(state.decksByKey, ([key, value]) => [key, cloneJson(value)]));
+      state.originalLinksByKey = new Map(Array.from(state.linksByKey, ([key, value]) => [key, cloneJson(value)]));
+      materializeDerivedData();
+    }
+
+    function linksForStream(streamKeyValue) {
+      return Array.from(state.linksByKey.values())
+        .filter(link => link.stream_key === streamKeyValue)
+        .sort((a, b) => a.display_order - b.display_order || deckLabel(state.decksByKey.get(a.deck_key) || a).localeCompare(deckLabel(state.decksByKey.get(b.deck_key) || b), "ja"));
+    }
+
+    function materializeDerivedData() {
+      state.timelines.forEach(timeline => {
+        (timeline.streams || []).forEach(stream => {
+          const keyValue = streamKey(stream);
+          stream.decks = linksForStream(keyValue).map(link => ({
+            ...state.decksByKey.get(link.deck_key),
+            confidence: link.confidence,
+            source_note: link.source_note,
+            display_order: link.display_order
+          }));
+        });
+      });
+
+      const rows = Array.from(state.decksByKey.values()).map(deck => {
+        const streams = Array.from(state.linksByKey.values())
+          .filter(link => link.deck_key === deck.deck_key)
+          .map(link => {
+            const stream = state.streamsByKey.get(link.stream_key);
+            if (!stream) return null;
+            return {
+              team: stream.team || "",
+              player_name: stream.player_name || "",
+              player_icon_url: stream.player_icon_url || "",
+              platform: stream.platform,
+              external_stream_id: stream.external_stream_id,
+              title: stream.title,
+              url: stream.url,
+              thumbnail_url: stream.thumbnail_url,
+              started_at: stream.started_at,
+              published_at: stream.published_at,
+              occurred_at: stream.occurred_at,
+              duration_sec: stream.duration_sec,
+              is_shadowverse_related: stream.is_shadowverse_related,
+              confidence: link.confidence,
+              source_note: link.source_note,
+              display_order: link.display_order
+            };
+          })
+          .filter(Boolean)
+          .sort((a, b) => String(b.occurred_at || "").localeCompare(String(a.occurred_at || "")));
+        const players = Array.from(new Set(streams.map(stream => stream.player_name).filter(Boolean))).sort();
+        return {
+          ...deck,
+          stream_count: streams.length,
+          player_count: players.length,
+          players,
+          streams
+        };
+      }).sort((a, b) => b.stream_count - a.stream_count || deckLabel(a).localeCompare(deckLabel(b), "ja"));
+
+      state.deck = rows;
+      state.deckByKey = new Map(rows.map(deck => [deck.deck_key, deck]));
+      state.timelineByPlayer = new Map(state.timelines.map(timeline => [playerKey(timeline), timeline]));
+    }
+
+    function pendingChanges() {
+      const addedDecks = Array.from(state.decksByKey.values())
+        .filter(deck => !state.originalDecksByKey.has(deck.deck_key));
+      const addedLinks = Array.from(state.linksByKey.values())
+        .filter(link => !state.originalLinksByKey.has(linkKey(link.stream_key, link.deck_key)));
+      const removedLinks = Array.from(state.originalLinksByKey.values())
+        .filter(link => !state.linksByKey.has(linkKey(link.stream_key, link.deck_key)));
+      const updatedLinks = Array.from(state.linksByKey.values()).filter(link => {
+        const original = state.originalLinksByKey.get(linkKey(link.stream_key, link.deck_key));
+        if (!original) return false;
+        return original.confidence !== link.confidence
+          || original.source_note !== link.source_note
+          || Number(original.display_order || 0) !== Number(link.display_order || 0);
+      });
+      return { addedDecks, addedLinks, removedLinks, updatedLinks };
+    }
+
+    function changeCount(changes = pendingChanges()) {
+      return changes.addedDecks.length + changes.addedLinks.length + changes.removedLinks.length + changes.updatedLinks.length;
+    }
+
+    function changeDescription(prefix, link) {
+      const deck = state.decksByKey.get(link.deck_key) || state.originalDecksByKey.get(link.deck_key) || { deck_name: link.deck_key };
+      const stream = state.streamsByKey.get(link.stream_key) || {};
+      return `${prefix}: ${deckLabel(deck)} -> ${describeStream(stream) || "Unknown archive"}`;
+    }
+
+    function renderDraftState() {
+      const changes = pendingChanges();
+      const count = changeCount(changes);
+      const bar = document.getElementById("change-bar");
+      const panel = document.getElementById("draft-panel");
+      const list = document.getElementById("draft-list");
+      document.getElementById("change-summary").textContent = count === 0
+        ? "No unsaved changes."
+        : `${count} unsaved draft change${count === 1 ? "" : "s"}. Changes are not persisted yet.`;
+      bar.hidden = count === 0;
+      panel.hidden = count === 0 || !state.showDraftPanel;
+      if (count === 0) {
+        list.innerHTML = "";
+        return;
+      }
+
+      const items = [
+        ...changes.addedDecks.map(deck => `New deck: ${deckLabel(deck)}`),
+        ...changes.addedLinks.map(link => changeDescription("Linked", link)),
+        ...changes.removedLinks.map(link => changeDescription("Unlinked", link)),
+        ...changes.updatedLinks.map(link => changeDescription("Updated link", link))
+      ];
+      list.innerHTML = items.map(item => `<div class="draft-item">${escapeHtml(item)}</div>`).join("");
+    }
+
     function rowMatches(row) {
       if (!state.query) return true;
       const haystack = JSON.stringify(row).toLowerCase();
@@ -1229,6 +1746,7 @@ HTML = """<!doctype html>
     }
 
     function render() {
+      materializeDerivedData();
       let activeTableColumns = activeColumns();
       if (!activeTableColumns.some(([key]) => key === state.sortKey)) {
         state.sortKey = state.view === "deck" ? "stream_count" : "total_hours";
@@ -1299,6 +1817,12 @@ HTML = """<!doctype html>
       });
 
       renderSidePanel();
+      document.querySelectorAll(".edit-stream-button").forEach(button => {
+        button.addEventListener("click", () => {
+          openDeckEditor(button.dataset.streamKey || "");
+        });
+      });
+      renderDraftState();
     }
 
     function renderSidePanel() {
@@ -1358,7 +1882,10 @@ HTML = """<!doctype html>
                 ${deckTags}
               </div>
             </div>
-            <a class="timeline-link" href="${escapeHtml(stream.url)}" target="_blank" rel="noreferrer">Open archive</a>
+            <div class="stream-actions">
+              <a class="timeline-link" href="${escapeHtml(stream.url)}" target="_blank" rel="noreferrer">Open archive</a>
+              <button class="secondary-button edit-stream-button" type="button" data-stream-key="${escapeHtml(streamKey(stream))}">Edit decks</button>
+            </div>
           </article>
         `;
       }).join("");
@@ -1418,10 +1945,207 @@ HTML = """<!doctype html>
               </div>
               ${note}
             </div>
-            <a class="timeline-link" href="${escapeHtml(stream.url)}" target="_blank" rel="noreferrer">Open archive</a>
+            <div class="stream-actions">
+              <a class="timeline-link" href="${escapeHtml(stream.url)}" target="_blank" rel="noreferrer">Open archive</a>
+              <button class="secondary-button edit-stream-button" type="button" data-stream-key="${escapeHtml(streamKey(stream))}">Edit decks</button>
+            </div>
           </article>
         `;
       }).join("");
+    }
+
+    function openDeckEditor(streamKeyValue) {
+      if (!state.streamsByKey.has(streamKeyValue)) {
+        return;
+      }
+      state.editingStreamKey = streamKeyValue;
+      state.deckSearchQuery = "";
+      renderDeckEditor();
+      document.getElementById("deck-editor-modal").hidden = false;
+    }
+
+    function closeDeckEditor() {
+      state.editingStreamKey = "";
+      document.getElementById("deck-editor-modal").hidden = true;
+    }
+
+    function renderDeckEditor() {
+      const stream = state.streamsByKey.get(state.editingStreamKey);
+      if (!stream) {
+        closeDeckEditor();
+        return;
+      }
+
+      document.getElementById("deck-editor-title").textContent = "Edit archive decks";
+      document.getElementById("deck-editor-summary").textContent = describeStream(stream);
+      renderLinkedDecks();
+
+      const searchInput = document.getElementById("deck-search-input");
+      searchInput.value = state.deckSearchQuery;
+      renderDeckSearchResults();
+
+      document.getElementById("new-deck-key").value = state.newDeckDraft.deck_key;
+      document.getElementById("new-deck-name").value = state.newDeckDraft.deck_name;
+      document.getElementById("new-deck-class").value = state.newDeckDraft.class_name;
+      document.getElementById("new-deck-archetype").value = state.newDeckDraft.archetype;
+      document.getElementById("new-deck-url").value = state.newDeckDraft.deck_url;
+      document.getElementById("new-deck-code").value = state.newDeckDraft.deck_code;
+      document.getElementById("new-deck-notes").value = state.newDeckDraft.notes;
+    }
+
+    function renderLinkedDecks() {
+      const container = document.getElementById("linked-decks");
+      const links = linksForStream(state.editingStreamKey);
+      if (links.length === 0) {
+        container.innerHTML = `<div class="empty">No linked decks.</div>`;
+        return;
+      }
+
+      container.innerHTML = links.map(link => {
+        const deck = state.decksByKey.get(link.deck_key) || { deck_name: link.deck_key };
+        const keyValue = linkKey(link.stream_key, link.deck_key);
+        return `
+          <article class="linked-deck">
+            <div class="linked-deck-head">
+              <div class="deck-heading">
+                <strong>${escapeHtml(deck.deck_name || link.deck_key)}</strong>
+                <span>${escapeHtml([deck.class_name, deck.archetype].filter(Boolean).join(" / ") || link.deck_key)}</span>
+              </div>
+              <button class="danger-button unlink-deck" type="button" data-link-key="${escapeHtml(keyValue)}">Unlink</button>
+            </div>
+            <div class="form-grid">
+              <label class="field">Confidence
+                <select class="link-field" data-link-key="${escapeHtml(keyValue)}" data-field="confidence">
+                  ${["", "low", "medium", "high"].map(value => `<option value="${escapeHtml(value)}"${value === link.confidence ? " selected" : ""}>${escapeHtml(value || "unset")}</option>`).join("")}
+                </select>
+              </label>
+              <label class="field">Display order
+                <input class="link-field" data-link-key="${escapeHtml(keyValue)}" data-field="display_order" type="number" min="0" step="1" value="${escapeHtml(link.display_order)}">
+              </label>
+              <label class="field full">Note
+                <textarea class="link-field" data-link-key="${escapeHtml(keyValue)}" data-field="source_note">${escapeHtml(link.source_note)}</textarea>
+              </label>
+            </div>
+          </article>
+        `;
+      }).join("");
+
+      document.querySelectorAll(".unlink-deck").forEach(button => {
+        button.addEventListener("click", () => {
+          state.linksByKey.delete(button.dataset.linkKey || "");
+          render();
+          renderDeckEditor();
+        });
+      });
+
+      document.querySelectorAll(".link-field").forEach(field => {
+        field.addEventListener("change", () => {
+          updateLinkField(field.dataset.linkKey || "", field.dataset.field || "", field.value);
+        });
+      });
+    }
+
+    function renderDeckSearchResults() {
+      const container = document.getElementById("deck-search-results");
+      const query = state.deckSearchQuery.toLowerCase();
+      const linked = new Set(linksForStream(state.editingStreamKey).map(link => link.deck_key));
+      const decks = Array.from(state.decksByKey.values())
+        .filter(deck => !query || JSON.stringify(deck).toLowerCase().includes(query))
+        .sort((a, b) => deckLabel(a).localeCompare(deckLabel(b), "ja"))
+        .slice(0, 8);
+
+      if (decks.length === 0) {
+        container.innerHTML = `<div class="empty">No existing decks found.</div>`;
+        return;
+      }
+
+      container.innerHTML = decks.map(deck => {
+        const alreadyLinked = linked.has(deck.deck_key);
+        return `
+          <div class="search-result">
+            <div class="deck-heading">
+              <strong>${escapeHtml(deck.deck_name)}</strong>
+              <span>${escapeHtml([deck.class_name, deck.archetype].filter(Boolean).join(" / ") || deck.deck_key)}</span>
+            </div>
+            <button class="secondary-button add-existing-deck" type="button" data-deck-key="${escapeHtml(deck.deck_key)}"${alreadyLinked ? " disabled" : ""}>${alreadyLinked ? "Linked" : "Add"}</button>
+          </div>
+        `;
+      }).join("");
+
+      document.querySelectorAll(".add-existing-deck").forEach(button => {
+        button.addEventListener("click", () => {
+          addDeckLink(button.dataset.deckKey || "");
+        });
+      });
+    }
+
+    function addDeckLink(deckKey) {
+      if (!deckKey || !state.decksByKey.has(deckKey) || !state.editingStreamKey) {
+        return;
+      }
+      const keyValue = linkKey(state.editingStreamKey, deckKey);
+      if (state.linksByKey.has(keyValue)) {
+        return;
+      }
+      state.linksByKey.set(keyValue, {
+        stream_key: state.editingStreamKey,
+        deck_key: deckKey,
+        confidence: "",
+        source_note: "",
+        display_order: linksForStream(state.editingStreamKey).length + 1
+      });
+      render();
+      renderDeckEditor();
+    }
+
+    function updateLinkField(keyValue, field, value) {
+      const link = state.linksByKey.get(keyValue);
+      if (!link) return;
+      if (field === "display_order") {
+        link.display_order = normalizeInt(value);
+      } else if (field === "confidence" || field === "source_note") {
+        link[field] = normalizeText(value);
+      }
+      state.linksByKey.set(keyValue, link);
+      render();
+      renderDeckEditor();
+    }
+
+    function createAndLinkDeck() {
+      const draft = deckMeta(state.newDeckDraft);
+      if (!draft.deck_key && draft.deck_name) {
+        draft.deck_key = `deck-${Date.now()}`;
+      }
+      if (!draft.deck_key || !draft.deck_name) {
+        window.alert("Deck key and deck name are required.");
+        return;
+      }
+      if (state.decksByKey.has(draft.deck_key)) {
+        window.alert("Deck key already exists.");
+        return;
+      }
+      state.decksByKey.set(draft.deck_key, draft);
+      state.newDeckDraft = {
+        deck_key: "",
+        deck_name: "",
+        class_name: "",
+        archetype: "",
+        deck_url: "",
+        deck_code: "",
+        notes: ""
+      };
+      addDeckLink(draft.deck_key);
+    }
+
+    function clearDraft() {
+      state.decksByKey = new Map(Array.from(state.originalDecksByKey, ([key, value]) => [key, cloneJson(value)]));
+      state.linksByKey = new Map(Array.from(state.originalLinksByKey, ([key, value]) => [key, cloneJson(value)]));
+      state.showDraftPanel = false;
+      materializeDerivedData();
+      render();
+      if (state.editingStreamKey) {
+        renderDeckEditor();
+      }
     }
 
     function renderMetadata() {
@@ -1449,11 +2173,8 @@ HTML = """<!doctype html>
       ]);
       state.team = team;
       state.player = player;
-      state.deck = deckUsage;
       state.timelines = timelines;
-      state.timelineByPlayer = new Map(timelines.map(timeline => [playerKey(timeline), timeline]));
-      state.deckUsage = deckUsage;
-      state.deckByKey = new Map(deckUsage.map(deck => [deck.deck_key, deck]));
+      initializeEditorState(timelines, deckUsage);
       state.metadata = metadata;
       renderMetadata();
       render();
@@ -1479,6 +2200,41 @@ HTML = """<!doctype html>
       state.showPlayerDetails = event.target.checked;
       render();
     });
+
+    document.getElementById("toggle-draft-panel").addEventListener("click", () => {
+      state.showDraftPanel = !state.showDraftPanel;
+      renderDraftState();
+    });
+
+    document.getElementById("clear-draft").addEventListener("click", clearDraft);
+    document.getElementById("close-deck-editor").addEventListener("click", closeDeckEditor);
+
+    document.getElementById("deck-editor-modal").addEventListener("click", event => {
+      if (event.target.id === "deck-editor-modal") {
+        closeDeckEditor();
+      }
+    });
+
+    document.getElementById("deck-search-input").addEventListener("input", event => {
+      state.deckSearchQuery = event.target.value.trim();
+      renderDeckSearchResults();
+    });
+
+    [
+      ["new-deck-key", "deck_key"],
+      ["new-deck-name", "deck_name"],
+      ["new-deck-class", "class_name"],
+      ["new-deck-archetype", "archetype"],
+      ["new-deck-url", "deck_url"],
+      ["new-deck-code", "deck_code"],
+      ["new-deck-notes", "notes"]
+    ].forEach(([id, field]) => {
+      document.getElementById(id).addEventListener("input", event => {
+        state.newDeckDraft[field] = event.target.value;
+      });
+    });
+
+    document.getElementById("create-deck").addEventListener("click", createAndLinkDeck);
 
     loadData().catch(error => {
       document.getElementById("metadata").textContent = "Failed to load report data.";
