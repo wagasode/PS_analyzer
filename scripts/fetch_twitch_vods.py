@@ -73,6 +73,17 @@ def resolve_users(channels: list[sqlite3.Row], client_id: str, token: str) -> di
     return users
 
 
+def update_channel_metadata(conn: sqlite3.Connection, channel_id: int, user: dict) -> None:
+    conn.execute(
+        """
+        UPDATE channels
+        SET external_channel_id = ?, image_url = ?, updated_at = datetime('now')
+        WHERE channel_id = ?
+        """,
+        (user["id"], user.get("profile_image_url", ""), channel_id),
+    )
+
+
 def fetch_archives(user_id: str, client_id: str, token: str, max_pages: int) -> list[dict]:
     videos: list[dict] = []
     after = ""
@@ -174,14 +185,7 @@ def main() -> None:
             user = users.get(login)
             if not user:
                 raise RuntimeError(f"Twitch user not found: {channel['player_name']} {login}")
-            conn.execute(
-                """
-                UPDATE channels
-                SET external_channel_id = ?, updated_at = datetime('now')
-                WHERE channel_id = ?
-                """,
-                (user["id"], channel["channel_id"]),
-            )
+            update_channel_metadata(conn, channel["channel_id"], user)
             videos = fetch_archives(user["id"], client_id, token, args.max_pages)
             items_seen += len(videos)
             for video in videos:

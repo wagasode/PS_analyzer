@@ -41,6 +41,31 @@ def write_json(path: Path, payload: Any) -> None:
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
+def best_thumbnail_url(thumbnails: dict[str, Any]) -> str:
+    for key in ("maxres", "standard", "high", "medium", "default"):
+        value = thumbnails.get(key)
+        if isinstance(value, dict) and value.get("url"):
+            return str(value["url"])
+    return ""
+
+
+def thumbnail_from_raw_json(platform: str, raw_json: str | None) -> str:
+    if not raw_json:
+        return ""
+    try:
+        payload = json.loads(raw_json)
+    except json.JSONDecodeError:
+        return ""
+    if platform == "youtube":
+        thumbnails = payload.get("snippet", {}).get("thumbnails", {})
+        return best_thumbnail_url(thumbnails) if isinstance(thumbnails, dict) else ""
+    if platform == "twitch":
+        url = payload.get("thumbnail_url", "")
+        if isinstance(url, str):
+            return url.replace("%{width}", "320").replace("%{height}", "180")
+    return ""
+
+
 def github_run_url() -> str:
     explicit = os.environ.get("GITHUB_RUN_URL")
     if explicit:
@@ -77,9 +102,22 @@ def build_player_timelines(db_path: Path) -> list[dict[str, Any]]:
     init_schema(conn)
     rows = conn.execute(
         """
+        WITH channel_icons AS (
+            SELECT
+                player_id,
+                COALESCE(
+                    MAX(CASE WHEN platform = 'youtube' THEN NULLIF(image_url, '') END),
+                    MAX(CASE WHEN platform = 'twitch' THEN NULLIF(image_url, '') END),
+                    ''
+                ) AS player_icon_url
+            FROM channels
+            WHERE is_owned = 1
+            GROUP BY player_id
+        )
         SELECT
             p.team,
             p.player_name,
+            COALESCE(ci.player_icon_url, '') AS player_icon_url,
             s.platform,
             s.title,
             s.url,
@@ -87,11 +125,14 @@ def build_player_timelines(db_path: Path) -> list[dict[str, Any]]:
             s.published_at,
             COALESCE(s.started_at, s.published_at, '') AS occurred_at,
             s.duration_sec,
-            s.is_shadowverse_related
+            s.is_shadowverse_related,
+            s.raw_json
         FROM players p
         LEFT JOIN stream_sessions s
           ON s.player_id = p.player_id
          AND s.is_live_archive = 1
+        LEFT JOIN channel_icons ci
+          ON ci.player_id = p.player_id
         ORDER BY
             p.team,
             p.player_name,
@@ -113,6 +154,7 @@ def build_player_timelines(db_path: Path) -> list[dict[str, Any]]:
             current_timeline = {
                 "team": team,
                 "player_name": player_name,
+                "player_icon_url": row["player_icon_url"],
                 "streams": [],
             }
             timelines.append(current_timeline)
@@ -127,6 +169,7 @@ def build_player_timelines(db_path: Path) -> list[dict[str, Any]]:
                 "platform": row["platform"],
                 "title": row["title"],
                 "url": row["url"],
+                "thumbnail_url": thumbnail_from_raw_json(row["platform"], row["raw_json"]),
                 "started_at": row["started_at"],
                 "published_at": row["published_at"],
                 "occurred_at": row["occurred_at"],
@@ -460,6 +503,50 @@ HTML = """<!doctype html>
       text-align: center;
     }
 
+    .player-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      color: inherit;
+    }
+
+    .player-label.heading {
+      gap: 12px;
+    }
+
+    .avatar {
+      position: relative;
+      display: inline-grid;
+      place-items: center;
+      flex: 0 0 auto;
+      width: 28px;
+      height: 28px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--none-soft);
+      color: var(--none);
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .player-label.heading .avatar {
+      width: 40px;
+      height: 40px;
+      font-size: 13px;
+    }
+
+    .avatar img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      background: var(--panel);
+    }
+
     .detail-button {
       min-height: 30px;
       border: 1px solid var(--border);
@@ -558,6 +645,32 @@ HTML = """<!doctype html>
     .timeline-meta {
       color: var(--muted);
       font-size: 13px;
+    }
+
+    .timeline-thumbnail {
+      display: block;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #eef2f7;
+      color: var(--muted);
+      text-decoration: none;
+    }
+
+    .timeline-thumbnail img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+    }
+
+    .timeline-thumbnail.missing {
+      display: grid;
+      place-items: center;
+      font-size: 13px;
+      font-weight: 700;
     }
 
     .timeline-main {
@@ -816,6 +929,40 @@ HTML = """<!doctype html>
       return JSON.stringify([row.team, row.player_name]);
     }
 
+    function initials(value) {
+      const name = String(value || "?").trim();
+      return Array.from(name || "?").slice(0, 2).join("").toUpperCase();
+    }
+
+    function avatarHtml(name, imageUrl) {
+      const fallback = escapeHtml(initials(name));
+      const image = imageUrl
+        ? `<img src="${escapeHtml(imageUrl)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">`
+        : "";
+      return `<span class="avatar" aria-hidden="true">${image}<span>${fallback}</span></span>`;
+    }
+
+    function playerLabelHtml(row, className = "") {
+      const classes = className ? `player-label ${className}` : "player-label";
+      return `
+        <span class="${classes}">
+          ${avatarHtml(row.player_name, row.player_icon_url)}
+          <span>${escapeHtml(row.player_name || "Unknown player")}</span>
+        </span>
+      `;
+    }
+
+    function streamThumbnailHtml(stream) {
+      if (!stream.thumbnail_url) {
+        return `<div class="timeline-thumbnail missing" aria-hidden="true">No thumbnail</div>`;
+      }
+      return `
+        <a class="timeline-thumbnail" href="${escapeHtml(stream.url)}" target="_blank" rel="noreferrer" aria-label="${escapeHtml(stream.title || "Open archive")}">
+          <img src="${escapeHtml(stream.thumbnail_url)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.closest('.timeline-thumbnail').classList.add('missing'); this.closest('.timeline-thumbnail').textContent='No thumbnail';">
+        </a>
+      `;
+    }
+
     function formatDuration(totalSeconds) {
       const seconds = Math.max(Number(totalSeconds || 0), 0);
       const hours = Math.floor(seconds / 3600);
@@ -857,6 +1004,9 @@ HTML = """<!doctype html>
         const keyValue = playerKey(row);
         const active = keyValue === state.selectedPlayerKey ? " active" : "";
         return `<td class="action"><button class="detail-button${active}" type="button" data-player-key="${escapeHtml(keyValue)}">View</button></td>`;
+      }
+      if (key === "player_name") {
+        return `<td>${playerLabelHtml(row)}</td>`;
       }
       if (numberFields.has(key)) {
         return `<td class="num">${formatNumber(value)}</td>`;
@@ -957,7 +1107,7 @@ HTML = """<!doctype html>
       }
 
       const streams = timeline.streams || [];
-      title.textContent = `${timeline.player_name} timeline`;
+      title.innerHTML = `${playerLabelHtml(timeline, "heading")} <span>timeline</span>`;
       summary.textContent = timeline.team;
       count.textContent = `${streams.length} streams`;
       empty.hidden = streams.length > 0;
@@ -973,6 +1123,7 @@ HTML = """<!doctype html>
               <strong>${escapeHtml(formatDate(timestamp))}</strong>
               <span>${escapeHtml(timestampKind)}</span>
             </div>
+            ${streamThumbnailHtml(stream)}
             <div class="timeline-main">
               <a class="timeline-title" href="${escapeHtml(stream.url)}" target="_blank" rel="noreferrer">${escapeHtml(stream.title || "Untitled stream")}</a>
               <div class="timeline-tags">

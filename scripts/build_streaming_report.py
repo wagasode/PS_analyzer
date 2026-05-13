@@ -111,10 +111,23 @@ def main() -> None:
             LEFT JOIN channel_collection_status USING(channel_id)
             WHERE is_owned = 1
             GROUP BY player_id
+        ),
+        channel_icons AS (
+            SELECT
+                player_id,
+                COALESCE(
+                    MAX(CASE WHEN platform = 'youtube' THEN NULLIF(image_url, '') END),
+                    MAX(CASE WHEN platform = 'twitch' THEN NULLIF(image_url, '') END),
+                    ''
+                ) AS player_icon_url
+            FROM channels
+            WHERE is_owned = 1
+            GROUP BY player_id
         )
         SELECT
             p.team,
             p.player_name,
+            COALESCE(ci.player_icon_url, '') AS player_icon_url,
             COALESCE(ps.stream_count, 0) AS stream_count,
             COALESCE(ps.total_hours, 0.0) AS total_hours,
             COALESCE(ps.shadowverse_hours, 0.0) AS shadowverse_hours,
@@ -135,12 +148,14 @@ def main() -> None:
         FROM players p
         LEFT JOIN player_streams ps USING(player_id)
         LEFT JOIN channel_status cs USING(player_id)
+        LEFT JOIN channel_icons ci USING(player_id)
         ORDER BY total_hours DESC, p.team, p.player_name
         """
     ).fetchall()
     player_fields = [
         "team",
         "player_name",
+        "player_icon_url",
         "stream_count",
         "total_hours",
         "shadowverse_hours",
