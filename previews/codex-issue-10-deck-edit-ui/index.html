@@ -956,26 +956,30 @@
 
         <section class="editor-section">
           <h3>Create new deck</h3>
+          <label class="field">Deck name
+            <input id="new-deck-name" type="text" placeholder="連携R" autocomplete="off">
+          </label>
+          <div class="timeline-summary" id="new-deck-class-hint"></div>
+          <div class="modal-actions">
+            <button class="secondary-button" id="toggle-new-deck-advanced" type="button" aria-expanded="false">Advanced input</button>
+          </div>
           <div class="form-grid">
-            <label class="field">Deck key
+            <label class="field advanced-deck-field" hidden>Deck key
               <input id="new-deck-key" type="text" autocomplete="off">
             </label>
-            <label class="field">Deck name
-              <input id="new-deck-name" type="text" autocomplete="off">
-            </label>
-            <label class="field">Class
+            <label class="field advanced-deck-field" hidden>Class
               <input id="new-deck-class" type="text" autocomplete="off">
             </label>
-            <label class="field">Archetype
+            <label class="field advanced-deck-field" hidden>Archetype
               <input id="new-deck-archetype" type="text" autocomplete="off">
             </label>
-            <label class="field">Deck URL
+            <label class="field advanced-deck-field" hidden>Deck URL
               <input id="new-deck-url" type="url" autocomplete="off">
             </label>
-            <label class="field">Deck code
+            <label class="field advanced-deck-field" hidden>Deck code
               <input id="new-deck-code" type="text" autocomplete="off">
             </label>
-            <label class="field full">Notes
+            <label class="field full advanced-deck-field" hidden>Notes
               <textarea id="new-deck-notes"></textarea>
             </label>
           </div>
@@ -1011,6 +1015,8 @@
       editingStreamKey: "",
       deckSearchQuery: "",
       showDraftPanel: false,
+      showNewDeckAdvanced: false,
+      newDeckClassManual: false,
       newDeckDraft: {
         deck_key: "",
         deck_name: "",
@@ -1178,6 +1184,37 @@
         return `<a class="pill deck" href="${escapeHtml(deck.deck_url)}" target="_blank" rel="noreferrer">${label}</a>`;
       }
       return `<span class="pill deck">${label}</span>`;
+    }
+
+    const classAliases = [
+      ["Nm", ["Nm", "NM", "ナイトメア", "NIGHTMARE"]],
+      ["Nc", ["Nc", "NC", "ネクロ", "ネクロマンサー", "NECRO", "NECROMANCER"]],
+      ["R", ["R", "ロイヤル", "ROYAL"]],
+      ["E", ["E", "エルフ", "ELF"]],
+      ["W", ["W", "ウィッチ", "WITCH"]],
+      ["D", ["D", "ドラゴン", "DRAGON"]],
+      ["B", ["B", "ビショップ", "BISHOP"]],
+      ["V", ["V", "ヴァンプ", "ヴァンパイア", "VAMPIRE"]]
+    ];
+
+    function inferClassName(deckName) {
+      const name = normalizeText(deckName);
+      if (!name) return "";
+      const upperName = name.toUpperCase();
+      for (const [className, aliases] of classAliases) {
+        for (const alias of aliases) {
+          const normalizedAlias = alias.toUpperCase();
+          if (upperName.endsWith(normalizedAlias)) {
+            return className;
+          }
+        }
+      }
+      return "";
+    }
+
+    function generatedDeckKey(deckName) {
+      const inferredClass = inferClassName(deckName).toLowerCase();
+      return `deck-${inferredClass ? `${inferredClass}-` : ""}${Date.now()}`;
     }
 
     function deckMeta(deck) {
@@ -1653,6 +1690,22 @@
       document.getElementById("new-deck-url").value = state.newDeckDraft.deck_url;
       document.getElementById("new-deck-code").value = state.newDeckDraft.deck_code;
       document.getElementById("new-deck-notes").value = state.newDeckDraft.notes;
+      renderNewDeckAdvanced();
+    }
+
+    function renderNewDeckAdvanced() {
+      const inferredClass = inferClassName(state.newDeckDraft.deck_name);
+      const className = state.newDeckDraft.class_name || inferredClass;
+      document.getElementById("new-deck-class-hint").textContent = state.newDeckDraft.deck_name
+        ? `Class guess: ${className || "unknown"}`
+        : "Class guess appears after entering a deck name.";
+      document.querySelectorAll(".advanced-deck-field").forEach(field => {
+        field.hidden = !state.showNewDeckAdvanced;
+      });
+      document.getElementById("toggle-new-deck-advanced").setAttribute("aria-expanded", String(state.showNewDeckAdvanced));
+      document.getElementById("toggle-new-deck-advanced").textContent = state.showNewDeckAdvanced
+        ? "Hide advanced input"
+        : "Advanced input";
     }
 
     function renderLinkedDecks() {
@@ -1775,11 +1828,14 @@
 
     function createAndLinkDeck() {
       const draft = deckMeta(state.newDeckDraft);
+      if (!draft.class_name) {
+        draft.class_name = inferClassName(draft.deck_name);
+      }
       if (!draft.deck_key && draft.deck_name) {
-        draft.deck_key = `deck-${Date.now()}`;
+        draft.deck_key = generatedDeckKey(draft.deck_name);
       }
       if (!draft.deck_key || !draft.deck_name) {
-        window.alert("Deck key and deck name are required.");
+        window.alert("Deck name is required.");
         return;
       }
       if (state.decksByKey.has(draft.deck_key)) {
@@ -1796,6 +1852,8 @@
         deck_code: "",
         notes: ""
       };
+      state.newDeckClassManual = false;
+      state.showNewDeckAdvanced = false;
       addDeckLink(draft.deck_key);
     }
 
@@ -1882,6 +1940,11 @@
       renderDeckSearchResults();
     });
 
+    document.getElementById("toggle-new-deck-advanced").addEventListener("click", () => {
+      state.showNewDeckAdvanced = !state.showNewDeckAdvanced;
+      renderNewDeckAdvanced();
+    });
+
     [
       ["new-deck-key", "deck_key"],
       ["new-deck-name", "deck_name"],
@@ -1893,6 +1956,16 @@
     ].forEach(([id, field]) => {
       document.getElementById(id).addEventListener("input", event => {
         state.newDeckDraft[field] = event.target.value;
+        if (field === "class_name") {
+          state.newDeckClassManual = true;
+        }
+        if (field === "deck_name" && !state.newDeckClassManual) {
+          state.newDeckDraft.class_name = inferClassName(event.target.value);
+          document.getElementById("new-deck-class").value = state.newDeckDraft.class_name;
+        }
+        if (field === "deck_name" || field === "class_name") {
+          renderNewDeckAdvanced();
+        }
       });
     });
 
