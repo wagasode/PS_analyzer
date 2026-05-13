@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS channels (
     platform_identifier TEXT NOT NULL,
     external_channel_id TEXT,
     uploads_playlist_id TEXT,
+    image_url TEXT NOT NULL DEFAULT '',
     is_owned INTEGER NOT NULL CHECK (is_owned IN (0, 1)),
     updated_at TEXT NOT NULL DEFAULT (datetime('now')),
     UNIQUE (platform, platform_identifier)

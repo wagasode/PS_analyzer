@@ -56,6 +56,13 @@ def connect(db_path: Path = DEFAULT_DB_PATH) -> sqlite3.Connection:
 
 def init_schema(conn: sqlite3.Connection) -> None:
     conn.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
+    ensure_column(conn, "channels", "image_url", "TEXT NOT NULL DEFAULT ''")
+
+
+def ensure_column(conn: sqlite3.Connection, table_name: str, column_name: str, column_def: str) -> None:
+    columns = {row["name"] for row in conn.execute(f"PRAGMA table_info({table_name})")}
+    if column_name not in columns:
+        conn.execute(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_def}")
 
 
 def read_players_csv(path: Path = DEFAULT_PLAYERS_CSV) -> list[dict[str, str]]:

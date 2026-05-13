@@ -25,6 +25,14 @@ from common import (
 SKIPPED_CHANNELS_REPORT = ROOT_DIR / "reports" / "youtube_skipped_channels.csv"
 
 
+def best_thumbnail_url(thumbnails: dict) -> str:
+    for key in ("maxres", "standard", "high", "medium", "default"):
+        url = thumbnails.get(key, {}).get("url")
+        if url:
+            return url
+    return ""
+
+
 def youtube_channels(conn: sqlite3.Connection, player_name: str | None = None) -> list[sqlite3.Row]:
     params: list[str] = []
     where = "c.platform = 'youtube' AND c.is_owned = 1"
@@ -46,9 +54,9 @@ def youtube_channels(conn: sqlite3.Connection, player_name: str | None = None) -
 def resolve_channel(conn: sqlite3.Connection, channel: sqlite3.Row, api_key: str) -> tuple[str, str]:
     identifier = channel["platform_identifier"]
     if identifier.startswith("UC"):
-        params = {"part": "contentDetails", "id": identifier}
+        params = {"part": "snippet,contentDetails", "id": identifier}
     else:
-        params = {"part": "contentDetails", "forHandle": identifier}
+        params = {"part": "snippet,contentDetails", "forHandle": identifier}
     payload = youtube_api("channels", params, api_key)
     items = payload.get("items", [])
     if not items:
@@ -56,13 +64,14 @@ def resolve_channel(conn: sqlite3.Connection, channel: sqlite3.Row, api_key: str
     item = items[0]
     external_channel_id = item["id"]
     uploads_playlist_id = item["contentDetails"]["relatedPlaylists"]["uploads"]
+    image_url = best_thumbnail_url(item.get("snippet", {}).get("thumbnails", {}))
     conn.execute(
         """
         UPDATE channels
-        SET external_channel_id = ?, uploads_playlist_id = ?, updated_at = datetime('now')
+        SET external_channel_id = ?, uploads_playlist_id = ?, image_url = ?, updated_at = datetime('now')
         WHERE channel_id = ?
         """,
-        (external_channel_id, uploads_playlist_id, channel["channel_id"]),
+        (external_channel_id, uploads_playlist_id, image_url, channel["channel_id"]),
     )
     conn.commit()
     return external_channel_id, uploads_playlist_id
@@ -269,6 +278,8 @@ def main() -> None:
                 external_channel_id, uploads_playlist_id = resolve_channel(conn, channel, api_key)
             else:
                 external_channel_id = channel["external_channel_id"] or ""
+                if not channel["image_url"]:
+                    external_channel_id, uploads_playlist_id = resolve_channel(conn, channel, api_key)
             try:
                 video_ids = list_playlist_video_ids(uploads_playlist_id, api_key, args.max_pages)
             except Exception as exc:
