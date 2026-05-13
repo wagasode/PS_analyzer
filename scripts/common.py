@@ -96,6 +96,47 @@ def youtube_api(path: str, params: dict[str, Any], api_key: str) -> dict[str, An
     return http_json(f"https://www.googleapis.com/youtube/v3/{path}?{query}")
 
 
+def _youtube_video_id(value: str) -> str:
+    value = value.strip()
+    if not value:
+        return ""
+    parsed = urllib.parse.urlparse(value)
+    if not parsed.scheme or not parsed.netloc:
+        return value
+
+    host = parsed.netloc.lower()
+    path_parts = [urllib.parse.unquote(part) for part in parsed.path.split("/") if part]
+    if host.endswith("youtu.be") and path_parts:
+        return path_parts[0]
+    if "youtube.com" not in host:
+        return value
+
+    query = urllib.parse.parse_qs(parsed.query)
+    if query.get("v"):
+        return query["v"][0]
+    if len(path_parts) >= 2 and path_parts[0] in {"live", "embed", "shorts"}:
+        return path_parts[1]
+    return value
+
+
+def youtube_archive_url(video_id_or_url: str) -> str:
+    video_id = _youtube_video_id(video_id_or_url)
+    if not video_id:
+        return ""
+    return f"https://www.youtube.com/watch?v={urllib.parse.quote(video_id, safe='-_')}"
+
+
+def twitch_archive_url(video_id: str, url: str = "") -> str:
+    parsed = urllib.parse.urlparse(url.strip())
+    path_parts = [part for part in parsed.path.split("/") if part]
+    if parsed.scheme and parsed.netloc and len(path_parts) >= 2 and path_parts[0] == "videos":
+        return f"https://www.twitch.tv/videos/{urllib.parse.quote(path_parts[1], safe='')}"
+    video_id = video_id.strip()
+    if not video_id:
+        return url.strip()
+    return f"https://www.twitch.tv/videos/{urllib.parse.quote(video_id, safe='')}"
+
+
 def parse_iso8601_duration(value: str | None) -> int:
     if not value:
         return 0
