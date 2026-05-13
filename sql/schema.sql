@@ -48,6 +48,29 @@ CREATE TABLE IF NOT EXISTS stream_sessions (
     UNIQUE (platform, external_stream_id)
 );
 
+CREATE TABLE IF NOT EXISTS decks (
+    deck_id INTEGER PRIMARY KEY,
+    deck_key TEXT NOT NULL UNIQUE,
+    deck_name TEXT NOT NULL,
+    class_name TEXT NOT NULL DEFAULT '',
+    archetype TEXT NOT NULL DEFAULT '',
+    deck_url TEXT NOT NULL DEFAULT '',
+    deck_code TEXT NOT NULL DEFAULT '',
+    notes TEXT NOT NULL DEFAULT '',
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS stream_session_decks (
+    stream_session_deck_id INTEGER PRIMARY KEY,
+    stream_session_id INTEGER NOT NULL REFERENCES stream_sessions(stream_session_id) ON DELETE CASCADE,
+    deck_id INTEGER NOT NULL REFERENCES decks(deck_id) ON DELETE CASCADE,
+    confidence TEXT NOT NULL DEFAULT '',
+    source_note TEXT NOT NULL DEFAULT '',
+    display_order INTEGER NOT NULL DEFAULT 0,
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE (stream_session_id, deck_id)
+);
+
 CREATE TABLE IF NOT EXISTS collection_runs (
     collection_run_id INTEGER PRIMARY KEY,
     platform TEXT NOT NULL CHECK (platform IN ('youtube', 'twitch', 'local')),
@@ -78,3 +101,9 @@ CREATE INDEX IF NOT EXISTS idx_stream_sessions_player_started
 
 CREATE INDEX IF NOT EXISTS idx_stream_sessions_platform_started
     ON stream_sessions(platform, started_at);
+
+CREATE INDEX IF NOT EXISTS idx_stream_session_decks_stream
+    ON stream_session_decks(stream_session_id, display_order);
+
+CREATE INDEX IF NOT EXISTS idx_stream_session_decks_deck
+    ON stream_session_decks(deck_id, stream_session_id);

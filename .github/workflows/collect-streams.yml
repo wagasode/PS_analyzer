@@ -54,6 +54,7 @@ jobs:
           python3 -m py_compile \
             scripts/common.py \
             scripts/init_db.py \
+            scripts/import_deck_links.py \
             scripts/fetch_youtube_archives.py \
             scripts/fetch_twitch_vods.py \
             scripts/build_streaming_report.py \
@@ -67,6 +68,9 @@ jobs:
 
       - name: Fetch Twitch VODs
         run: python3 scripts/fetch_twitch_vods.py --max-pages "${{ inputs.twitch_max_pages }}"
+
+      - name: Import deck links
+        run: python3 scripts/import_deck_links.py
 
       - name: Build reports
         run: python3 scripts/build_streaming_report.py --summary
