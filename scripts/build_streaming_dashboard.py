@@ -1083,6 +1083,14 @@ HTML = """<!doctype html>
       gap: 12px;
     }
 
+    .linked-deck-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
     .deck-heading {
       display: grid;
       gap: 2px;
@@ -1352,6 +1360,7 @@ HTML = """<!doctype html>
       selectedDeckKey: "",
       editingStreamKey: "",
       deckSearchQuery: "",
+      expandedLinkedDeckKeys: new Set(),
       showDraftPanel: false,
       showNewDeckAdvanced: false,
       newDeckClassManual: false,
@@ -2057,6 +2066,22 @@ HTML = """<!doctype html>
       container.innerHTML = links.map(link => {
         const deck = state.decksByKey.get(link.deck_key) || { deck_name: link.deck_key };
         const keyValue = linkKey(link.stream_key, link.deck_key);
+        const expanded = state.expandedLinkedDeckKeys.has(keyValue);
+        const detailForm = expanded ? `
+          <div class="form-grid">
+            <label class="field">Confidence
+              <select class="link-field" data-link-key="${escapeHtml(keyValue)}" data-field="confidence">
+                ${["", "low", "medium", "high"].map(value => `<option value="${escapeHtml(value)}"${value === link.confidence ? " selected" : ""}>${escapeHtml(value || "unset")}</option>`).join("")}
+              </select>
+            </label>
+            <label class="field">Display order
+              <input class="link-field" data-link-key="${escapeHtml(keyValue)}" data-field="display_order" type="number" min="0" step="1" value="${escapeHtml(link.display_order)}">
+            </label>
+            <label class="field full">Note
+              <textarea class="link-field" data-link-key="${escapeHtml(keyValue)}" data-field="source_note">${escapeHtml(link.source_note)}</textarea>
+            </label>
+          </div>
+        ` : "";
         return `
           <article class="linked-deck">
             <div class="linked-deck-head">
@@ -2064,34 +2089,42 @@ HTML = """<!doctype html>
                 <strong>${escapeHtml(deck.deck_name || link.deck_key)}</strong>
                 <span>${escapeHtml([deck.class_name, deck.archetype].filter(Boolean).join(" / ") || link.deck_key)}</span>
               </div>
-              <button class="danger-button unlink-deck" type="button" data-link-key="${escapeHtml(keyValue)}">Unlink</button>
+              <div class="linked-deck-actions">
+                <button class="secondary-button toggle-link-details" type="button" data-link-key="${escapeHtml(keyValue)}">${expanded ? "Hide details" : "Details"}</button>
+                <button class="danger-button unlink-deck" type="button" data-link-key="${escapeHtml(keyValue)}">Unlink</button>
+              </div>
             </div>
-            <div class="form-grid">
-              <label class="field">Confidence
-                <select class="link-field" data-link-key="${escapeHtml(keyValue)}" data-field="confidence">
-                  ${["", "low", "medium", "high"].map(value => `<option value="${escapeHtml(value)}"${value === link.confidence ? " selected" : ""}>${escapeHtml(value || "unset")}</option>`).join("")}
-                </select>
-              </label>
-              <label class="field">Display order
-                <input class="link-field" data-link-key="${escapeHtml(keyValue)}" data-field="display_order" type="number" min="0" step="1" value="${escapeHtml(link.display_order)}">
-              </label>
-              <label class="field full">Note
-                <textarea class="link-field" data-link-key="${escapeHtml(keyValue)}" data-field="source_note">${escapeHtml(link.source_note)}</textarea>
-              </label>
-            </div>
+            ${detailForm}
           </article>
         `;
       }).join("");
 
+      document.querySelectorAll(".toggle-link-details").forEach(button => {
+        button.addEventListener("click", () => {
+          const keyValue = button.dataset.linkKey || "";
+          if (state.expandedLinkedDeckKeys.has(keyValue)) {
+            state.expandedLinkedDeckKeys.delete(keyValue);
+          } else {
+            state.expandedLinkedDeckKeys.add(keyValue);
+          }
+          renderDeckEditor();
+        });
+      });
+
       document.querySelectorAll(".unlink-deck").forEach(button => {
         button.addEventListener("click", () => {
-          state.linksByKey.delete(button.dataset.linkKey || "");
+          const keyValue = button.dataset.linkKey || "";
+          state.linksByKey.delete(keyValue);
+          state.expandedLinkedDeckKeys.delete(keyValue);
           render();
           renderDeckEditor();
         });
       });
 
       document.querySelectorAll(".link-field").forEach(field => {
+        field.addEventListener("input", () => {
+          updateLinkField(field.dataset.linkKey || "", field.dataset.field || "", field.value, false);
+        });
         field.addEventListener("change", () => {
           updateLinkField(field.dataset.linkKey || "", field.dataset.field || "", field.value);
         });
@@ -2151,7 +2184,7 @@ HTML = """<!doctype html>
       renderDeckEditor();
     }
 
-    function updateLinkField(keyValue, field, value) {
+    function updateLinkField(keyValue, field, value, rerender = true) {
       const link = state.linksByKey.get(keyValue);
       if (!link) return;
       if (field === "display_order") {
@@ -2160,8 +2193,13 @@ HTML = """<!doctype html>
         link[field] = normalizeText(value);
       }
       state.linksByKey.set(keyValue, link);
-      render();
-      renderDeckEditor();
+      if (rerender) {
+        render();
+        renderDeckEditor();
+      } else {
+        materializeDerivedData();
+        renderDraftState();
+      }
     }
 
     function createAndLinkDeck() {
