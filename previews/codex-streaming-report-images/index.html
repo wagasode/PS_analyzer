@@ -1,0 +1,1016 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Streaming Report</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --text: #1f2937;
+      --muted: #64748b;
+      --border: #d7dde6;
+      --accent: #0f766e;
+      --accent-soft: #dff7f3;
+      --warn: #9a3412;
+      --warn-soft: #ffedd5;
+      --bad: #991b1b;
+      --bad-soft: #fee2e2;
+      --none: #475569;
+      --none-soft: #e2e8f0;
+      --shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.5;
+    }
+
+    header {
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .shell {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 28px 0 22px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 28px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .meta {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    a.button {
+      display: inline-flex;
+      align-items: center;
+      min-height: 36px;
+      padding: 0 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--panel);
+      color: var(--text);
+      text-decoration: none;
+      font-size: 14px;
+      box-shadow: var(--shadow);
+    }
+
+    main {
+      padding: 24px 0 40px;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .stat {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      box-shadow: var(--shadow);
+    }
+
+    .stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+
+    .stat strong {
+      display: block;
+      margin-top: 4px;
+      font-size: 22px;
+      line-height: 1.2;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin: 18px 0;
+    }
+
+    .tabs {
+      display: inline-flex;
+      padding: 3px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    .tab {
+      min-height: 34px;
+      border: 0;
+      border-radius: 6px;
+      padding: 0 14px;
+      background: transparent;
+      color: var(--muted);
+      font: inherit;
+      cursor: pointer;
+    }
+
+    .tab.active {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .search {
+      width: min(380px, 100%);
+      min-height: 40px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0 12px;
+      color: var(--text);
+      font: inherit;
+      box-shadow: var(--shadow);
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) clamp(320px, 34vw, 440px);
+      gap: 16px;
+      align-items: start;
+    }
+
+    .timeline-panel {
+      display: none;
+    }
+
+    .workspace.player-mode .timeline-panel {
+      display: block;
+    }
+
+    .workspace.team-mode {
+      grid-template-columns: 1fr;
+    }
+
+    .workspace.team-mode .timeline-panel {
+      display: none;
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .panel-actions {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    .toggle input {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--accent);
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.3;
+      letter-spacing: 0;
+    }
+
+    .count {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .table-wrap {
+      overflow: auto;
+      max-height: calc(100vh - 300px);
+    }
+
+    .player-table-wrap {
+      max-height: calc(100vh - 250px);
+    }
+
+    .player-table-wrap table {
+      min-width: 520px;
+    }
+
+    .player-detail-table-wrap table {
+      min-width: 980px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      min-width: 980px;
+      font-size: 14px;
+    }
+
+    th,
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: #eef2f7;
+      color: #334155;
+      font-weight: 700;
+      user-select: none;
+    }
+
+    th.sortable {
+      cursor: pointer;
+    }
+
+    th.sortable::after {
+      content: "↕";
+      margin-left: 6px;
+      color: #94a3b8;
+      font-size: 12px;
+    }
+
+    th.sorted-asc::after {
+      content: "↑";
+      color: var(--accent);
+    }
+
+    th.sorted-desc::after {
+      content: "↓";
+      color: var(--accent);
+    }
+
+    tbody tr:hover {
+      background: #f8fafc;
+    }
+
+    td.num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    td.action {
+      text-align: center;
+    }
+
+    .player-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      color: inherit;
+    }
+
+    .player-label.heading {
+      gap: 12px;
+    }
+
+    .avatar {
+      position: relative;
+      display: inline-grid;
+      place-items: center;
+      flex: 0 0 auto;
+      width: 28px;
+      height: 28px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--none-soft);
+      color: var(--none);
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .player-label.heading .avatar {
+      width: 40px;
+      height: 40px;
+      font-size: 13px;
+    }
+
+    .avatar img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      background: var(--panel);
+    }
+
+    .detail-button {
+      min-height: 30px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0 10px;
+      background: var(--panel);
+      color: var(--text);
+      font: inherit;
+      cursor: pointer;
+    }
+
+    .detail-button.active {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      padding: 0 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .status.ok {
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    .status.skipped {
+      background: var(--warn-soft);
+      color: var(--warn);
+    }
+
+    .status.failed {
+      background: var(--bad-soft);
+      color: var(--bad);
+    }
+
+    .status.no_channel,
+    .status.not_checked {
+      background: var(--none-soft);
+      color: var(--none);
+    }
+
+    .empty {
+      padding: 28px 16px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .timeline-summary {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 14px;
+      flex-wrap: wrap;
+    }
+
+    .timeline-list {
+      display: grid;
+      gap: 0;
+      max-height: calc(100vh - 300px);
+      overflow: auto;
+    }
+
+    .timeline-item {
+      display: grid;
+      gap: 12px;
+      align-items: start;
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .timeline-item:last-child {
+      border-bottom: 0;
+    }
+
+    .timeline-date {
+      display: grid;
+      gap: 4px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .timeline-date strong {
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .timeline-date span,
+    .timeline-meta {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .timeline-thumbnail {
+      display: block;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #eef2f7;
+      color: var(--muted);
+      text-decoration: none;
+    }
+
+    .timeline-thumbnail img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+    }
+
+    .timeline-thumbnail.missing {
+      display: grid;
+      place-items: center;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .timeline-main {
+      min-width: 0;
+      display: grid;
+      gap: 8px;
+    }
+
+    .timeline-title {
+      color: var(--text);
+      text-decoration: none;
+      font-weight: 700;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    .timeline-title:hover {
+      text-decoration: underline;
+    }
+
+    .timeline-tags {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      border-radius: 999px;
+      padding: 0 8px;
+      background: var(--none-soft);
+      color: var(--none);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .pill.youtube {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+
+    .pill.twitch {
+      background: #ede9fe;
+      color: #6d28d9;
+    }
+
+    .pill.related {
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    .timeline-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 36px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0 12px;
+      color: var(--text);
+      text-decoration: none;
+      box-shadow: var(--shadow);
+      white-space: nowrap;
+      justify-self: start;
+    }
+
+    @media (max-width: 820px) {
+      .workspace,
+      .workspace.team-mode {
+        grid-template-columns: 1fr;
+      }
+
+      .timeline-list,
+      .player-table-wrap {
+        max-height: none;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .shell {
+        width: min(100% - 20px, 1180px);
+      }
+
+      .topbar,
+      .toolbar,
+      .panel-head {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .actions {
+        justify-content: flex-start;
+      }
+
+      .summary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      h1 {
+        font-size: 24px;
+      }
+
+      .table-wrap {
+        max-height: none;
+      }
+
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="shell topbar">
+      <div>
+        <h1>Streaming Report</h1>
+        <div class="meta" id="metadata">Loading...</div>
+      </div>
+      <div class="actions">
+        <a class="button" href="data/streaming_by_team.json">Team JSON</a>
+        <a class="button" href="data/streaming_by_player.json">Player JSON</a>
+        <a class="button" href="data/streaming_timeline_by_player.json">Timeline JSON</a>
+        <a class="button" id="run-link" href="#" hidden>Workflow run</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="shell">
+      <section class="summary" aria-label="Summary">
+        <div class="stat"><span>Teams</span><strong id="team-count">-</strong></div>
+        <div class="stat"><span>Players</span><strong id="player-count">-</strong></div>
+        <div class="stat"><span>Streams</span><strong id="stream-count">-</strong></div>
+        <div class="stat"><span>Total hours</span><strong id="total-hours">-</strong></div>
+        <div class="stat"><span>SV hours</span><strong id="sv-hours">-</strong></div>
+      </section>
+
+      <div class="toolbar">
+        <div class="tabs" role="tablist" aria-label="Report views">
+          <button class="tab active" type="button" data-view="team">By team</button>
+          <button class="tab" type="button" data-view="player">By player</button>
+        </div>
+        <input class="search" id="search" type="search" placeholder="Filter by team, player, or status" autocomplete="off">
+      </div>
+
+      <div class="workspace team-mode" id="workspace">
+        <section class="panel">
+          <div class="panel-head">
+            <h2 id="table-title">By team</h2>
+            <div class="panel-actions">
+              <label class="toggle" id="player-details-control" hidden>
+                <input id="show-player-details" type="checkbox">
+                Show details
+              </label>
+              <div class="count" id="row-count">0 rows</div>
+            </div>
+          </div>
+          <div class="table-wrap" id="table-wrap">
+            <table>
+              <thead id="table-head"></thead>
+              <tbody id="table-body"></tbody>
+            </table>
+            <div class="empty" id="empty" hidden>No matching rows.</div>
+          </div>
+        </section>
+
+        <section class="panel timeline-panel" id="timeline-panel">
+          <div class="panel-head">
+            <div>
+              <h2 id="timeline-title">Player timeline</h2>
+              <div class="timeline-summary" id="timeline-summary"></div>
+            </div>
+            <div class="count" id="timeline-count">0 streams</div>
+          </div>
+          <div class="timeline-list" id="timeline-list"></div>
+          <div class="empty" id="timeline-empty" hidden>No stream archives collected.</div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const numberFields = new Set(["stream_count", "total_hours", "shadowverse_hours", "youtube_hours", "twitch_hours"]);
+    const statusFields = new Set(["youtube_channel_status", "twitch_channel_status"]);
+    const state = {
+      view: "team",
+      query: "",
+      sortKey: "total_hours",
+      sortDirection: "desc",
+      team: [],
+      player: [],
+      timelines: [],
+      timelineByPlayer: new Map(),
+      selectedPlayerKey: "",
+      showPlayerDetails: false,
+      metadata: {}
+    };
+
+    const columns = {
+      team: [
+        ["team", "Team"],
+        ["stream_count", "Streams"],
+        ["total_hours", "Total hours"],
+        ["shadowverse_hours", "SV hours"],
+        ["youtube_hours", "YouTube hours"],
+        ["twitch_hours", "Twitch hours"]
+      ],
+      playerCompact: [
+        ["team", "Team"],
+        ["player_name", "Player"],
+        ["timeline", "Timeline"],
+        ["stream_count", "Streams"],
+        ["total_hours", "Total hours"],
+        ["shadowverse_hours", "SV hours"]
+      ],
+      playerDetail: [
+        ["team", "Team"],
+        ["player_name", "Player"],
+        ["timeline", "Timeline"],
+        ["stream_count", "Streams"],
+        ["total_hours", "Total hours"],
+        ["shadowverse_hours", "SV hours"],
+        ["youtube_hours", "YouTube hours"],
+        ["twitch_hours", "Twitch hours"],
+        ["youtube_channel_status", "YouTube"],
+        ["twitch_channel_status", "Twitch"],
+        ["youtube_skipped_reason", "YouTube reason"],
+        ["twitch_skipped_reason", "Twitch reason"]
+      ]
+    };
+
+    function activeColumns() {
+      if (state.view === "player") {
+        return state.showPlayerDetails ? columns.playerDetail : columns.playerCompact;
+      }
+      return columns[state.view];
+    }
+
+    function formatNumber(value) {
+      return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(value ?? 0);
+    }
+
+    function formatDate(value) {
+      if (!value) return "Unknown";
+      return new Intl.DateTimeFormat("ja-JP", {
+        dateStyle: "medium",
+        timeStyle: "short"
+      }).format(new Date(value));
+    }
+
+    function statusLabel(value) {
+      return String(value || "unknown").replaceAll("_", " ");
+    }
+
+    function playerKey(row) {
+      return JSON.stringify([row.team, row.player_name]);
+    }
+
+    function initials(value) {
+      const name = String(value || "?").trim();
+      return Array.from(name || "?").slice(0, 2).join("").toUpperCase();
+    }
+
+    function avatarHtml(name, imageUrl) {
+      const fallback = escapeHtml(initials(name));
+      const image = imageUrl
+        ? `<img src="${escapeHtml(imageUrl)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">`
+        : "";
+      return `<span class="avatar" aria-hidden="true">${image}<span>${fallback}</span></span>`;
+    }
+
+    function playerLabelHtml(row, className = "") {
+      const classes = className ? `player-label ${className}` : "player-label";
+      return `
+        <span class="${classes}">
+          ${avatarHtml(row.player_name, row.player_icon_url)}
+          <span>${escapeHtml(row.player_name || "Unknown player")}</span>
+        </span>
+      `;
+    }
+
+    function streamThumbnailHtml(stream) {
+      if (!stream.thumbnail_url) {
+        return `<div class="timeline-thumbnail missing" aria-hidden="true">No thumbnail</div>`;
+      }
+      return `
+        <a class="timeline-thumbnail" href="${escapeHtml(stream.url)}" target="_blank" rel="noreferrer" aria-label="${escapeHtml(stream.title || "Open archive")}">
+          <img src="${escapeHtml(stream.thumbnail_url)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.closest('.timeline-thumbnail').classList.add('missing'); this.closest('.timeline-thumbnail').textContent='No thumbnail';">
+        </a>
+      `;
+    }
+
+    function formatDuration(totalSeconds) {
+      const seconds = Math.max(Number(totalSeconds || 0), 0);
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      if (hours > 0) {
+        return `${hours}h ${String(minutes).padStart(2, "0")}m`;
+      }
+      return `${minutes}m`;
+    }
+
+    function platformLabel(value) {
+      if (value === "youtube") return "YouTube";
+      if (value === "twitch") return "Twitch";
+      return statusLabel(value);
+    }
+
+    function rowMatches(row) {
+      if (!state.query) return true;
+      const haystack = Object.values(row).join(" ").toLowerCase();
+      return haystack.includes(state.query);
+    }
+
+    function compareRows(left, right) {
+      const key = state.sortKey;
+      const a = left[key];
+      const b = right[key];
+      let result;
+      if (numberFields.has(key)) {
+        result = Number(a || 0) - Number(b || 0);
+      } else {
+        result = String(a || "").localeCompare(String(b || ""), "ja");
+      }
+      return state.sortDirection === "asc" ? result : -result;
+    }
+
+    function cellHtml(row, key) {
+      const value = row[key] ?? "";
+      if (key === "timeline") {
+        const keyValue = playerKey(row);
+        const active = keyValue === state.selectedPlayerKey ? " active" : "";
+        return `<td class="action"><button class="detail-button${active}" type="button" data-player-key="${escapeHtml(keyValue)}">View</button></td>`;
+      }
+      if (key === "player_name") {
+        return `<td>${playerLabelHtml(row)}</td>`;
+      }
+      if (numberFields.has(key)) {
+        return `<td class="num">${formatNumber(value)}</td>`;
+      }
+      if (statusFields.has(key)) {
+        const className = String(value || "unknown").replaceAll("_", "-");
+        return `<td><span class="status ${String(value || "unknown")}">${statusLabel(value)}</span></td>`;
+      }
+      return `<td>${escapeHtml(value)}</td>`;
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function render() {
+      let activeTableColumns = activeColumns();
+      if (!activeTableColumns.some(([key]) => key === state.sortKey)) {
+        state.sortKey = "total_hours";
+        state.sortDirection = "desc";
+        activeTableColumns = activeColumns();
+      }
+      const rows = state[state.view].filter(rowMatches).sort(compareRows);
+      const workspace = document.getElementById("workspace");
+      const tableWrap = document.getElementById("table-wrap");
+      const playerDetailsControl = document.getElementById("player-details-control");
+      workspace.classList.toggle("player-mode", state.view === "player");
+      workspace.classList.toggle("team-mode", state.view !== "player");
+      tableWrap.classList.toggle("player-table-wrap", state.view === "player");
+      tableWrap.classList.toggle("player-detail-table-wrap", state.view === "player" && state.showPlayerDetails);
+      playerDetailsControl.hidden = state.view !== "player";
+      if (state.view === "player") {
+        const visibleKeys = new Set(rows.map(playerKey));
+        if (!visibleKeys.has(state.selectedPlayerKey)) {
+          state.selectedPlayerKey = rows[0] ? playerKey(rows[0]) : "";
+        }
+      }
+      document.getElementById("table-title").textContent = state.view === "team" ? "By team" : "By player";
+      document.getElementById("row-count").textContent = `${rows.length} rows`;
+      document.getElementById("empty").hidden = rows.length > 0;
+
+      document.getElementById("table-head").innerHTML = `<tr>${activeTableColumns.map(([key, label]) => {
+        const sortClass = key === state.sortKey ? ` sorted-${state.sortDirection}` : "";
+        return `<th class="sortable${sortClass}" data-key="${key}" scope="col">${label}</th>`;
+      }).join("")}</tr>`;
+
+      document.getElementById("table-body").innerHTML = rows.map(row => (
+        `<tr>${activeTableColumns.map(([key]) => cellHtml(row, key)).join("")}</tr>`
+      )).join("");
+
+      document.querySelectorAll("th.sortable").forEach(th => {
+        th.addEventListener("click", () => {
+          const key = th.dataset.key;
+          if (state.sortKey === key) {
+            state.sortDirection = state.sortDirection === "asc" ? "desc" : "asc";
+          } else {
+            state.sortKey = key;
+            state.sortDirection = numberFields.has(key) ? "desc" : "asc";
+          }
+          render();
+        });
+      });
+
+      document.querySelectorAll(".detail-button").forEach(button => {
+        button.addEventListener("click", () => {
+          state.selectedPlayerKey = button.dataset.playerKey || "";
+          render();
+        });
+      });
+
+      renderTimeline();
+    }
+
+    function renderTimeline() {
+      if (state.view !== "player") {
+        return;
+      }
+
+      const timeline = state.timelineByPlayer.get(state.selectedPlayerKey);
+      const title = document.getElementById("timeline-title");
+      const summary = document.getElementById("timeline-summary");
+      const count = document.getElementById("timeline-count");
+      const list = document.getElementById("timeline-list");
+      const empty = document.getElementById("timeline-empty");
+
+      if (!timeline) {
+        title.textContent = "Player timeline";
+        summary.textContent = "";
+        count.textContent = "0 streams";
+        list.innerHTML = "";
+        empty.hidden = false;
+        return;
+      }
+
+      const streams = timeline.streams || [];
+      title.innerHTML = `${playerLabelHtml(timeline, "heading")} <span>timeline</span>`;
+      summary.textContent = timeline.team;
+      count.textContent = `${streams.length} streams`;
+      empty.hidden = streams.length > 0;
+      list.innerHTML = streams.map(stream => {
+        const timestamp = stream.occurred_at || stream.started_at || stream.published_at || "";
+        const timestampKind = stream.started_at ? "Started" : stream.published_at ? "Published" : "Date unknown";
+        const related = Number(stream.is_shadowverse_related || 0) === 1
+          ? `<span class="pill related">Shadowverse</span>`
+          : "";
+        return `
+          <article class="timeline-item">
+            <div class="timeline-date">
+              <strong>${escapeHtml(formatDate(timestamp))}</strong>
+              <span>${escapeHtml(timestampKind)}</span>
+            </div>
+            ${streamThumbnailHtml(stream)}
+            <div class="timeline-main">
+              <a class="timeline-title" href="${escapeHtml(stream.url)}" target="_blank" rel="noreferrer">${escapeHtml(stream.title || "Untitled stream")}</a>
+              <div class="timeline-tags">
+                <span class="pill ${escapeHtml(stream.platform || "")}">${escapeHtml(platformLabel(stream.platform))}</span>
+                <span class="pill">${escapeHtml(formatDuration(stream.duration_sec))}</span>
+                ${related}
+              </div>
+            </div>
+            <a class="timeline-link" href="${escapeHtml(stream.url)}" target="_blank" rel="noreferrer">Open archive</a>
+          </article>
+        `;
+      }).join("");
+    }
+
+    function renderMetadata() {
+      const meta = state.metadata;
+      document.getElementById("metadata").textContent = `Updated ${formatDate(meta.generated_at)}${meta.run_number ? ` · Run #${meta.run_number}` : ""}`;
+      document.getElementById("team-count").textContent = formatNumber(meta.team_count);
+      document.getElementById("player-count").textContent = formatNumber(meta.player_count);
+      document.getElementById("stream-count").textContent = formatNumber(meta.total_streams);
+      document.getElementById("total-hours").textContent = formatNumber(meta.total_hours);
+      document.getElementById("sv-hours").textContent = formatNumber(meta.shadowverse_hours);
+      if (meta.run_url) {
+        const link = document.getElementById("run-link");
+        link.href = meta.run_url;
+        link.hidden = false;
+      }
+    }
+
+    async function loadData() {
+      const [team, player, timelines, metadata] = await Promise.all([
+        fetch("data/streaming_by_team.json").then(response => response.json()),
+        fetch("data/streaming_by_player.json").then(response => response.json()),
+        fetch("data/streaming_timeline_by_player.json").then(response => response.json()),
+        fetch("data/metadata.json").then(response => response.json())
+      ]);
+      state.team = team;
+      state.player = player;
+      state.timelines = timelines;
+      state.timelineByPlayer = new Map(timelines.map(timeline => [playerKey(timeline), timeline]));
+      state.metadata = metadata;
+      renderMetadata();
+      render();
+    }
+
+    document.querySelectorAll(".tab").forEach(tab => {
+      tab.addEventListener("click", () => {
+        document.querySelectorAll(".tab").forEach(item => item.classList.remove("active"));
+        tab.classList.add("active");
+        state.view = tab.dataset.view;
+        state.sortKey = "total_hours";
+        state.sortDirection = "desc";
+        render();
+      });
+    });
+
+    document.getElementById("search").addEventListener("input", event => {
+      state.query = event.target.value.trim().toLowerCase();
+      render();
+    });
+
+    document.getElementById("show-player-details").addEventListener("change", event => {
+      state.showPlayerDetails = event.target.checked;
+      render();
+    });
+
+    loadData().catch(error => {
+      document.getElementById("metadata").textContent = "Failed to load report data.";
+      document.getElementById("empty").hidden = false;
+      document.getElementById("empty").textContent = error.message;
+    });
+  </script>
+</body>
+</html>
