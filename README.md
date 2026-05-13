@@ -85,6 +85,110 @@ python3 scripts/import_deck_links.py
 Links whose target archive has not been collected yet are skipped, so the
 dashboard can still be built when deck link data is empty or partially matched.
 
+## Save Deck Links from Dashboard
+
+The dashboard can draft deck edits in the browser and send the updated CSV
+payloads to a configured Save API:
+
+- `data/decks.csv`
+- `data/stream_session_decks.csv`
+
+The browser never asks users to enter a GitHub token. The Save API owns the
+GitHub write credential as a server-side secret and validates the target
+repository and branch before writing repository data.
+
+To enable saving, set this environment variable when building the dashboard:
+
+```bash
+SAVE_API_ENDPOINT=https://example.com/save-deck-links
+```
+
+The dashboard sends `POST` requests to that endpoint with this JSON shape:
+
+```json
+{
+  "repository": "owner/repo",
+  "branch": "branch-name",
+  "decks_csv": "deck_key,deck_name,class_name,archetype,deck_url,deck_code,notes\n",
+  "stream_session_decks_csv": "platform,external_stream_id,deck_key,confidence,source_note,display_order\n",
+  "changes": {
+    "added_decks": 0,
+    "added_links": 0,
+    "updated_links": 0,
+    "removed_links": 0,
+    "total": 0
+  }
+}
+```
+
+The Save API should keep these settings server-side:
+
+- `GITHUB_TOKEN`: GitHub write credential with repository contents write access
+- `ALLOWED_REPOSITORY`: repository allowed to be updated
+- `ALLOWED_BRANCHES`: comma-separated list of branches allowed to be updated
+- `ALLOWED_ORIGINS`: comma-separated list of browser origins allowed by CORS
+
+The API should validate the request body, enforce the repository and branch
+allowlist, verify both CSV schemas, and update both files in the repository.
+On success, return JSON like:
+
+```json
+{
+  "ok": true,
+  "commit_url": "https://github.com/owner/repo/commit/..."
+}
+```
+
+This repository includes a Cloudflare Workers implementation:
+
+- `workers/save-deck-links/worker.mjs`
+- `workers/save-deck-links/wrangler.toml`
+
+To deploy it:
+
+```bash
+cd workers/save-deck-links
+npx wrangler secret put GITHUB_TOKEN
+npx wrangler deploy
+```
+
+For initial branch testing, keep `ALLOWED_BRANCHES` limited to the preview
+branch, for example:
+
+```toml
+ALLOWED_BRANCHES = "codex/issue-11-save-deck-edits"
+```
+
+After deploying the Worker, add the Worker URL as a GitHub Actions repository
+variable:
+
+```text
+SAVE_API_ENDPOINT=https://ps-analyzer-save-deck-links.<account>.workers.dev/
+```
+
+The `Collect streaming data` workflow passes this variable into the dashboard
+build. If the variable is empty, the dashboard still allows draft edits but
+disables saving.
+
+For access control, put the Worker behind Cloudflare Access or an equivalent
+trusted-user gate. CORS allowlists reduce accidental browser use from other
+origins, but they are not authentication by themselves.
+
+To save from the published dashboard:
+
+1. Open the branch dashboard preview.
+2. Edit deck links with `Edit decks`.
+3. Click `Save changes`.
+4. Confirm the save dialog and click `Save changes`.
+5. Confirm that the Save API created a commit on the target branch.
+6. Run `Collect streaming data` for the same branch to rebuild and publish the
+   updated dashboard.
+7. Reload the dashboard preview and confirm the saved deck links are still
+   visible in the timeline and `By deck` view.
+
+If `SAVE_API_ENDPOINT` is not configured, the dashboard still allows draft edits
+but disables saving.
+
 ## Build Reports
 
 ```bash

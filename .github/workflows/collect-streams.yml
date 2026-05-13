@@ -76,6 +76,8 @@ jobs:
         run: python3 scripts/build_streaming_report.py --summary
 
       - name: Build dashboard
+        env:
+          SAVE_API_ENDPOINT: ${{ vars.SAVE_API_ENDPOINT }}
         run: python3 scripts/build_streaming_dashboard.py
 
       - name: Write dashboard URL summary
