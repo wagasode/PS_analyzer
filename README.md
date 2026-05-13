@@ -87,24 +87,68 @@ dashboard can still be built when deck link data is empty or partially matched.
 
 ## Save Deck Links from Dashboard
 
-The dashboard can draft deck edits in the browser and save them back to:
+The dashboard can draft deck edits in the browser and send the updated CSV
+payloads to a configured Save API:
 
 - `data/decks.csv`
 - `data/stream_session_decks.csv`
+
+The browser never asks users to enter a GitHub token. The Save API owns the
+GitHub write credential as a server-side secret and validates the target
+repository and branch before writing repository data.
+
+To enable saving, set this environment variable when building the dashboard:
+
+```bash
+SAVE_API_ENDPOINT=https://example.com/save-deck-links
+```
+
+The dashboard sends `POST` requests to that endpoint with this JSON shape:
+
+```json
+{
+  "repository": "owner/repo",
+  "branch": "branch-name",
+  "decks_csv": "deck_key,deck_name,class_name,archetype,deck_url,deck_code,notes\n",
+  "stream_session_decks_csv": "platform,external_stream_id,deck_key,confidence,source_note,display_order\n",
+  "changes": {
+    "added_decks": 0,
+    "added_links": 0,
+    "updated_links": 0,
+    "removed_links": 0,
+    "total": 0
+  }
+}
+```
+
+The Save API should keep these settings server-side:
+
+- `GITHUB_TOKEN`: GitHub write credential with repository contents write access
+- `ALLOWED_REPOSITORY`: repository allowed to be updated
+- `ALLOWED_BRANCHES`: comma-separated list of branches allowed to be updated
+
+The API should validate the request body, enforce the repository and branch
+allowlist, verify both CSV schemas, and update both files in the repository.
+On success, return JSON like:
+
+```json
+{
+  "ok": true,
+  "commit_url": "https://github.com/owner/repo/commit/..."
+}
+```
 
 To save from the published dashboard:
 
 1. Open the branch dashboard preview.
 2. Edit deck links with `Edit decks`.
 3. Click `Save changes`.
-4. Enter a GitHub token with repository contents write access.
-5. Confirm the repository and branch, then click `Save to GitHub`.
-6. Run `Collect streaming data` for the same branch to rebuild and publish the
+4. Confirm the save dialog and click `Save changes`.
+5. Run `Collect streaming data` for the same branch to rebuild and publish the
    updated dashboard.
 
-For a fine-grained GitHub token, grant `Contents: Read and write` access to this
-repository. The token is used only for the save request in the browser and is
-not stored by the dashboard.
+If `SAVE_API_ENDPOINT` is not configured, the dashboard still allows draft edits
+but disables saving.
 
 ## Build Reports
 
