@@ -1252,16 +1252,16 @@ HTML = """<!doctype html>
       </div>
 
       <section class="change-bar" id="change-bar" hidden>
-        <div id="change-summary">No unsaved changes.</div>
+        <div id="change-summary">未保存の変更はありません。</div>
         <div class="change-actions">
-          <button class="primary-button open-save-modal-button" id="open-save-modal" type="button">Save changes</button>
-          <button class="secondary-button" id="toggle-draft-panel" type="button">Review changes</button>
-          <button class="danger-button" id="clear-draft" type="button">Clear draft</button>
+          <button class="primary-button open-save-modal-button" id="open-save-modal" type="button">変更を保存</button>
+          <button class="secondary-button" id="toggle-draft-panel" type="button">変更内容を確認</button>
+          <button class="danger-button" id="clear-draft" type="button">下書きを破棄</button>
         </div>
       </section>
 
       <section class="draft-panel" id="draft-panel" hidden>
-        <h3>Pending changes</h3>
+        <h3>未保存の変更</h3>
         <div class="draft-list" id="draft-list"></div>
       </section>
 
@@ -1305,20 +1305,20 @@ HTML = """<!doctype html>
     <section class="modal" role="dialog" aria-modal="true" aria-labelledby="save-modal-title">
       <div class="modal-head">
         <div>
-          <h2 id="save-modal-title">Save deck edits</h2>
+          <h2 id="save-modal-title">デッキ編集を保存</h2>
           <div class="timeline-summary" id="save-modal-summary"></div>
         </div>
         <div class="modal-actions">
-          <button class="secondary-button" id="close-save-modal" type="button">Close</button>
+          <button class="secondary-button" id="close-save-modal" type="button">閉じる</button>
         </div>
       </div>
       <div class="modal-body">
         <section class="editor-section">
-          <h3>Save target</h3>
+          <h3>保存先</h3>
           <div class="timeline-summary" id="save-target-summary"></div>
           <div class="save-status" id="save-status"></div>
           <div class="modal-actions">
-            <button class="primary-button" id="save-to-api" type="button">Save changes</button>
+            <button class="primary-button" id="save-to-api" type="button">変更を保存</button>
           </div>
         </section>
       </div>
@@ -1329,57 +1329,57 @@ HTML = """<!doctype html>
     <section class="modal" role="dialog" aria-modal="true" aria-labelledby="deck-editor-title">
       <div class="modal-head">
         <div>
-          <h2 id="deck-editor-title">Edit archive decks</h2>
+          <h2 id="deck-editor-title">アーカイブのデッキを編集</h2>
           <div class="timeline-summary" id="deck-editor-summary"></div>
         </div>
         <div class="modal-actions">
-          <button class="primary-button open-save-modal-button" type="button">Save changes</button>
-          <button class="secondary-button" id="close-deck-editor" type="button">Close</button>
+          <button class="primary-button open-save-modal-button" type="button">変更を保存</button>
+          <button class="secondary-button" id="close-deck-editor" type="button">閉じる</button>
         </div>
       </div>
       <div class="modal-body">
         <section class="editor-section">
-          <h3>Linked decks</h3>
+          <h3>リンク済みデッキ</h3>
           <div class="linked-decks" id="linked-decks"></div>
         </section>
 
         <section class="editor-section">
-          <h3>Add existing deck</h3>
-          <input class="editor-input" id="deck-search-input" type="search" placeholder="Search decks" autocomplete="off">
+          <h3>既存デッキを追加</h3>
+          <input class="editor-input" id="deck-search-input" type="search" placeholder="デッキを検索" autocomplete="off">
           <div class="search-results" id="deck-search-results"></div>
         </section>
 
         <section class="editor-section">
-          <h3>Create new deck</h3>
-          <label class="field">Deck name
+          <h3>新規デッキを作成</h3>
+          <label class="field">デッキ名
             <input id="new-deck-name" type="text" placeholder="連携R" autocomplete="off">
           </label>
           <div class="timeline-summary" id="new-deck-class-hint"></div>
           <div class="modal-actions">
-            <button class="secondary-button" id="toggle-new-deck-advanced" type="button" aria-expanded="false">Advanced input</button>
+            <button class="secondary-button" id="toggle-new-deck-advanced" type="button" aria-expanded="false">詳細入力</button>
           </div>
           <div class="form-grid">
-            <label class="field advanced-deck-field" hidden>Deck key
+            <label class="field advanced-deck-field" hidden>デッキキー
               <input id="new-deck-key" type="text" autocomplete="off">
             </label>
-            <label class="field advanced-deck-field" hidden>Class
+            <label class="field advanced-deck-field" hidden>クラス
               <input id="new-deck-class" type="text" autocomplete="off">
             </label>
-            <label class="field advanced-deck-field" hidden>Archetype
+            <label class="field advanced-deck-field" hidden>アーキタイプ
               <input id="new-deck-archetype" type="text" autocomplete="off">
             </label>
-            <label class="field advanced-deck-field" hidden>Deck URL
+            <label class="field advanced-deck-field" hidden>デッキURL
               <input id="new-deck-url" type="url" autocomplete="off">
             </label>
-            <label class="field advanced-deck-field" hidden>Deck code
+            <label class="field advanced-deck-field" hidden>デッキコード
               <input id="new-deck-code" type="text" autocomplete="off">
             </label>
-            <label class="field full advanced-deck-field" hidden>Notes
+            <label class="field full advanced-deck-field" hidden>メモ
               <textarea id="new-deck-notes"></textarea>
             </label>
           </div>
           <div class="modal-actions">
-            <button class="primary-button" id="create-deck" type="button">Create and link</button>
+            <button class="primary-button" id="create-deck" type="button">作成してリンク</button>
           </div>
         </section>
       </div>
@@ -1507,6 +1507,16 @@ HTML = """<!doctype html>
     function statusLabel(value) {
       const key = String(value || "unknown");
       return statusLabels[key] || key.replaceAll("_", " ");
+    }
+
+    function confidenceLabel(value) {
+      const labels = {
+        "": "未設定",
+        low: "低",
+        medium: "中",
+        high: "高"
+      };
+      return labels[value] || value;
     }
 
     function playerKey(row) {
@@ -1784,7 +1794,7 @@ HTML = """<!doctype html>
     function changeDescription(prefix, link) {
       const deck = state.decksByKey.get(link.deck_key) || state.originalDecksByKey.get(link.deck_key) || { deck_name: link.deck_key };
       const stream = state.streamsByKey.get(link.stream_key) || {};
-      return `${prefix}: ${deckLabel(deck)} -> ${describeStream(stream) || "Unknown archive"}`;
+      return `${prefix}: ${deckLabel(deck)} -> ${describeStream(stream) || "不明なアーカイブ"}`;
     }
 
     function renderDraftState() {
@@ -1794,8 +1804,8 @@ HTML = """<!doctype html>
       const panel = document.getElementById("draft-panel");
       const list = document.getElementById("draft-list");
       document.getElementById("change-summary").textContent = count === 0
-        ? "No unsaved changes."
-        : `${count} unsaved draft change${count === 1 ? "" : "s"}. Changes are not persisted yet.`;
+        ? "未保存の変更はありません。"
+        : `${count}件の未保存の変更があります。まだ保存されていません。`;
       bar.hidden = count === 0;
       panel.hidden = count === 0 || !state.showDraftPanel;
       if (count === 0) {
@@ -1804,10 +1814,10 @@ HTML = """<!doctype html>
       }
 
       const items = [
-        ...changes.addedDecks.map(deck => `New deck: ${deckLabel(deck)}`),
-        ...changes.addedLinks.map(link => changeDescription("Linked", link)),
-        ...changes.removedLinks.map(link => changeDescription("Unlinked", link)),
-        ...changes.updatedLinks.map(link => changeDescription("Updated link", link))
+        ...changes.addedDecks.map(deck => `新規デッキ: ${deckLabel(deck)}`),
+        ...changes.addedLinks.map(link => changeDescription("リンク追加", link)),
+        ...changes.removedLinks.map(link => changeDescription("リンク解除", link)),
+        ...changes.updatedLinks.map(link => changeDescription("リンク更新", link))
       ];
       list.innerHTML = items.map(item => `<div class="draft-item">${escapeHtml(item)}</div>`).join("");
     }
@@ -1858,24 +1868,24 @@ HTML = """<!doctype html>
       const errors = [];
       const deckKeys = new Set();
       state.decksByKey.forEach(deck => {
-        if (!deck.deck_key) errors.push("Deck key is required.");
-        if (!deck.deck_name) errors.push(`Deck name is required for ${deck.deck_key || "a deck"}.`);
-        if (deckKeys.has(deck.deck_key)) errors.push(`Duplicate deck key: ${deck.deck_key}`);
+        if (!deck.deck_key) errors.push("デッキキーが必要です。");
+        if (!deck.deck_name) errors.push(`${deck.deck_key || "デッキ"} のデッキ名が必要です。`);
+        if (deckKeys.has(deck.deck_key)) errors.push(`デッキキーが重複しています: ${deck.deck_key}`);
         deckKeys.add(deck.deck_key);
       });
 
       const linkKeys = new Set();
       state.linksByKey.forEach(link => {
         const stream = state.streamsByKey.get(link.stream_key);
-        if (!deckKeys.has(link.deck_key)) errors.push(`Linked deck is missing: ${link.deck_key}`);
+        if (!deckKeys.has(link.deck_key)) errors.push(`リンク先デッキが見つかりません: ${link.deck_key}`);
         if (!stream) {
-          errors.push(`Linked stream is missing for ${link.deck_key}.`);
+          errors.push(`${link.deck_key} のリンク先配信が見つかりません。`);
           return;
         }
-        if (!["youtube", "twitch"].includes(stream.platform)) errors.push(`Invalid platform: ${stream.platform || "empty"}`);
-        if (!stream.external_stream_id) errors.push(`External stream id is required for ${stream.title || "a stream"}.`);
+        if (!["youtube", "twitch"].includes(stream.platform)) errors.push(`不正なプラットフォームです: ${stream.platform || "空"}`);
+        if (!stream.external_stream_id) errors.push(`${stream.title || "配信"} の外部配信IDが必要です。`);
         const keyValue = `${stream.platform}/${stream.external_stream_id}/${link.deck_key}`;
-        if (linkKeys.has(keyValue)) errors.push(`Duplicate stream deck link: ${keyValue}`);
+        if (linkKeys.has(keyValue)) errors.push(`配信とデッキのリンクが重複しています: ${keyValue}`);
         linkKeys.add(keyValue);
       });
       return Array.from(new Set(errors));
@@ -1894,14 +1904,14 @@ HTML = """<!doctype html>
       const endpoint = normalizeText(state.metadata.save_api_endpoint || "");
       const repository = normalizeText(state.metadata.repository || "");
       const branch = normalizeText(state.metadata.branch_name || "");
-      document.getElementById("save-modal-summary").textContent = `${changeCount(changes)} pending changes will update data/decks.csv and data/stream_session_decks.csv.`;
+      document.getElementById("save-modal-summary").textContent = `${changeCount(changes)}件の変更で data/decks.csv と data/stream_session_decks.csv を更新します。`;
       document.getElementById("save-target-summary").textContent = repository && branch
         ? `${repository} / ${branch}`
-        : "Repository or branch metadata is missing.";
+        : "リポジトリまたはブランチ情報が見つかりません。";
       document.getElementById("save-to-api").disabled = !endpoint;
       setSaveStatus(endpoint
-        ? "Changes will be sent to the configured save API. No GitHub token is entered in this browser."
-        : "Save API endpoint is not configured for this dashboard.", endpoint ? "" : "error");
+        ? "設定済みの保存APIへ変更を送信します。このブラウザでGitHubトークンを入力する必要はありません。"
+        : "このダッシュボードには保存APIエンドポイントが設定されていません。", endpoint ? "" : "error");
       document.getElementById("save-modal").hidden = false;
     }
 
@@ -1921,7 +1931,7 @@ HTML = """<!doctype html>
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
-        const message = payload.message || payload.error || `Save API request failed with status ${response.status}.`;
+        const message = payload.message || payload.error || `保存APIリクエストに失敗しました。ステータス: ${response.status}`;
         throw new Error(message);
       }
       return payload;
@@ -1957,10 +1967,10 @@ HTML = """<!doctype html>
       const repo = normalizeText(state.metadata.repository || "");
       const branch = normalizeText(state.metadata.branch_name || "");
       const errors = validateSavePayload();
-      if (!repo || !repo.includes("/")) errors.push("Repository must be owner/repo.");
-      if (!branch) errors.push("Branch is required.");
-      if (!endpoint) errors.push("Save API endpoint is not configured.");
-      if (changeCount() === 0) errors.push("There are no draft changes to save.");
+      if (!repo || !repo.includes("/")) errors.push("リポジトリは owner/repo 形式である必要があります。");
+      if (!branch) errors.push("ブランチが必要です。");
+      if (!endpoint) errors.push("このダッシュボードには保存APIエンドポイントが設定されていません。");
+      if (changeCount() === 0) errors.push("保存する下書き変更がありません。");
       if (errors.length > 0) {
         setSaveStatus(errors.join(" "), "error");
         return;
@@ -1968,7 +1978,7 @@ HTML = """<!doctype html>
 
       state.saving = true;
       document.getElementById("save-to-api").disabled = true;
-      setSaveStatus("Saving changes...", "");
+      setSaveStatus("保存中...", "");
       try {
         const result = await saveApiJson(endpoint, {
           method: "POST",
@@ -1976,10 +1986,10 @@ HTML = """<!doctype html>
           body: JSON.stringify(buildSavePayload())
         });
         markDraftSaved();
-        const detail = result.commit_url ? ` Commit: ${result.commit_url}` : "";
-        setSaveStatus(`Saved. Run Collect streaming data for this branch to rebuild the dashboard.${detail}`, "ok");
+        const detail = result.commit_url ? ` コミット: ${result.commit_url}` : "";
+        setSaveStatus(`保存しました。このブランチで Collect streaming data を実行してダッシュボードを再生成してください。${detail}`, "ok");
       } catch (error) {
-        setSaveStatus(`Save failed: ${error.message}`, "error");
+        setSaveStatus(`保存に失敗しました: ${error.message}`, "error");
       } finally {
         state.saving = false;
         document.getElementById("save-to-api").disabled = !normalizeText(state.metadata.save_api_endpoint || "");
@@ -2272,7 +2282,7 @@ HTML = """<!doctype html>
         return;
       }
 
-      document.getElementById("deck-editor-title").textContent = "Edit archive decks";
+      document.getElementById("deck-editor-title").textContent = "アーカイブのデッキを編集";
       document.getElementById("deck-editor-summary").textContent = describeStream(stream);
       renderLinkedDecks();
 
@@ -2294,22 +2304,22 @@ HTML = """<!doctype html>
       const inferredClass = inferClassName(state.newDeckDraft.deck_name);
       const className = state.newDeckDraft.class_name || inferredClass;
       document.getElementById("new-deck-class-hint").textContent = state.newDeckDraft.deck_name
-        ? `Class guess: ${className || "unknown"}`
-        : "Class guess appears after entering a deck name.";
+        ? `推定クラス: ${className || "不明"}`
+        : "デッキ名を入力すると推定クラスが表示されます。";
       document.querySelectorAll(".advanced-deck-field").forEach(field => {
         field.hidden = !state.showNewDeckAdvanced;
       });
       document.getElementById("toggle-new-deck-advanced").setAttribute("aria-expanded", String(state.showNewDeckAdvanced));
       document.getElementById("toggle-new-deck-advanced").textContent = state.showNewDeckAdvanced
-        ? "Hide advanced input"
-        : "Advanced input";
+        ? "詳細入力を閉じる"
+        : "詳細入力";
     }
 
     function renderLinkedDecks() {
       const container = document.getElementById("linked-decks");
       const links = linksForStream(state.editingStreamKey);
       if (links.length === 0) {
-        container.innerHTML = `<div class="empty">No linked decks.</div>`;
+        container.innerHTML = `<div class="empty">リンク済みデッキはありません。</div>`;
         return;
       }
 
@@ -2319,15 +2329,15 @@ HTML = """<!doctype html>
         const expanded = state.expandedLinkedDeckKeys.has(keyValue);
         const detailForm = expanded ? `
           <div class="form-grid">
-            <label class="field">Confidence
+            <label class="field">信頼度
               <select class="link-field" data-link-key="${escapeHtml(keyValue)}" data-field="confidence">
-                ${["", "low", "medium", "high"].map(value => `<option value="${escapeHtml(value)}"${value === link.confidence ? " selected" : ""}>${escapeHtml(value || "unset")}</option>`).join("")}
+                ${["", "low", "medium", "high"].map(value => `<option value="${escapeHtml(value)}"${value === link.confidence ? " selected" : ""}>${escapeHtml(confidenceLabel(value))}</option>`).join("")}
               </select>
             </label>
-            <label class="field">Display order
+            <label class="field">表示順
               <input class="link-field" data-link-key="${escapeHtml(keyValue)}" data-field="display_order" type="number" min="0" step="1" value="${escapeHtml(link.display_order)}">
             </label>
-            <label class="field full">Note
+            <label class="field full">メモ
               <textarea class="link-field" data-link-key="${escapeHtml(keyValue)}" data-field="source_note">${escapeHtml(link.source_note)}</textarea>
             </label>
           </div>
@@ -2340,8 +2350,8 @@ HTML = """<!doctype html>
                 <span>${escapeHtml([deck.class_name, deck.archetype].filter(Boolean).join(" / ") || link.deck_key)}</span>
               </div>
               <div class="linked-deck-actions">
-                <button class="secondary-button toggle-link-details" type="button" data-link-key="${escapeHtml(keyValue)}">${expanded ? "Hide details" : "Details"}</button>
-                <button class="danger-button unlink-deck" type="button" data-link-key="${escapeHtml(keyValue)}">Unlink</button>
+                <button class="secondary-button toggle-link-details" type="button" data-link-key="${escapeHtml(keyValue)}">${expanded ? "詳細を閉じる" : "詳細"}</button>
+                <button class="danger-button unlink-deck" type="button" data-link-key="${escapeHtml(keyValue)}">リンク解除</button>
               </div>
             </div>
             ${detailForm}
@@ -2391,7 +2401,7 @@ HTML = """<!doctype html>
         .slice(0, 8);
 
       if (decks.length === 0) {
-        container.innerHTML = `<div class="empty">No existing decks found.</div>`;
+        container.innerHTML = `<div class="empty">既存デッキが見つかりません。</div>`;
         return;
       }
 
@@ -2403,7 +2413,7 @@ HTML = """<!doctype html>
               <strong>${escapeHtml(deck.deck_name)}</strong>
               <span>${escapeHtml([deck.class_name, deck.archetype].filter(Boolean).join(" / ") || deck.deck_key)}</span>
             </div>
-            <button class="secondary-button add-existing-deck" type="button" data-deck-key="${escapeHtml(deck.deck_key)}"${alreadyLinked ? " disabled" : ""}>${alreadyLinked ? "Linked" : "Add"}</button>
+            <button class="secondary-button add-existing-deck" type="button" data-deck-key="${escapeHtml(deck.deck_key)}"${alreadyLinked ? " disabled" : ""}>${alreadyLinked ? "リンク済み" : "追加"}</button>
           </div>
         `;
       }).join("");
@@ -2461,11 +2471,11 @@ HTML = """<!doctype html>
         draft.deck_key = generatedDeckKey(draft.deck_name);
       }
       if (!draft.deck_key || !draft.deck_name) {
-        window.alert("Deck name is required.");
+        window.alert("デッキ名が必要です。");
         return;
       }
       if (state.decksByKey.has(draft.deck_key)) {
-        window.alert("Deck key already exists.");
+        window.alert("同じデッキキーが既に存在します。");
         return;
       }
       state.decksByKey.set(draft.deck_key, draft);
