@@ -1,0 +1,16 @@
+{
+  "generated_at": "2026-05-14T06:18:33Z",
+  "workflow": "Collect streaming data",
+  "run_number": "34",
+  "run_id": "25845206998",
+  "run_url": "https://github.com/wagasode/PS_analyzer/actions/runs/25845206998",
+  "commit_sha": "f398cfc0470d6e231c3ac0ad85bdb328820ea5cc",
+  "repository": "wagasode/PS_analyzer",
+  "branch_name": "feature/issue-23-video-assisted-deck-editing",
+  "save_api_endpoint": "https://ps-analyzer-save-deck-links.seeking-origin.workers.dev/",
+  "player_count": 25,
+  "team_count": 8,
+  "total_streams": 934,
+  "total_hours": 3922.91,
+  "shadowverse_hours": 3841.27
+}
