@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import csv
-from difflib import SequenceMatcher
 import json
 import os
 import re
@@ -158,13 +157,6 @@ def stream_timestamp(stream: dict[str, Any]) -> datetime | None:
     return None
 
 
-def normalized_stream_title(value: object) -> str:
-    text = str(value or "").lower()
-    text = re.sub(r"https?://\S+", " ", text)
-    text = re.sub(r"[\W_]+", " ", text, flags=re.UNICODE)
-    return " ".join(text.split())
-
-
 def _same_stream_owner(left: dict[str, Any], right: dict[str, Any]) -> bool:
     for key in ("player_id", "player_name"):
         left_value = left.get(key)
@@ -172,16 +164,6 @@ def _same_stream_owner(left: dict[str, Any], right: dict[str, Any]) -> bool:
         if left_value and right_value and left_value != right_value:
             return False
     return True
-
-
-def _titles_compatible(left: dict[str, Any], right: dict[str, Any]) -> bool:
-    left_title = normalized_stream_title(left.get("title"))
-    right_title = normalized_stream_title(right.get("title"))
-    if not left_title or not right_title:
-        return True
-    if left_title == right_title:
-        return True
-    return SequenceMatcher(None, left_title, right_title).ratio() >= 0.62
 
 
 def streams_are_simulcast(left: dict[str, Any], right: dict[str, Any]) -> bool:
@@ -205,7 +187,7 @@ def streams_are_simulcast(left: dict[str, Any], right: dict[str, Any]) -> bool:
         if duration_delta > SIMULCAST_DURATION_TOLERANCE_SECONDS:
             return False
 
-    return _titles_compatible(left, right)
+    return True
 
 
 def dedupe_simulcast_groups(streams: list[dict[str, Any]]) -> list[list[dict[str, Any]]]:

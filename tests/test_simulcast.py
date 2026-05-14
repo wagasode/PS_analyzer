@@ -61,8 +61,8 @@ def stream(
 
 class SimulcastTest(unittest.TestCase):
     def test_same_player_close_youtube_and_twitch_are_simulcast(self) -> None:
-        youtube = stream("youtube", "yt-1")
-        twitch = stream("twitch", "tw-1", occurred_at="2026-05-13T10:04:00Z")
+        youtube = stream("youtube", "yt-1", title="Shadowverse practice")
+        twitch = stream("twitch", "tw-1", occurred_at="2026-05-13T10:04:00Z", title="違うタイトルでも同時配信")
 
         self.assertTrue(streams_are_simulcast(youtube, twitch))
         self.assertEqual(len(dedupe_simulcast_groups([youtube, twitch])), 1)

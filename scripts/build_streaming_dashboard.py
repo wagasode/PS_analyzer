@@ -1694,17 +1694,6 @@ HTML = """<!doctype html>
       return Number.isFinite(parsed) ? parsed : null;
     }
 
-    function normalizedTitle(value) {
-      return String(value || "").toLowerCase().replace(/https?:\/\/\S+/g, " ").replace(/[^\p{Letter}\p{Number}]+/gu, " ").trim().replace(/\s+/g, " ");
-    }
-
-    function titlesCompatible(left, right) {
-      const a = normalizedTitle(left.title);
-      const b = normalizedTitle(right.title);
-      if (!a || !b || a === b) return true;
-      return a.includes(b) || b.includes(a);
-    }
-
     function streamsAreSimulcast(left, right) {
       if (new Set([left.platform, right.platform]).size !== 2 || !["youtube", "twitch"].includes(left.platform) || !["youtube", "twitch"].includes(right.platform)) {
         return false;
@@ -1722,7 +1711,7 @@ HTML = """<!doctype html>
       if (leftDuration > 0 && rightDuration > 0 && Math.abs(leftDuration - rightDuration) > 20 * 60) {
         return false;
       }
-      return titlesCompatible(left, right);
+      return true;
     }
 
     function mergeDecks(decks) {
