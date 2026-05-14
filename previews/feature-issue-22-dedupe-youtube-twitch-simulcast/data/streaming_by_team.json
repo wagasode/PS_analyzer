@@ -1,0 +1,66 @@
+[
+  {
+    "team": "MURASH GAMING",
+    "stream_count": 198,
+    "total_hours": 1010.74,
+    "shadowverse_hours": 945.1,
+    "youtube_hours": 917.74,
+    "twitch_hours": 377.3
+  },
+  {
+    "team": "レバンガ北海道",
+    "stream_count": 150,
+    "total_hours": 689.51,
+    "shadowverse_hours": 689.51,
+    "youtube_hours": 689.51,
+    "twitch_hours": 0.0
+  },
+  {
+    "team": "REJECT",
+    "stream_count": 160,
+    "total_hours": 638.69,
+    "shadowverse_hours": 637.26,
+    "youtube_hours": 637.93,
+    "twitch_hours": 0.76
+  },
+  {
+    "team": "Crazy Raccoon",
+    "stream_count": 113,
+    "total_hours": 415.34,
+    "shadowverse_hours": 415.34,
+    "youtube_hours": 415.34,
+    "twitch_hours": 0.0
+  },
+  {
+    "team": "DetonatioN FocusMe",
+    "stream_count": 127,
+    "total_hours": 413.28,
+    "shadowverse_hours": 411.81,
+    "youtube_hours": 413.28,
+    "twitch_hours": 0.0
+  },
+  {
+    "team": "ZETA DIVISION",
+    "stream_count": 97,
+    "total_hours": 399.88,
+    "shadowverse_hours": 399.88,
+    "youtube_hours": 399.88,
+    "twitch_hours": 0.0
+  },
+  {
+    "team": "RIDDLE ORDER",
+    "stream_count": 86,
+    "total_hours": 366.44,
+    "shadowverse_hours": 167.77,
+    "youtube_hours": 160.22,
+    "twitch_hours": 230.22
+  },
+  {
+    "team": "VARREL",
+    "stream_count": 51,
+    "total_hours": 186.22,
+    "shadowverse_hours": 186.22,
+    "youtube_hours": 186.22,
+    "twitch_hours": 0.0
+  }
+]
