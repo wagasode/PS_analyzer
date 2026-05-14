@@ -1,0 +1,2287 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>配信レポート</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --text: #1f2937;
+      --muted: #64748b;
+      --border: #d7dde6;
+      --accent: #0f766e;
+      --accent-soft: #dff7f3;
+      --warn: #9a3412;
+      --warn-soft: #ffedd5;
+      --bad: #991b1b;
+      --bad-soft: #fee2e2;
+      --none: #475569;
+      --none-soft: #e2e8f0;
+      --shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.5;
+    }
+
+    header {
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .shell {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 28px 0 22px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 28px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .meta {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    a.button {
+      display: inline-flex;
+      align-items: center;
+      min-height: 36px;
+      padding: 0 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--panel);
+      color: var(--text);
+      text-decoration: none;
+      font-size: 14px;
+      box-shadow: var(--shadow);
+    }
+
+    main {
+      padding: 24px 0 40px;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .stat {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      box-shadow: var(--shadow);
+    }
+
+    .stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+
+    .stat strong {
+      display: block;
+      margin-top: 4px;
+      font-size: 22px;
+      line-height: 1.2;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin: 18px 0;
+    }
+
+    .tabs {
+      display: inline-flex;
+      padding: 3px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    .tab {
+      min-height: 34px;
+      border: 0;
+      border-radius: 6px;
+      padding: 0 14px;
+      background: transparent;
+      color: var(--muted);
+      font: inherit;
+      cursor: pointer;
+    }
+
+    .tab.active {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .search {
+      width: min(380px, 100%);
+      min-height: 40px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0 12px;
+      color: var(--text);
+      font: inherit;
+      box-shadow: var(--shadow);
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) clamp(320px, 34vw, 440px);
+      gap: 16px;
+      align-items: start;
+    }
+
+    .timeline-panel {
+      display: none;
+    }
+
+    .workspace.player-mode .timeline-panel,
+    .workspace.deck-mode .timeline-panel {
+      display: block;
+    }
+
+    .workspace.team-mode {
+      grid-template-columns: 1fr;
+    }
+
+    .workspace.team-mode .timeline-panel {
+      display: none;
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .panel-actions {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    .toggle input {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--accent);
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.3;
+      letter-spacing: 0;
+    }
+
+    .count {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .table-wrap {
+      overflow: auto;
+      max-height: calc(100vh - 300px);
+    }
+
+    .player-table-wrap {
+      max-height: calc(100vh - 250px);
+    }
+
+    .player-table-wrap table {
+      min-width: 520px;
+    }
+
+    .deck-table-wrap table {
+      min-width: 760px;
+    }
+
+    .player-detail-table-wrap table {
+      min-width: 980px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      min-width: 980px;
+      font-size: 14px;
+    }
+
+    th,
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: #eef2f7;
+      color: #334155;
+      font-weight: 700;
+      user-select: none;
+    }
+
+    th.sortable {
+      cursor: pointer;
+    }
+
+    th.sortable::after {
+      content: "↕";
+      margin-left: 6px;
+      color: #94a3b8;
+      font-size: 12px;
+    }
+
+    th.sorted-asc::after {
+      content: "↑";
+      color: var(--accent);
+    }
+
+    th.sorted-desc::after {
+      content: "↓";
+      color: var(--accent);
+    }
+
+    tbody tr:hover {
+      background: #f8fafc;
+    }
+
+    td.num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    td.action {
+      text-align: center;
+    }
+
+    .player-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      color: inherit;
+    }
+
+    .player-label.heading {
+      gap: 12px;
+    }
+
+    .avatar {
+      position: relative;
+      display: inline-grid;
+      place-items: center;
+      flex: 0 0 auto;
+      width: 28px;
+      height: 28px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--none-soft);
+      color: var(--none);
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .player-label.heading .avatar {
+      width: 40px;
+      height: 40px;
+      font-size: 13px;
+    }
+
+    .avatar img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      background: var(--panel);
+    }
+
+    .detail-button {
+      min-height: 30px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0 10px;
+      background: var(--panel);
+      color: var(--text);
+      font: inherit;
+      cursor: pointer;
+    }
+
+    .detail-button.active {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      padding: 0 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .status.ok {
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    .status.skipped {
+      background: var(--warn-soft);
+      color: var(--warn);
+    }
+
+    .status.failed {
+      background: var(--bad-soft);
+      color: var(--bad);
+    }
+
+    .status.no_channel,
+    .status.not_checked {
+      background: var(--none-soft);
+      color: var(--none);
+    }
+
+    .empty {
+      padding: 28px 16px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .timeline-summary {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 14px;
+      flex-wrap: wrap;
+    }
+
+    .timeline-list {
+      display: grid;
+      gap: 0;
+      max-height: calc(100vh - 300px);
+      overflow: auto;
+    }
+
+    .timeline-item {
+      display: grid;
+      gap: 12px;
+      align-items: start;
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .timeline-item:last-child {
+      border-bottom: 0;
+    }
+
+    .timeline-date {
+      display: grid;
+      gap: 4px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .timeline-date strong {
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .timeline-date span,
+    .timeline-meta {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .timeline-thumbnail {
+      display: block;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #eef2f7;
+      color: var(--muted);
+      text-decoration: none;
+    }
+
+    .timeline-thumbnail img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+    }
+
+    .timeline-thumbnail.missing {
+      display: grid;
+      place-items: center;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .timeline-main {
+      min-width: 0;
+      display: grid;
+      gap: 8px;
+    }
+
+    .timeline-title {
+      color: var(--text);
+      text-decoration: none;
+      font-weight: 700;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    .timeline-title:hover {
+      text-decoration: underline;
+    }
+
+    .timeline-tags {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      border-radius: 999px;
+      padding: 0 8px;
+      background: var(--none-soft);
+      color: var(--none);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .pill.youtube {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+
+    .pill.twitch {
+      background: #ede9fe;
+      color: #6d28d9;
+    }
+
+    .pill.related {
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    .pill.deck {
+      background: #e0f2fe;
+      color: #075985;
+      text-decoration: none;
+    }
+
+    .timeline-note {
+      color: var(--muted);
+      font-size: 13px;
+      overflow-wrap: anywhere;
+      white-space: normal;
+    }
+
+    .timeline-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 36px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0 12px;
+      color: var(--text);
+      text-decoration: none;
+      box-shadow: var(--shadow);
+      white-space: nowrap;
+      justify-self: start;
+    }
+
+    .stream-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .change-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin: 0 0 18px;
+      padding: 12px 14px;
+      border: 1px solid #bae6fd;
+      border-radius: 8px;
+      background: #f0f9ff;
+      color: #075985;
+      box-shadow: var(--shadow);
+      font-size: 14px;
+    }
+
+    .change-actions,
+    .modal-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .save-status {
+      color: var(--muted);
+      font-size: 13px;
+      overflow-wrap: anywhere;
+    }
+
+    .save-status.ok {
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .save-status.error {
+      color: var(--bad);
+      font-weight: 700;
+    }
+
+    .draft-panel {
+      margin: -6px 0 18px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .draft-panel h3 {
+      margin: 0;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      font-size: 15px;
+    }
+
+    .draft-list {
+      display: grid;
+      gap: 0;
+    }
+
+    .draft-item {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .draft-item:last-child {
+      border-bottom: 0;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: rgba(15, 23, 42, 0.42);
+    }
+
+    #save-modal {
+      z-index: 30;
+    }
+
+    .modal {
+      width: min(920px, 100%);
+      max-height: min(820px, calc(100vh - 40px));
+      display: grid;
+      grid-template-rows: auto 1fr;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: 0 24px 80px rgba(15, 23, 42, 0.25);
+    }
+
+    .modal-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .modal-body {
+      display: grid;
+      gap: 18px;
+      padding: 16px;
+      overflow: auto;
+    }
+
+    .editor-section {
+      display: grid;
+      gap: 10px;
+    }
+
+    .editor-section h3 {
+      margin: 0;
+      font-size: 15px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .field {
+      display: grid;
+      gap: 5px;
+      min-width: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .field.full {
+      grid-column: 1 / -1;
+    }
+
+    .field input,
+    .field select,
+    .field textarea,
+    .editor-input {
+      width: 100%;
+      min-height: 36px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 7px 9px;
+      color: var(--text);
+      font: inherit;
+      background: var(--panel);
+    }
+
+    .field textarea {
+      min-height: 76px;
+      resize: vertical;
+    }
+
+    .linked-decks,
+    .search-results {
+      display: grid;
+      gap: 8px;
+    }
+
+    .linked-deck,
+    .search-result {
+      display: grid;
+      gap: 10px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #f8fafc;
+    }
+
+    .linked-deck-head,
+    .search-result {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .linked-deck-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .deck-heading {
+      display: grid;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .deck-heading strong,
+    .deck-heading span {
+      overflow-wrap: anywhere;
+    }
+
+    .deck-heading span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .primary-button,
+    .secondary-button,
+    .danger-button {
+      min-height: 34px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0 10px;
+      background: var(--panel);
+      color: var(--text);
+      font: inherit;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .primary-button {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .danger-button {
+      border-color: #fecaca;
+      background: #fff1f2;
+      color: #be123c;
+    }
+
+    @media (max-width: 820px) {
+      .workspace,
+      .workspace.team-mode,
+      .workspace.deck-mode {
+        grid-template-columns: 1fr;
+      }
+
+      .timeline-list,
+      .deck-table-wrap,
+      .player-table-wrap {
+        max-height: none;
+      }
+
+      .modal-backdrop {
+        align-items: stretch;
+        padding: 10px;
+      }
+
+      .modal {
+        max-height: calc(100vh - 20px);
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .shell {
+        width: min(100% - 20px, 1180px);
+      }
+
+      .topbar,
+      .toolbar,
+      .change-bar,
+      .panel-head {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .actions {
+        justify-content: flex-start;
+      }
+
+      .summary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      h1 {
+        font-size: 24px;
+      }
+
+      .table-wrap {
+        max-height: none;
+      }
+
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="shell topbar">
+      <div>
+        <h1>配信レポート</h1>
+        <div class="meta" id="metadata">読み込み中...</div>
+      </div>
+      <div class="actions">
+        <a class="button" href="data/streaming_by_team.json">チームJSON</a>
+        <a class="button" href="data/streaming_by_player.json">選手JSON</a>
+        <a class="button" href="data/streaming_timeline_by_player.json">タイムラインJSON</a>
+        <a class="button" href="data/streaming_deck_usage.json">デッキJSON</a>
+        <a class="button" id="run-link" href="#" hidden>ワークフロー実行</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="shell">
+      <section class="summary" aria-label="概要">
+        <div class="stat"><span>チーム数</span><strong id="team-count">-</strong></div>
+        <div class="stat"><span>選手数</span><strong id="player-count">-</strong></div>
+        <div class="stat"><span>配信数</span><strong id="stream-count">-</strong></div>
+        <div class="stat"><span>総配信時間</span><strong id="total-hours">-</strong></div>
+        <div class="stat"><span>SV時間</span><strong id="sv-hours">-</strong></div>
+      </section>
+
+      <div class="toolbar">
+        <div class="tabs" role="tablist" aria-label="表示切り替え">
+          <button class="tab active" type="button" data-view="team">チーム別</button>
+          <button class="tab" type="button" data-view="player">選手別</button>
+          <button class="tab" type="button" data-view="deck">デッキ別</button>
+        </div>
+        <input class="search" id="search" type="search" placeholder="チーム、選手、デッキ、ステータスで絞り込み" autocomplete="off">
+      </div>
+
+      <section class="change-bar" id="change-bar" hidden>
+        <div id="change-summary">未保存の変更はありません。</div>
+        <div class="change-actions">
+          <button class="primary-button open-save-modal-button" id="open-save-modal" type="button">変更を保存</button>
+          <button class="secondary-button" id="toggle-draft-panel" type="button">変更内容を確認</button>
+          <button class="danger-button" id="clear-draft" type="button">下書きを破棄</button>
+        </div>
+      </section>
+
+      <section class="draft-panel" id="draft-panel" hidden>
+        <h3>未保存の変更</h3>
+        <div class="draft-list" id="draft-list"></div>
+      </section>
+
+      <div class="workspace team-mode" id="workspace">
+        <section class="panel">
+          <div class="panel-head">
+            <h2 id="table-title">チーム別</h2>
+            <div class="panel-actions">
+              <label class="toggle" id="player-details-control" hidden>
+                <input id="show-player-details" type="checkbox">
+                詳細を表示
+              </label>
+              <div class="count" id="row-count">0行</div>
+            </div>
+          </div>
+          <div class="table-wrap" id="table-wrap">
+            <table>
+              <thead id="table-head"></thead>
+              <tbody id="table-body"></tbody>
+            </table>
+            <div class="empty" id="empty" hidden>一致する行はありません。</div>
+          </div>
+        </section>
+
+        <section class="panel timeline-panel" id="timeline-panel">
+          <div class="panel-head">
+            <div>
+              <h2 id="timeline-title">選手タイムライン</h2>
+              <div class="timeline-summary" id="timeline-summary"></div>
+            </div>
+            <div class="count" id="timeline-count">0配信</div>
+          </div>
+          <div class="timeline-list" id="timeline-list"></div>
+          <div class="empty" id="timeline-empty" hidden>収集済みの配信アーカイブはありません。</div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <div class="modal-backdrop" id="save-modal" hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="save-modal-title">
+      <div class="modal-head">
+        <div>
+          <h2 id="save-modal-title">デッキ編集を保存</h2>
+          <div class="timeline-summary" id="save-modal-summary"></div>
+        </div>
+        <div class="modal-actions">
+          <button class="secondary-button" id="close-save-modal" type="button">閉じる</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <section class="editor-section">
+          <h3>保存先</h3>
+          <div class="timeline-summary" id="save-target-summary"></div>
+          <div class="save-status" id="save-status"></div>
+          <div class="modal-actions">
+            <button class="primary-button" id="save-to-api" type="button">変更を保存</button>
+          </div>
+        </section>
+      </div>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" id="deck-editor-modal" hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="deck-editor-title">
+      <div class="modal-head">
+        <div>
+          <h2 id="deck-editor-title">アーカイブのデッキを編集</h2>
+          <div class="timeline-summary" id="deck-editor-summary"></div>
+        </div>
+        <div class="modal-actions">
+          <button class="primary-button open-save-modal-button" type="button">変更を保存</button>
+          <button class="secondary-button" id="close-deck-editor" type="button">閉じる</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <section class="editor-section">
+          <h3>リンク済みデッキ</h3>
+          <div class="linked-decks" id="linked-decks"></div>
+        </section>
+
+        <section class="editor-section">
+          <h3>既存デッキを追加</h3>
+          <input class="editor-input" id="deck-search-input" type="search" placeholder="デッキを検索" autocomplete="off">
+          <div class="search-results" id="deck-search-results"></div>
+        </section>
+
+        <section class="editor-section">
+          <h3>新規デッキを作成</h3>
+          <label class="field">デッキ名
+            <input id="new-deck-name" type="text" placeholder="連携R" autocomplete="off">
+          </label>
+          <div class="timeline-summary" id="new-deck-class-hint"></div>
+          <div class="modal-actions">
+            <button class="secondary-button" id="toggle-new-deck-advanced" type="button" aria-expanded="false">詳細入力</button>
+          </div>
+          <div class="form-grid">
+            <label class="field advanced-deck-field" hidden>デッキキー
+              <input id="new-deck-key" type="text" autocomplete="off">
+            </label>
+            <label class="field advanced-deck-field" hidden>クラス
+              <input id="new-deck-class" type="text" autocomplete="off">
+            </label>
+            <label class="field advanced-deck-field" hidden>アーキタイプ
+              <input id="new-deck-archetype" type="text" autocomplete="off">
+            </label>
+            <label class="field advanced-deck-field" hidden>デッキURL
+              <input id="new-deck-url" type="url" autocomplete="off">
+            </label>
+            <label class="field advanced-deck-field" hidden>デッキコード
+              <input id="new-deck-code" type="text" autocomplete="off">
+            </label>
+            <label class="field full advanced-deck-field" hidden>メモ
+              <textarea id="new-deck-notes"></textarea>
+            </label>
+          </div>
+          <div class="modal-actions">
+            <button class="primary-button" id="create-deck" type="button">作成してリンク</button>
+          </div>
+        </section>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const numberFields = new Set(["stream_count", "player_count", "total_hours", "shadowverse_hours", "youtube_hours", "twitch_hours"]);
+    const statusFields = new Set(["youtube_channel_status", "twitch_channel_status"]);
+    const state = {
+      view: "team",
+      query: "",
+      sortKey: "total_hours",
+      sortDirection: "desc",
+      team: [],
+      player: [],
+      deck: [],
+      timelines: [],
+      timelineByPlayer: new Map(),
+      decksByKey: new Map(),
+      originalDecksByKey: new Map(),
+      linksByKey: new Map(),
+      originalLinksByKey: new Map(),
+      streamsByKey: new Map(),
+      deckByKey: new Map(),
+      selectedPlayerKey: "",
+      selectedDeckKey: "",
+      editingStreamKey: "",
+      deckSearchQuery: "",
+      expandedLinkedDeckKeys: new Set(),
+      showDraftPanel: false,
+      showNewDeckAdvanced: false,
+      newDeckClassManual: false,
+      saving: false,
+      saveStatus: "",
+      saveStatusKind: "",
+      newDeckDraft: {
+        deck_key: "",
+        deck_name: "",
+        class_name: "",
+        archetype: "",
+        deck_url: "",
+        deck_code: "",
+        notes: ""
+      },
+      showPlayerDetails: false,
+      metadata: {}
+    };
+
+    const columns = {
+      team: [
+        ["team", "チーム"],
+        ["stream_count", "配信数"],
+        ["total_hours", "総配信時間"],
+        ["shadowverse_hours", "SV時間"],
+        ["youtube_hours", "YouTube時間"],
+        ["twitch_hours", "Twitch時間"]
+      ],
+      playerCompact: [
+        ["team", "チーム"],
+        ["player_name", "選手"],
+        ["timeline", "タイムライン"],
+        ["stream_count", "配信数"],
+        ["total_hours", "総配信時間"],
+        ["shadowverse_hours", "SV時間"]
+      ],
+      playerDetail: [
+        ["team", "チーム"],
+        ["player_name", "選手"],
+        ["timeline", "タイムライン"],
+        ["stream_count", "配信数"],
+        ["total_hours", "総配信時間"],
+        ["shadowverse_hours", "SV時間"],
+        ["youtube_hours", "YouTube時間"],
+        ["twitch_hours", "Twitch時間"],
+        ["youtube_channel_status", "YouTube"],
+        ["twitch_channel_status", "Twitch"],
+        ["youtube_skipped_reason", "YouTube理由"],
+        ["twitch_skipped_reason", "Twitch理由"]
+      ],
+      deck: [
+        ["deck_name", "デッキ"],
+        ["class_name", "クラス"],
+        ["archetype", "アーキタイプ"],
+        ["deck_usage", "利用状況"],
+        ["stream_count", "配信数"],
+        ["player_count", "選手数"]
+      ]
+    };
+
+    const viewLabels = {
+      team: "チーム別",
+      player: "選手別",
+      deck: "デッキ別"
+    };
+
+    const statusLabels = {
+      ok: "正常",
+      skipped: "スキップ",
+      failed: "失敗",
+      no_channel: "チャンネルなし",
+      not_checked: "未確認",
+      unknown: "不明"
+    };
+
+    function activeColumns() {
+      if (state.view === "player") {
+        return state.showPlayerDetails ? columns.playerDetail : columns.playerCompact;
+      }
+      return columns[state.view];
+    }
+
+    function formatNumber(value) {
+      return new Intl.NumberFormat("ja-JP", { maximumFractionDigits: 2 }).format(value ?? 0);
+    }
+
+    function formatDate(value) {
+      if (!value) return "不明";
+      return new Intl.DateTimeFormat("ja-JP", {
+        dateStyle: "medium",
+        timeStyle: "short"
+      }).format(new Date(value));
+    }
+
+    function statusLabel(value) {
+      const key = String(value || "unknown");
+      return statusLabels[key] || key.replaceAll("_", " ");
+    }
+
+    function confidenceLabel(value) {
+      const labels = {
+        "": "未設定",
+        low: "低",
+        medium: "中",
+        high: "高"
+      };
+      return labels[value] || value;
+    }
+
+    function playerKey(row) {
+      return JSON.stringify([row.team, row.player_name]);
+    }
+
+    function streamKey(stream) {
+      return JSON.stringify([stream.platform || "", stream.external_stream_id || ""]);
+    }
+
+    function linkKey(streamKeyValue, deckKey) {
+      return JSON.stringify([streamKeyValue, deckKey]);
+    }
+
+    function cloneJson(value) {
+      return JSON.parse(JSON.stringify(value));
+    }
+
+    function normalizeInt(value) {
+      const parsed = Number.parseInt(value, 10);
+      return Number.isFinite(parsed) ? parsed : 0;
+    }
+
+    function normalizeText(value) {
+      return String(value || "").trim();
+    }
+
+    function describeStream(stream) {
+      return [stream.team, stream.player_name, stream.title].filter(Boolean).join(" / ");
+    }
+
+    function initials(value) {
+      const name = String(value || "?").trim();
+      return Array.from(name || "?").slice(0, 2).join("").toUpperCase();
+    }
+
+    function avatarHtml(name, imageUrl) {
+      const fallback = escapeHtml(initials(name));
+      const image = imageUrl
+        ? `<img src="${escapeHtml(imageUrl)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">`
+        : "";
+      return `<span class="avatar" aria-hidden="true">${image}<span>${fallback}</span></span>`;
+    }
+
+    function playerLabelHtml(row, className = "") {
+      const classes = className ? `player-label ${className}` : "player-label";
+      return `
+        <span class="${classes}">
+          ${avatarHtml(row.player_name, row.player_icon_url)}
+          <span>${escapeHtml(row.player_name || "不明な選手")}</span>
+        </span>
+      `;
+    }
+
+    function streamThumbnailHtml(stream) {
+      if (!stream.thumbnail_url) {
+        return `<div class="timeline-thumbnail missing" aria-hidden="true">サムネイルなし</div>`;
+      }
+      return `
+        <a class="timeline-thumbnail" href="${escapeHtml(stream.url)}" target="_blank" rel="noreferrer" aria-label="${escapeHtml(stream.title || "アーカイブを開く")}">
+          <img src="${escapeHtml(stream.thumbnail_url)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.closest('.timeline-thumbnail').classList.add('missing'); this.closest('.timeline-thumbnail').textContent='サムネイルなし';">
+        </a>
+      `;
+    }
+
+    function formatDuration(totalSeconds) {
+      const seconds = Math.max(Number(totalSeconds || 0), 0);
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      if (hours > 0) {
+        return `${hours}時間${String(minutes).padStart(2, "0")}分`;
+      }
+      return `${minutes}分`;
+    }
+
+    function platformLabel(value) {
+      if (value === "youtube") return "YouTube";
+      if (value === "twitch") return "Twitch";
+      return statusLabel(value);
+    }
+
+    function streamCountLabel(countValue) {
+      return `${formatNumber(countValue)}配信`;
+    }
+
+    function rowCountLabel(countValue) {
+      return `${formatNumber(countValue)}行`;
+    }
+
+    function deckLabel(deck) {
+      const parts = [deck.class_name, deck.archetype].filter(Boolean).join(" / ");
+      return parts ? `${deck.deck_name} (${parts})` : deck.deck_name;
+    }
+
+    function deckPillHtml(deck) {
+      const label = escapeHtml(deckLabel(deck));
+      if (deck.deck_url) {
+        return `<a class="pill deck" href="${escapeHtml(deck.deck_url)}" target="_blank" rel="noreferrer">${label}</a>`;
+      }
+      return `<span class="pill deck">${label}</span>`;
+    }
+
+    const classAliases = [
+      ["Nm", ["Nm", "NM", "ナイトメア", "NIGHTMARE"]],
+      ["Nc", ["Nc", "NC", "ネクロ", "ネクロマンサー", "NECRO", "NECROMANCER"]],
+      ["R", ["R", "ロイヤル", "ROYAL"]],
+      ["E", ["E", "エルフ", "ELF"]],
+      ["W", ["W", "ウィッチ", "WITCH"]],
+      ["D", ["D", "ドラゴン", "DRAGON"]],
+      ["B", ["B", "ビショップ", "BISHOP"]],
+      ["V", ["V", "ヴァンプ", "ヴァンパイア", "VAMPIRE"]]
+    ];
+
+    function inferClassName(deckName) {
+      const name = normalizeText(deckName);
+      if (!name) return "";
+      const upperName = name.toUpperCase();
+      for (const [className, aliases] of classAliases) {
+        for (const alias of aliases) {
+          const normalizedAlias = alias.toUpperCase();
+          if (upperName.endsWith(normalizedAlias)) {
+            return className;
+          }
+        }
+      }
+      return "";
+    }
+
+    function generatedDeckKey(deckName) {
+      const inferredClass = inferClassName(deckName).toLowerCase();
+      return `deck-${inferredClass ? `${inferredClass}-` : ""}${Date.now()}`;
+    }
+
+    function deckMeta(deck) {
+      return {
+        deck_key: normalizeText(deck.deck_key),
+        deck_name: normalizeText(deck.deck_name) || normalizeText(deck.deck_key),
+        class_name: normalizeText(deck.class_name),
+        archetype: normalizeText(deck.archetype),
+        deck_url: normalizeText(deck.deck_url),
+        deck_code: normalizeText(deck.deck_code),
+        notes: normalizeText(deck.notes)
+      };
+    }
+
+    function linkMeta(streamKeyValue, deck) {
+      return {
+        stream_key: streamKeyValue,
+        deck_key: normalizeText(deck.deck_key),
+        confidence: normalizeText(deck.confidence),
+        source_note: normalizeText(deck.source_note),
+        display_order: normalizeInt(deck.display_order)
+      };
+    }
+
+    function initializeEditorState(timelines, deckUsage) {
+      state.decksByKey = new Map();
+      state.linksByKey = new Map();
+      state.streamsByKey = new Map();
+
+      deckUsage.forEach(deck => {
+        const normalized = deckMeta(deck);
+        if (normalized.deck_key) {
+          state.decksByKey.set(normalized.deck_key, normalized);
+        }
+      });
+
+      timelines.forEach(timeline => {
+        (timeline.streams || []).forEach(stream => {
+          stream.team = timeline.team;
+          stream.player_name = timeline.player_name;
+          stream.player_icon_url = timeline.player_icon_url;
+          const keyValue = streamKey(stream);
+          state.streamsByKey.set(keyValue, stream);
+          (stream.decks || []).forEach(deck => {
+            const normalizedDeck = deckMeta(deck);
+            if (normalizedDeck.deck_key && !state.decksByKey.has(normalizedDeck.deck_key)) {
+              state.decksByKey.set(normalizedDeck.deck_key, normalizedDeck);
+            }
+            const link = linkMeta(keyValue, deck);
+            if (link.deck_key) {
+              state.linksByKey.set(linkKey(keyValue, link.deck_key), link);
+            }
+          });
+        });
+      });
+
+      state.originalDecksByKey = new Map(Array.from(state.decksByKey, ([key, value]) => [key, cloneJson(value)]));
+      state.originalLinksByKey = new Map(Array.from(state.linksByKey, ([key, value]) => [key, cloneJson(value)]));
+      materializeDerivedData();
+    }
+
+    function linksForStream(streamKeyValue) {
+      return Array.from(state.linksByKey.values())
+        .filter(link => link.stream_key === streamKeyValue)
+        .sort((a, b) => a.display_order - b.display_order || deckLabel(state.decksByKey.get(a.deck_key) || a).localeCompare(deckLabel(state.decksByKey.get(b.deck_key) || b), "ja"));
+    }
+
+    function materializeDerivedData() {
+      state.timelines.forEach(timeline => {
+        (timeline.streams || []).forEach(stream => {
+          const keyValue = streamKey(stream);
+          stream.decks = linksForStream(keyValue).map(link => ({
+            ...state.decksByKey.get(link.deck_key),
+            confidence: link.confidence,
+            source_note: link.source_note,
+            display_order: link.display_order
+          }));
+        });
+      });
+
+      const rows = Array.from(state.decksByKey.values()).map(deck => {
+        const streams = Array.from(state.linksByKey.values())
+          .filter(link => link.deck_key === deck.deck_key)
+          .map(link => {
+            const stream = state.streamsByKey.get(link.stream_key);
+            if (!stream) return null;
+            return {
+              team: stream.team || "",
+              player_name: stream.player_name || "",
+              player_icon_url: stream.player_icon_url || "",
+              platform: stream.platform,
+              external_stream_id: stream.external_stream_id,
+              title: stream.title,
+              url: stream.url,
+              thumbnail_url: stream.thumbnail_url,
+              started_at: stream.started_at,
+              published_at: stream.published_at,
+              occurred_at: stream.occurred_at,
+              duration_sec: stream.duration_sec,
+              is_shadowverse_related: stream.is_shadowverse_related,
+              confidence: link.confidence,
+              source_note: link.source_note,
+              display_order: link.display_order
+            };
+          })
+          .filter(Boolean)
+          .sort((a, b) => String(b.occurred_at || "").localeCompare(String(a.occurred_at || "")));
+        const players = Array.from(new Set(streams.map(stream => stream.player_name).filter(Boolean))).sort();
+        return {
+          ...deck,
+          stream_count: streams.length,
+          player_count: players.length,
+          players,
+          streams
+        };
+      }).sort((a, b) => b.stream_count - a.stream_count || deckLabel(a).localeCompare(deckLabel(b), "ja"));
+
+      state.deck = rows;
+      state.deckByKey = new Map(rows.map(deck => [deck.deck_key, deck]));
+      state.timelineByPlayer = new Map(state.timelines.map(timeline => [playerKey(timeline), timeline]));
+    }
+
+    function pendingChanges() {
+      const addedDecks = Array.from(state.decksByKey.values())
+        .filter(deck => !state.originalDecksByKey.has(deck.deck_key));
+      const addedLinks = Array.from(state.linksByKey.values())
+        .filter(link => !state.originalLinksByKey.has(linkKey(link.stream_key, link.deck_key)));
+      const removedLinks = Array.from(state.originalLinksByKey.values())
+        .filter(link => !state.linksByKey.has(linkKey(link.stream_key, link.deck_key)));
+      const updatedLinks = Array.from(state.linksByKey.values()).filter(link => {
+        const original = state.originalLinksByKey.get(linkKey(link.stream_key, link.deck_key));
+        if (!original) return false;
+        return original.confidence !== link.confidence
+          || original.source_note !== link.source_note
+          || Number(original.display_order || 0) !== Number(link.display_order || 0);
+      });
+      return { addedDecks, addedLinks, removedLinks, updatedLinks };
+    }
+
+    function changeCount(changes = pendingChanges()) {
+      return changes.addedDecks.length + changes.addedLinks.length + changes.removedLinks.length + changes.updatedLinks.length;
+    }
+
+    function changeDescription(prefix, link) {
+      const deck = state.decksByKey.get(link.deck_key) || state.originalDecksByKey.get(link.deck_key) || { deck_name: link.deck_key };
+      const stream = state.streamsByKey.get(link.stream_key) || {};
+      return `${prefix}: ${deckLabel(deck)} -> ${describeStream(stream) || "不明なアーカイブ"}`;
+    }
+
+    function renderDraftState() {
+      const changes = pendingChanges();
+      const count = changeCount(changes);
+      const bar = document.getElementById("change-bar");
+      const panel = document.getElementById("draft-panel");
+      const list = document.getElementById("draft-list");
+      document.getElementById("change-summary").textContent = count === 0
+        ? "未保存の変更はありません。"
+        : `${count}件の未保存の変更があります。まだ保存されていません。`;
+      bar.hidden = count === 0;
+      panel.hidden = count === 0 || !state.showDraftPanel;
+      if (count === 0) {
+        list.innerHTML = "";
+        return;
+      }
+
+      const items = [
+        ...changes.addedDecks.map(deck => `新規デッキ: ${deckLabel(deck)}`),
+        ...changes.addedLinks.map(link => changeDescription("リンク追加", link)),
+        ...changes.removedLinks.map(link => changeDescription("リンク解除", link)),
+        ...changes.updatedLinks.map(link => changeDescription("リンク更新", link))
+      ];
+      list.innerHTML = items.map(item => `<div class="draft-item">${escapeHtml(item)}</div>`).join("");
+    }
+
+    function csvEscape(value) {
+      const text = String(value ?? "");
+      if (/[",\n\r]/.test(text)) {
+        return `"${text.replaceAll('"', '""')}"`;
+      }
+      return text;
+    }
+
+    function csvLine(values) {
+      return values.map(csvEscape).join(",");
+    }
+
+    function serializeDecksCsv() {
+      const fields = ["deck_key", "deck_name", "class_name", "archetype", "deck_url", "deck_code", "notes"];
+      const rows = Array.from(state.decksByKey.values())
+        .sort((a, b) => a.deck_key.localeCompare(b.deck_key, "ja"))
+        .map(deck => fields.map(field => deck[field] || ""));
+      return [csvLine(fields), ...rows.map(csvLine)].join("\n") + "\n";
+    }
+
+    function serializeStreamSessionDecksCsv() {
+      const fields = ["platform", "external_stream_id", "deck_key", "confidence", "source_note", "display_order"];
+      const rows = Array.from(state.linksByKey.values()).map(link => {
+        const stream = state.streamsByKey.get(link.stream_key);
+        if (!stream) return null;
+        return {
+          platform: stream.platform || "",
+          external_stream_id: stream.external_stream_id || "",
+          deck_key: link.deck_key,
+          confidence: link.confidence || "",
+          source_note: link.source_note || "",
+          display_order: String(normalizeInt(link.display_order))
+        };
+      }).filter(Boolean)
+        .sort((a, b) => a.platform.localeCompare(b.platform)
+          || a.external_stream_id.localeCompare(b.external_stream_id)
+          || normalizeInt(a.display_order) - normalizeInt(b.display_order)
+          || a.deck_key.localeCompare(b.deck_key, "ja"))
+        .map(row => fields.map(field => row[field] || ""));
+      return [csvLine(fields), ...rows.map(csvLine)].join("\n") + "\n";
+    }
+
+    function validateSavePayload() {
+      const errors = [];
+      const deckKeys = new Set();
+      state.decksByKey.forEach(deck => {
+        if (!deck.deck_key) errors.push("デッキキーが必要です。");
+        if (!deck.deck_name) errors.push(`${deck.deck_key || "デッキ"} のデッキ名が必要です。`);
+        if (deckKeys.has(deck.deck_key)) errors.push(`デッキキーが重複しています: ${deck.deck_key}`);
+        deckKeys.add(deck.deck_key);
+      });
+
+      const linkKeys = new Set();
+      state.linksByKey.forEach(link => {
+        const stream = state.streamsByKey.get(link.stream_key);
+        if (!deckKeys.has(link.deck_key)) errors.push(`リンク先デッキが見つかりません: ${link.deck_key}`);
+        if (!stream) {
+          errors.push(`${link.deck_key} のリンク先配信が見つかりません。`);
+          return;
+        }
+        if (!["youtube", "twitch"].includes(stream.platform)) errors.push(`不正なプラットフォームです: ${stream.platform || "空"}`);
+        if (!stream.external_stream_id) errors.push(`${stream.title || "配信"} の外部配信IDが必要です。`);
+        const keyValue = `${stream.platform}/${stream.external_stream_id}/${link.deck_key}`;
+        if (linkKeys.has(keyValue)) errors.push(`配信とデッキのリンクが重複しています: ${keyValue}`);
+        linkKeys.add(keyValue);
+      });
+      return Array.from(new Set(errors));
+    }
+
+    function setSaveStatus(message, kind = "") {
+      state.saveStatus = message;
+      state.saveStatusKind = kind;
+      const status = document.getElementById("save-status");
+      status.textContent = message;
+      status.className = kind ? `save-status ${kind}` : "save-status";
+    }
+
+    function openSaveModal() {
+      const changes = pendingChanges();
+      const endpoint = normalizeText(state.metadata.save_api_endpoint || "");
+      const repository = normalizeText(state.metadata.repository || "");
+      const branch = normalizeText(state.metadata.branch_name || "");
+      document.getElementById("save-modal-summary").textContent = `${changeCount(changes)}件の変更で data/decks.csv と data/stream_session_decks.csv を更新します。`;
+      document.getElementById("save-target-summary").textContent = repository && branch
+        ? `${repository} / ${branch}`
+        : "リポジトリまたはブランチ情報が見つかりません。";
+      document.getElementById("save-to-api").disabled = !endpoint;
+      setSaveStatus(endpoint
+        ? "設定済みの保存APIへ変更を送信します。このブラウザでGitHubトークンを入力する必要はありません。"
+        : "このダッシュボードには保存APIエンドポイントが設定されていません。", endpoint ? "" : "error");
+      document.getElementById("save-modal").hidden = false;
+    }
+
+    function closeSaveModal() {
+      if (state.saving) return;
+      document.getElementById("save-modal").hidden = true;
+    }
+
+    async function saveApiJson(url, options = {}) {
+      const response = await fetch(url, {
+        ...options,
+        credentials: "include",
+        headers: {
+          "Accept": "application/json",
+          ...(options.headers || {})
+        }
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const message = payload.message || payload.error || `保存APIリクエストに失敗しました。ステータス: ${response.status}`;
+        throw new Error(message);
+      }
+      return payload;
+    }
+
+    function buildSavePayload() {
+      const changes = pendingChanges();
+      return {
+        repository: state.metadata.repository || "",
+        branch: state.metadata.branch_name || "",
+        decks_csv: serializeDecksCsv(),
+        stream_session_decks_csv: serializeStreamSessionDecksCsv(),
+        changes: {
+          added_decks: changes.addedDecks.length,
+          added_links: changes.addedLinks.length,
+          updated_links: changes.updatedLinks.length,
+          removed_links: changes.removedLinks.length,
+          total: changeCount(changes)
+        }
+      };
+    }
+
+    function markDraftSaved() {
+      state.originalDecksByKey = new Map(Array.from(state.decksByKey, ([key, value]) => [key, cloneJson(value)]));
+      state.originalLinksByKey = new Map(Array.from(state.linksByKey, ([key, value]) => [key, cloneJson(value)]));
+      state.showDraftPanel = false;
+      render();
+    }
+
+    async function saveChangesToApi() {
+      if (state.saving) return;
+      const endpoint = normalizeText(state.metadata.save_api_endpoint || "");
+      const repo = normalizeText(state.metadata.repository || "");
+      const branch = normalizeText(state.metadata.branch_name || "");
+      const errors = validateSavePayload();
+      if (!repo || !repo.includes("/")) errors.push("リポジトリは owner/repo 形式である必要があります。");
+      if (!branch) errors.push("ブランチが必要です。");
+      if (!endpoint) errors.push("このダッシュボードには保存APIエンドポイントが設定されていません。");
+      if (changeCount() === 0) errors.push("保存する下書き変更がありません。");
+      if (errors.length > 0) {
+        setSaveStatus(errors.join(" "), "error");
+        return;
+      }
+
+      state.saving = true;
+      document.getElementById("save-to-api").disabled = true;
+      setSaveStatus("保存中...", "");
+      try {
+        const result = await saveApiJson(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(buildSavePayload())
+        });
+        markDraftSaved();
+        const detail = result.commit_url ? ` コミット: ${result.commit_url}` : "";
+        setSaveStatus(`保存しました。このブランチで Collect streaming data を実行してダッシュボードを再生成してください。${detail}`, "ok");
+      } catch (error) {
+        setSaveStatus(`保存に失敗しました: ${error.message}`, "error");
+      } finally {
+        state.saving = false;
+        document.getElementById("save-to-api").disabled = !normalizeText(state.metadata.save_api_endpoint || "");
+      }
+    }
+
+    function rowMatches(row) {
+      if (!state.query) return true;
+      const haystack = JSON.stringify(row).toLowerCase();
+      return haystack.includes(state.query);
+    }
+
+    function compareRows(left, right) {
+      const key = state.sortKey;
+      const a = left[key];
+      const b = right[key];
+      let result;
+      if (numberFields.has(key)) {
+        result = Number(a || 0) - Number(b || 0);
+      } else {
+        result = String(a || "").localeCompare(String(b || ""), "ja");
+      }
+      return state.sortDirection === "asc" ? result : -result;
+    }
+
+    function cellHtml(row, key) {
+      const value = row[key] ?? "";
+      if (key === "timeline") {
+        const keyValue = playerKey(row);
+        const active = keyValue === state.selectedPlayerKey ? " active" : "";
+        return `<td class="action"><button class="detail-button${active}" type="button" data-player-key="${escapeHtml(keyValue)}">表示</button></td>`;
+      }
+      if (key === "deck_usage") {
+        const active = row.deck_key === state.selectedDeckKey ? " active" : "";
+        return `<td class="action"><button class="detail-button deck-detail-button${active}" type="button" data-deck-key="${escapeHtml(row.deck_key)}">表示</button></td>`;
+      }
+      if (key === "deck_name" && row.deck_url) {
+        return `<td><a class="timeline-title" href="${escapeHtml(row.deck_url)}" target="_blank" rel="noreferrer">${escapeHtml(value)}</a></td>`;
+      }
+      if (key === "player_name") {
+        return `<td>${playerLabelHtml(row)}</td>`;
+      }
+      if (numberFields.has(key)) {
+        return `<td class="num">${formatNumber(value)}</td>`;
+      }
+      if (statusFields.has(key)) {
+        const className = String(value || "unknown").replaceAll("_", "-");
+        return `<td><span class="status ${String(value || "unknown")}">${statusLabel(value)}</span></td>`;
+      }
+      return `<td>${escapeHtml(value)}</td>`;
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function render() {
+      materializeDerivedData();
+      let activeTableColumns = activeColumns();
+      if (!activeTableColumns.some(([key]) => key === state.sortKey)) {
+        state.sortKey = state.view === "deck" ? "stream_count" : "total_hours";
+        state.sortDirection = "desc";
+        activeTableColumns = activeColumns();
+      }
+      const rows = state[state.view].filter(rowMatches).sort(compareRows);
+      const workspace = document.getElementById("workspace");
+      const tableWrap = document.getElementById("table-wrap");
+      const playerDetailsControl = document.getElementById("player-details-control");
+      workspace.classList.toggle("player-mode", state.view === "player");
+      workspace.classList.toggle("deck-mode", state.view === "deck");
+      workspace.classList.toggle("team-mode", state.view === "team");
+      tableWrap.classList.toggle("player-table-wrap", state.view === "player");
+      tableWrap.classList.toggle("player-detail-table-wrap", state.view === "player" && state.showPlayerDetails);
+      tableWrap.classList.toggle("deck-table-wrap", state.view === "deck");
+      playerDetailsControl.hidden = state.view !== "player";
+      if (state.view === "player") {
+        const visibleKeys = new Set(rows.map(playerKey));
+        if (!visibleKeys.has(state.selectedPlayerKey)) {
+          state.selectedPlayerKey = rows[0] ? playerKey(rows[0]) : "";
+        }
+      }
+      if (state.view === "deck") {
+        const visibleKeys = new Set(rows.map(row => row.deck_key));
+        if (!visibleKeys.has(state.selectedDeckKey)) {
+          state.selectedDeckKey = rows[0] ? rows[0].deck_key : "";
+        }
+      }
+      document.getElementById("table-title").textContent = viewLabels[state.view] || "";
+      document.getElementById("row-count").textContent = rowCountLabel(rows.length);
+      document.getElementById("empty").hidden = rows.length > 0;
+
+      document.getElementById("table-head").innerHTML = `<tr>${activeTableColumns.map(([key, label]) => {
+        const sortClass = key === state.sortKey ? ` sorted-${state.sortDirection}` : "";
+        return `<th class="sortable${sortClass}" data-key="${key}" scope="col">${label}</th>`;
+      }).join("")}</tr>`;
+
+      document.getElementById("table-body").innerHTML = rows.map(row => (
+        `<tr>${activeTableColumns.map(([key]) => cellHtml(row, key)).join("")}</tr>`
+      )).join("");
+
+      document.querySelectorAll("th.sortable").forEach(th => {
+        th.addEventListener("click", () => {
+          const key = th.dataset.key;
+          if (state.sortKey === key) {
+            state.sortDirection = state.sortDirection === "asc" ? "desc" : "asc";
+          } else {
+            state.sortKey = key;
+            state.sortDirection = numberFields.has(key) ? "desc" : "asc";
+          }
+          render();
+        });
+      });
+
+      document.querySelectorAll(".detail-button[data-player-key]").forEach(button => {
+        button.addEventListener("click", () => {
+          state.selectedPlayerKey = button.dataset.playerKey || "";
+          render();
+        });
+      });
+
+      document.querySelectorAll(".deck-detail-button").forEach(button => {
+        button.addEventListener("click", () => {
+          state.selectedDeckKey = button.dataset.deckKey || "";
+          render();
+        });
+      });
+
+      renderSidePanel();
+      document.querySelectorAll(".edit-stream-button").forEach(button => {
+        button.addEventListener("click", () => {
+          openDeckEditor(button.dataset.streamKey || "");
+        });
+      });
+      renderDraftState();
+    }
+
+    function renderSidePanel() {
+      if (state.view === "deck") {
+        renderDeckUsage();
+        return;
+      }
+      renderTimeline();
+    }
+
+    function renderTimeline() {
+      if (state.view !== "player") {
+        return;
+      }
+
+      const timeline = state.timelineByPlayer.get(state.selectedPlayerKey);
+      const title = document.getElementById("timeline-title");
+      const summary = document.getElementById("timeline-summary");
+      const count = document.getElementById("timeline-count");
+      const list = document.getElementById("timeline-list");
+      const empty = document.getElementById("timeline-empty");
+
+      if (!timeline) {
+        title.textContent = "選手タイムライン";
+        summary.textContent = "";
+        count.textContent = streamCountLabel(0);
+        list.innerHTML = "";
+        empty.hidden = false;
+        return;
+      }
+
+      const streams = timeline.streams || [];
+      title.innerHTML = `${playerLabelHtml(timeline, "heading")} <span>タイムライン</span>`;
+      summary.textContent = timeline.team;
+      count.textContent = streamCountLabel(streams.length);
+      empty.hidden = streams.length > 0;
+      list.innerHTML = streams.map(stream => {
+        const timestamp = stream.occurred_at || stream.started_at || stream.published_at || "";
+        const timestampKind = stream.started_at ? "開始" : stream.published_at ? "公開" : "日付不明";
+        const related = Number(stream.is_shadowverse_related || 0) === 1
+          ? `<span class="pill related">Shadowverse</span>`
+          : "";
+        const deckTags = (stream.decks || []).map(deckPillHtml).join("");
+        return `
+          <article class="timeline-item">
+            <div class="timeline-date">
+              <strong>${escapeHtml(formatDate(timestamp))}</strong>
+              <span>${escapeHtml(timestampKind)}</span>
+            </div>
+            ${streamThumbnailHtml(stream)}
+            <div class="timeline-main">
+              <a class="timeline-title" href="${escapeHtml(stream.url)}" target="_blank" rel="noreferrer">${escapeHtml(stream.title || "無題の配信")}</a>
+              <div class="timeline-tags">
+                <span class="pill ${escapeHtml(stream.platform || "")}">${escapeHtml(platformLabel(stream.platform))}</span>
+                <span class="pill">${escapeHtml(formatDuration(stream.duration_sec))}</span>
+                ${related}
+                ${deckTags}
+              </div>
+            </div>
+            <div class="stream-actions">
+              <a class="timeline-link" href="${escapeHtml(stream.url)}" target="_blank" rel="noreferrer">アーカイブを開く</a>
+              <button class="secondary-button edit-stream-button" type="button" data-stream-key="${escapeHtml(streamKey(stream))}">デッキ編集</button>
+            </div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    function renderDeckUsage() {
+      const deck = state.deckByKey.get(state.selectedDeckKey);
+      const title = document.getElementById("timeline-title");
+      const summary = document.getElementById("timeline-summary");
+      const count = document.getElementById("timeline-count");
+      const list = document.getElementById("timeline-list");
+      const empty = document.getElementById("timeline-empty");
+
+      if (!deck) {
+        title.textContent = "デッキ利用状況";
+        summary.textContent = "";
+        count.textContent = streamCountLabel(0);
+        list.innerHTML = "";
+        empty.textContent = "デッキが選択されていません。";
+        empty.hidden = false;
+        return;
+      }
+
+      const streams = deck.streams || [];
+      title.textContent = `${deck.deck_name}のアーカイブ`;
+      summary.textContent = [deck.class_name, deck.archetype, deck.notes].filter(Boolean).join(" · ");
+      count.textContent = streamCountLabel(streams.length);
+      empty.textContent = "紐づいた配信アーカイブはありません。";
+      empty.hidden = streams.length > 0;
+      list.innerHTML = streams.map(stream => {
+        const timestamp = stream.occurred_at || stream.started_at || stream.published_at || "";
+        const timestampKind = stream.started_at ? "開始" : stream.published_at ? "公開" : "日付不明";
+        const related = Number(stream.is_shadowverse_related || 0) === 1
+          ? `<span class="pill related">Shadowverse</span>`
+          : "";
+        const note = stream.source_note
+          ? `<div class="timeline-note">${escapeHtml(stream.source_note)}</div>`
+          : "";
+        const confidence = stream.confidence
+          ? `<span class="pill">${escapeHtml(stream.confidence)}</span>`
+          : "";
+        return `
+          <article class="timeline-item">
+            <div class="timeline-date">
+              <strong>${escapeHtml(formatDate(timestamp))}</strong>
+              <span>${escapeHtml(timestampKind)}</span>
+            </div>
+            ${streamThumbnailHtml(stream)}
+            <div class="timeline-main">
+              <a class="timeline-title" href="${escapeHtml(stream.url)}" target="_blank" rel="noreferrer">${escapeHtml(stream.title || "無題の配信")}</a>
+              <div class="timeline-meta">${escapeHtml(stream.team || "")} / ${escapeHtml(stream.player_name || "不明な選手")}</div>
+              <div class="timeline-tags">
+                <span class="pill ${escapeHtml(stream.platform || "")}">${escapeHtml(platformLabel(stream.platform))}</span>
+                <span class="pill">${escapeHtml(formatDuration(stream.duration_sec))}</span>
+                ${related}
+                ${confidence}
+              </div>
+              ${note}
+            </div>
+            <div class="stream-actions">
+              <a class="timeline-link" href="${escapeHtml(stream.url)}" target="_blank" rel="noreferrer">アーカイブを開く</a>
+              <button class="secondary-button edit-stream-button" type="button" data-stream-key="${escapeHtml(streamKey(stream))}">デッキ編集</button>
+            </div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    function openDeckEditor(streamKeyValue) {
+      if (!state.streamsByKey.has(streamKeyValue)) {
+        return;
+      }
+      state.editingStreamKey = streamKeyValue;
+      state.deckSearchQuery = "";
+      renderDeckEditor();
+      document.getElementById("deck-editor-modal").hidden = false;
+    }
+
+    function closeDeckEditor() {
+      state.editingStreamKey = "";
+      document.getElementById("deck-editor-modal").hidden = true;
+    }
+
+    function renderDeckEditor() {
+      const stream = state.streamsByKey.get(state.editingStreamKey);
+      if (!stream) {
+        closeDeckEditor();
+        return;
+      }
+
+      document.getElementById("deck-editor-title").textContent = "アーカイブのデッキを編集";
+      document.getElementById("deck-editor-summary").textContent = describeStream(stream);
+      renderLinkedDecks();
+
+      const searchInput = document.getElementById("deck-search-input");
+      searchInput.value = state.deckSearchQuery;
+      renderDeckSearchResults();
+
+      document.getElementById("new-deck-key").value = state.newDeckDraft.deck_key;
+      document.getElementById("new-deck-name").value = state.newDeckDraft.deck_name;
+      document.getElementById("new-deck-class").value = state.newDeckDraft.class_name;
+      document.getElementById("new-deck-archetype").value = state.newDeckDraft.archetype;
+      document.getElementById("new-deck-url").value = state.newDeckDraft.deck_url;
+      document.getElementById("new-deck-code").value = state.newDeckDraft.deck_code;
+      document.getElementById("new-deck-notes").value = state.newDeckDraft.notes;
+      renderNewDeckAdvanced();
+    }
+
+    function renderNewDeckAdvanced() {
+      const inferredClass = inferClassName(state.newDeckDraft.deck_name);
+      const className = state.newDeckDraft.class_name || inferredClass;
+      document.getElementById("new-deck-class-hint").textContent = state.newDeckDraft.deck_name
+        ? `推定クラス: ${className || "不明"}`
+        : "デッキ名を入力すると推定クラスが表示されます。";
+      document.querySelectorAll(".advanced-deck-field").forEach(field => {
+        field.hidden = !state.showNewDeckAdvanced;
+      });
+      document.getElementById("toggle-new-deck-advanced").setAttribute("aria-expanded", String(state.showNewDeckAdvanced));
+      document.getElementById("toggle-new-deck-advanced").textContent = state.showNewDeckAdvanced
+        ? "詳細入力を閉じる"
+        : "詳細入力";
+    }
+
+    function renderLinkedDecks() {
+      const container = document.getElementById("linked-decks");
+      const links = linksForStream(state.editingStreamKey);
+      if (links.length === 0) {
+        container.innerHTML = `<div class="empty">リンク済みデッキはありません。</div>`;
+        return;
+      }
+
+      container.innerHTML = links.map(link => {
+        const deck = state.decksByKey.get(link.deck_key) || { deck_name: link.deck_key };
+        const keyValue = linkKey(link.stream_key, link.deck_key);
+        const expanded = state.expandedLinkedDeckKeys.has(keyValue);
+        const detailForm = expanded ? `
+          <div class="form-grid">
+            <label class="field">信頼度
+              <select class="link-field" data-link-key="${escapeHtml(keyValue)}" data-field="confidence">
+                ${["", "low", "medium", "high"].map(value => `<option value="${escapeHtml(value)}"${value === link.confidence ? " selected" : ""}>${escapeHtml(confidenceLabel(value))}</option>`).join("")}
+              </select>
+            </label>
+            <label class="field">表示順
+              <input class="link-field" data-link-key="${escapeHtml(keyValue)}" data-field="display_order" type="number" min="0" step="1" value="${escapeHtml(link.display_order)}">
+            </label>
+            <label class="field full">メモ
+              <textarea class="link-field" data-link-key="${escapeHtml(keyValue)}" data-field="source_note">${escapeHtml(link.source_note)}</textarea>
+            </label>
+          </div>
+        ` : "";
+        return `
+          <article class="linked-deck">
+            <div class="linked-deck-head">
+              <div class="deck-heading">
+                <strong>${escapeHtml(deck.deck_name || link.deck_key)}</strong>
+                <span>${escapeHtml([deck.class_name, deck.archetype].filter(Boolean).join(" / ") || link.deck_key)}</span>
+              </div>
+              <div class="linked-deck-actions">
+                <button class="secondary-button toggle-link-details" type="button" data-link-key="${escapeHtml(keyValue)}">${expanded ? "詳細を閉じる" : "詳細"}</button>
+                <button class="danger-button unlink-deck" type="button" data-link-key="${escapeHtml(keyValue)}">リンク解除</button>
+              </div>
+            </div>
+            ${detailForm}
+          </article>
+        `;
+      }).join("");
+
+      document.querySelectorAll(".toggle-link-details").forEach(button => {
+        button.addEventListener("click", () => {
+          const keyValue = button.dataset.linkKey || "";
+          if (state.expandedLinkedDeckKeys.has(keyValue)) {
+            state.expandedLinkedDeckKeys.delete(keyValue);
+          } else {
+            state.expandedLinkedDeckKeys.add(keyValue);
+          }
+          renderDeckEditor();
+        });
+      });
+
+      document.querySelectorAll(".unlink-deck").forEach(button => {
+        button.addEventListener("click", () => {
+          const keyValue = button.dataset.linkKey || "";
+          state.linksByKey.delete(keyValue);
+          state.expandedLinkedDeckKeys.delete(keyValue);
+          render();
+          renderDeckEditor();
+        });
+      });
+
+      document.querySelectorAll(".link-field").forEach(field => {
+        field.addEventListener("input", () => {
+          updateLinkField(field.dataset.linkKey || "", field.dataset.field || "", field.value, false);
+        });
+        field.addEventListener("change", () => {
+          updateLinkField(field.dataset.linkKey || "", field.dataset.field || "", field.value);
+        });
+      });
+    }
+
+    function renderDeckSearchResults() {
+      const container = document.getElementById("deck-search-results");
+      const query = state.deckSearchQuery.toLowerCase();
+      const linked = new Set(linksForStream(state.editingStreamKey).map(link => link.deck_key));
+      const decks = Array.from(state.decksByKey.values())
+        .filter(deck => !query || JSON.stringify(deck).toLowerCase().includes(query))
+        .sort((a, b) => deckLabel(a).localeCompare(deckLabel(b), "ja"))
+        .slice(0, 8);
+
+      if (decks.length === 0) {
+        container.innerHTML = `<div class="empty">既存デッキが見つかりません。</div>`;
+        return;
+      }
+
+      container.innerHTML = decks.map(deck => {
+        const alreadyLinked = linked.has(deck.deck_key);
+        return `
+          <div class="search-result">
+            <div class="deck-heading">
+              <strong>${escapeHtml(deck.deck_name)}</strong>
+              <span>${escapeHtml([deck.class_name, deck.archetype].filter(Boolean).join(" / ") || deck.deck_key)}</span>
+            </div>
+            <button class="secondary-button add-existing-deck" type="button" data-deck-key="${escapeHtml(deck.deck_key)}"${alreadyLinked ? " disabled" : ""}>${alreadyLinked ? "リンク済み" : "追加"}</button>
+          </div>
+        `;
+      }).join("");
+
+      document.querySelectorAll(".add-existing-deck").forEach(button => {
+        button.addEventListener("click", () => {
+          addDeckLink(button.dataset.deckKey || "");
+        });
+      });
+    }
+
+    function addDeckLink(deckKey) {
+      if (!deckKey || !state.decksByKey.has(deckKey) || !state.editingStreamKey) {
+        return;
+      }
+      const keyValue = linkKey(state.editingStreamKey, deckKey);
+      if (state.linksByKey.has(keyValue)) {
+        return;
+      }
+      state.linksByKey.set(keyValue, {
+        stream_key: state.editingStreamKey,
+        deck_key: deckKey,
+        confidence: "",
+        source_note: "",
+        display_order: linksForStream(state.editingStreamKey).length + 1
+      });
+      render();
+      renderDeckEditor();
+    }
+
+    function updateLinkField(keyValue, field, value, rerender = true) {
+      const link = state.linksByKey.get(keyValue);
+      if (!link) return;
+      if (field === "display_order") {
+        link.display_order = normalizeInt(value);
+      } else if (field === "confidence" || field === "source_note") {
+        link[field] = normalizeText(value);
+      }
+      state.linksByKey.set(keyValue, link);
+      if (rerender) {
+        render();
+        renderDeckEditor();
+      } else {
+        materializeDerivedData();
+        renderDraftState();
+      }
+    }
+
+    function createAndLinkDeck() {
+      const draft = deckMeta(state.newDeckDraft);
+      if (!draft.class_name) {
+        draft.class_name = inferClassName(draft.deck_name);
+      }
+      if (!draft.deck_key && draft.deck_name) {
+        draft.deck_key = generatedDeckKey(draft.deck_name);
+      }
+      if (!draft.deck_key || !draft.deck_name) {
+        window.alert("デッキ名が必要です。");
+        return;
+      }
+      if (state.decksByKey.has(draft.deck_key)) {
+        window.alert("同じデッキキーが既に存在します。");
+        return;
+      }
+      state.decksByKey.set(draft.deck_key, draft);
+      state.newDeckDraft = {
+        deck_key: "",
+        deck_name: "",
+        class_name: "",
+        archetype: "",
+        deck_url: "",
+        deck_code: "",
+        notes: ""
+      };
+      state.newDeckClassManual = false;
+      state.showNewDeckAdvanced = false;
+      addDeckLink(draft.deck_key);
+    }
+
+    function clearDraft() {
+      state.decksByKey = new Map(Array.from(state.originalDecksByKey, ([key, value]) => [key, cloneJson(value)]));
+      state.linksByKey = new Map(Array.from(state.originalLinksByKey, ([key, value]) => [key, cloneJson(value)]));
+      state.showDraftPanel = false;
+      materializeDerivedData();
+      render();
+      if (state.editingStreamKey) {
+        renderDeckEditor();
+      }
+    }
+
+    function renderMetadata() {
+      const meta = state.metadata;
+      document.getElementById("metadata").textContent = `更新: ${formatDate(meta.generated_at)}${meta.run_number ? ` · 実行 #${meta.run_number}` : ""}`;
+      document.getElementById("team-count").textContent = formatNumber(meta.team_count);
+      document.getElementById("player-count").textContent = formatNumber(meta.player_count);
+      document.getElementById("stream-count").textContent = formatNumber(meta.total_streams);
+      document.getElementById("total-hours").textContent = formatNumber(meta.total_hours);
+      document.getElementById("sv-hours").textContent = formatNumber(meta.shadowverse_hours);
+      if (meta.run_url) {
+        const link = document.getElementById("run-link");
+        link.href = meta.run_url;
+        link.hidden = false;
+      }
+    }
+
+    async function loadData() {
+      const [team, player, timelines, deckUsage, metadata] = await Promise.all([
+        fetch("data/streaming_by_team.json").then(response => response.json()),
+        fetch("data/streaming_by_player.json").then(response => response.json()),
+        fetch("data/streaming_timeline_by_player.json").then(response => response.json()),
+        fetch("data/streaming_deck_usage.json").then(response => response.json()),
+        fetch("data/metadata.json").then(response => response.json())
+      ]);
+      state.team = team;
+      state.player = player;
+      state.timelines = timelines;
+      initializeEditorState(timelines, deckUsage);
+      state.metadata = metadata;
+      renderMetadata();
+      render();
+    }
+
+    document.querySelectorAll(".tab").forEach(tab => {
+      tab.addEventListener("click", () => {
+        document.querySelectorAll(".tab").forEach(item => item.classList.remove("active"));
+        tab.classList.add("active");
+        state.view = tab.dataset.view;
+        state.sortKey = state.view === "deck" ? "stream_count" : "total_hours";
+        state.sortDirection = "desc";
+        render();
+      });
+    });
+
+    document.getElementById("search").addEventListener("input", event => {
+      state.query = event.target.value.trim().toLowerCase();
+      render();
+    });
+
+    document.getElementById("show-player-details").addEventListener("change", event => {
+      state.showPlayerDetails = event.target.checked;
+      render();
+    });
+
+    document.getElementById("toggle-draft-panel").addEventListener("click", () => {
+      state.showDraftPanel = !state.showDraftPanel;
+      renderDraftState();
+    });
+
+    document.getElementById("clear-draft").addEventListener("click", clearDraft);
+    document.querySelectorAll(".open-save-modal-button").forEach(button => {
+      button.addEventListener("click", openSaveModal);
+    });
+    document.getElementById("close-save-modal").addEventListener("click", closeSaveModal);
+    document.getElementById("save-to-api").addEventListener("click", saveChangesToApi);
+    document.getElementById("close-deck-editor").addEventListener("click", closeDeckEditor);
+
+    document.getElementById("save-modal").addEventListener("click", event => {
+      if (event.target.id === "save-modal") {
+        closeSaveModal();
+      }
+    });
+
+    document.getElementById("deck-editor-modal").addEventListener("click", event => {
+      if (event.target.id === "deck-editor-modal") {
+        closeDeckEditor();
+      }
+    });
+
+    document.getElementById("deck-search-input").addEventListener("input", event => {
+      state.deckSearchQuery = event.target.value.trim();
+      renderDeckSearchResults();
+    });
+
+    document.getElementById("toggle-new-deck-advanced").addEventListener("click", () => {
+      state.showNewDeckAdvanced = !state.showNewDeckAdvanced;
+      renderNewDeckAdvanced();
+    });
+
+    [
+      ["new-deck-key", "deck_key"],
+      ["new-deck-name", "deck_name"],
+      ["new-deck-class", "class_name"],
+      ["new-deck-archetype", "archetype"],
+      ["new-deck-url", "deck_url"],
+      ["new-deck-code", "deck_code"],
+      ["new-deck-notes", "notes"]
+    ].forEach(([id, field]) => {
+      document.getElementById(id).addEventListener("input", event => {
+        state.newDeckDraft[field] = event.target.value;
+        if (field === "class_name") {
+          state.newDeckClassManual = true;
+        }
+        if (field === "deck_name" && !state.newDeckClassManual) {
+          state.newDeckDraft.class_name = inferClassName(event.target.value);
+          document.getElementById("new-deck-class").value = state.newDeckDraft.class_name;
+        }
+        if (field === "deck_name" || field === "class_name") {
+          renderNewDeckAdvanced();
+        }
+      });
+    });
+
+    document.getElementById("create-deck").addEventListener("click", createAndLinkDeck);
+
+    loadData().catch(error => {
+      document.getElementById("metadata").textContent = "レポートデータの読み込みに失敗しました。";
+      document.getElementById("empty").hidden = false;
+      document.getElementById("empty").textContent = error.message;
+    });
+  </script>
+</body>
+</html>

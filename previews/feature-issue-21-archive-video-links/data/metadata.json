@@ -1,0 +1,16 @@
+{
+  "generated_at": "2026-05-14T03:56:49Z",
+  "workflow": "Collect streaming data",
+  "run_number": "28",
+  "run_id": "25840735099",
+  "run_url": "https://github.com/wagasode/PS_analyzer/actions/runs/25840735099",
+  "commit_sha": "4999b949605b73e8cbb154eaa993c883b841880f",
+  "repository": "wagasode/PS_analyzer",
+  "branch_name": "feature/issue-21-archive-video-links",
+  "save_api_endpoint": "https://ps-analyzer-save-deck-links.seeking-origin.workers.dev/",
+  "player_count": 25,
+  "team_count": 8,
+  "total_streams": 1034,
+  "total_hours": 4428.4,
+  "shadowverse_hours": 4118.26
+}
