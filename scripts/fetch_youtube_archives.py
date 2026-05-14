@@ -19,6 +19,7 @@ from common import (
     parse_iso8601_duration,
     require_env,
     youtube_api,
+    youtube_archive_url,
 )
 
 
@@ -238,7 +239,7 @@ def upsert_video(conn: sqlite3.Connection, channel: sqlite3.Row, video: dict) ->
             channel["channel_id"],
             video_id,
             title,
-            f"https://www.youtube.com/watch?v={video_id}",
+            youtube_archive_url(video_id),
             started_at,
             ended_at,
             snippet.get("publishedAt"),

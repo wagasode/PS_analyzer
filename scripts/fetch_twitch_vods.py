@@ -16,6 +16,7 @@ from common import (
     init_schema,
     parse_twitch_duration,
     require_env,
+    twitch_archive_url,
 )
 
 
@@ -149,7 +150,7 @@ def upsert_video(conn: sqlite3.Connection, channel: sqlite3.Row, video: dict) ->
             channel["channel_id"],
             video_id,
             title,
-            video.get("url", ""),
+            twitch_archive_url(video_id, video.get("url", "")),
             video.get("created_at"),
             video.get("published_at"),
             parse_twitch_duration(video.get("duration")),
