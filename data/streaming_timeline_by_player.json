@@ -11160,19 +11160,6 @@
         "duration_sec": 19281,
         "is_shadowverse_related": 0,
         "decks": []
-      },
-      {
-        "platform": "twitch",
-        "external_stream_id": "2722100490",
-        "title": "進化エルフで一旦beyond踏む",
-        "url": "https://www.twitch.tv/videos/2722100490",
-        "thumbnail_url": "https://static-cdn.jtvnw.net/cf_vods/d3vd9lfkzbru3h/84333d03da869a4d734f_origamisv_315615501938_1773494266//thumb/thumb0-320x180.jpg",
-        "started_at": "2026-03-14T13:17:52Z",
-        "published_at": "2026-03-14T13:17:52Z",
-        "occurred_at": "2026-03-14T13:17:52Z",
-        "duration_sec": 19012,
-        "is_shadowverse_related": 0,
-        "decks": []
       }
     ]
   },
@@ -14462,14 +14449,27 @@
     "streams": [
       {
         "platform": "youtube",
+        "external_stream_id": "B1pwbBPHsnw",
+        "title": "ミルティオで無双する【シャドバWB/Shadowverse】",
+        "url": "https://www.youtube.com/watch?v=B1pwbBPHsnw",
+        "thumbnail_url": "https://i.ytimg.com/vi/B1pwbBPHsnw/hqdefault_live.jpg",
+        "started_at": "2026-05-14T06:35:26Z",
+        "published_at": "2026-05-14T06:35:26Z",
+        "occurred_at": "2026-05-14T06:35:26Z",
+        "duration_sec": 0,
+        "is_shadowverse_related": 1,
+        "decks": []
+      },
+      {
+        "platform": "youtube",
         "external_stream_id": "z4KXZ1mLmDA",
         "title": "ミルティオで無双する【シャドバWB/Shadowverse】",
         "url": "https://www.youtube.com/watch?v=z4KXZ1mLmDA",
-        "thumbnail_url": "https://i.ytimg.com/vi/z4KXZ1mLmDA/hqdefault_live.jpg",
+        "thumbnail_url": "https://i.ytimg.com/vi/z4KXZ1mLmDA/hqdefault.jpg",
         "started_at": "2026-05-14T00:28:09Z",
-        "published_at": "2026-05-13T04:14:13Z",
+        "published_at": "2026-05-14T06:57:26Z",
         "occurred_at": "2026-05-14T00:28:09Z",
-        "duration_sec": 0,
+        "duration_sec": 22012,
         "is_shadowverse_related": 1,
         "decks": []
       },
@@ -15094,19 +15094,6 @@
         "published_at": "2025-04-04T09:19:28Z",
         "occurred_at": "2025-04-04T06:29:34Z",
         "duration_sec": 9133,
-        "is_shadowverse_related": 1,
-        "decks": []
-      },
-      {
-        "platform": "youtube",
-        "external_stream_id": "E2gaZ_iThdc",
-        "title": "【シャドバ】ランクマ",
-        "url": "https://www.youtube.com/watch?v=E2gaZ_iThdc",
-        "thumbnail_url": "https://i.ytimg.com/vi/E2gaZ_iThdc/maxresdefault.jpg",
-        "started_at": "2025-04-02T03:47:03Z",
-        "published_at": "2025-04-02T17:52:44Z",
-        "occurred_at": "2025-04-02T03:47:03Z",
-        "duration_sec": 6382,
         "is_shadowverse_related": 1,
         "decks": []
       }
