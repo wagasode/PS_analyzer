@@ -1,16 +1,16 @@
 {
-  "generated_at": "2026-05-14T04:41:41Z",
+  "generated_at": "2026-05-14T04:52:57Z",
   "workflow": "Collect streaming data",
-  "run_number": "29",
-  "run_id": "25842078819",
-  "run_url": "https://github.com/wagasode/PS_analyzer/actions/runs/25842078819",
-  "commit_sha": "346bd152ff0dd068026c1b4ad3ee5a085193f094",
+  "run_number": "30",
+  "run_id": "25842431116",
+  "run_url": "https://github.com/wagasode/PS_analyzer/actions/runs/25842431116",
+  "commit_sha": "d5656c383d7ed265459848d0ef0121c771e21f78",
   "repository": "wagasode/PS_analyzer",
   "branch_name": "feature/issue-22-dedupe-youtube-twitch-simulcast",
   "save_api_endpoint": "https://ps-analyzer-save-deck-links.seeking-origin.workers.dev/",
   "player_count": 25,
   "team_count": 8,
-  "total_streams": 982,
-  "total_hours": 4120.1,
-  "shadowverse_hours": 3852.89
+  "total_streams": 935,
+  "total_hours": 3928.19,
+  "shadowverse_hours": 3841.27
 }
