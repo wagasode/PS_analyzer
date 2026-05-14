@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from common import DEFAULT_DB_PATH, ROOT_DIR, connect, init_schema
+from common import DEFAULT_DB_PATH, ROOT_DIR, connect, dedupe_simulcast_groups, init_schema
 
 
 REPORTS_DIR = ROOT_DIR / "reports"
@@ -142,6 +142,56 @@ def build_decks_by_stream(conn) -> dict[int, list[dict[str, Any]]]:
     return decks_by_stream
 
 
+def dedupe_decks(decks: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    seen: set[str] = set()
+    merged: list[dict[str, Any]] = []
+    for deck in decks:
+        key = str(deck.get("deck_key") or deck.get("deck_name") or json.dumps(deck, ensure_ascii=False, sort_keys=True))
+        if key in seen:
+            continue
+        seen.add(key)
+        merged.append(deck)
+    return merged
+
+
+def stream_component(stream: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "platform": stream["platform"],
+        "external_stream_id": stream["external_stream_id"],
+        "title": stream["title"],
+        "url": stream["url"],
+        "thumbnail_url": stream["thumbnail_url"],
+        "started_at": stream["started_at"],
+        "published_at": stream["published_at"],
+        "occurred_at": stream["occurred_at"],
+        "duration_sec": int(stream["duration_sec"] or 0),
+        "is_shadowverse_related": int(stream["is_shadowverse_related"] or 0),
+        "decks": stream.get("decks", []),
+    }
+
+
+def primary_stream(streams: list[dict[str, Any]]) -> dict[str, Any]:
+    for stream in streams:
+        if stream.get("platform") == "youtube":
+            return stream
+    return streams[0]
+
+
+def merge_stream_group(group: list[dict[str, Any]]) -> dict[str, Any]:
+    primary = primary_stream(group)
+    merged = dict(primary)
+    merged["duration_sec"] = max(int(stream.get("duration_sec") or 0) for stream in group)
+    merged["is_shadowverse_related"] = 1 if any(int(stream.get("is_shadowverse_related") or 0) == 1 for stream in group) else 0
+    merged["decks"] = dedupe_decks([deck for stream in group for deck in stream.get("decks", [])])
+    if len(group) > 1:
+        merged["simulcast_streams"] = [stream_component(stream) for stream in group]
+    return merged
+
+
+def merge_simulcast_streams(streams: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [merge_stream_group(group) for group in dedupe_simulcast_groups(streams)]
+
+
 def build_player_timelines(db_path: Path) -> list[dict[str, Any]]:
     conn = connect(db_path)
     init_schema(conn)
@@ -229,7 +279,18 @@ def build_player_timelines(db_path: Path) -> list[dict[str, Any]]:
         )
 
     conn.close()
+    for timeline in timelines:
+        timeline["streams"] = merge_simulcast_streams(timeline["streams"])
     return timelines
+
+
+def finalize_deck_usage(deck: dict[str, Any] | None, players: set[str]) -> None:
+    if deck is None:
+        return
+    deck["streams"] = merge_simulcast_streams(deck["streams"])
+    deck["stream_count"] = len(deck["streams"])
+    deck["player_count"] = len(players)
+    deck["players"] = sorted(players)
 
 
 def build_deck_usage(db_path: Path) -> list[dict[str, Any]]:
@@ -283,9 +344,7 @@ def build_deck_usage(db_path: Path) -> list[dict[str, Any]]:
     for row in rows:
         deck_key = row["deck_key"]
         if deck_key != current_key:
-            if current_deck is not None:
-                current_deck["player_count"] = len(current_players)
-                current_deck["players"] = sorted(current_players)
+            finalize_deck_usage(current_deck, current_players)
             current_deck = {
                 "deck_key": deck_key,
                 "deck_name": row["deck_name"],
@@ -329,11 +388,8 @@ def build_deck_usage(db_path: Path) -> list[dict[str, Any]]:
                 "display_order": int(row["display_order"] or 0),
             }
         )
-        current_deck["stream_count"] = len(current_deck["streams"])
 
-    if current_deck is not None:
-        current_deck["player_count"] = len(current_players)
-        current_deck["players"] = sorted(current_players)
+    finalize_deck_usage(current_deck, current_players)
 
     conn.close()
     return deck_usage
@@ -1527,6 +1583,18 @@ HTML = """<!doctype html>
       return JSON.stringify([stream.platform || "", stream.external_stream_id || ""]);
     }
 
+    function streamComponents(stream) {
+      const components = Array.isArray(stream.simulcast_streams) && stream.simulcast_streams.length > 0
+        ? stream.simulcast_streams
+        : [stream];
+      return components.map(component => ({
+        ...component,
+        team: component.team || stream.team || "",
+        player_name: component.player_name || stream.player_name || "",
+        player_icon_url: component.player_icon_url || stream.player_icon_url || ""
+      }));
+    }
+
     function linkKey(streamKeyValue, deckKey) {
       return JSON.stringify([streamKeyValue, deckKey]);
     }
@@ -1596,6 +1664,98 @@ HTML = """<!doctype html>
       if (value === "youtube") return "YouTube";
       if (value === "twitch") return "Twitch";
       return statusLabel(value);
+    }
+
+    function platformLinksHtml(stream) {
+      return streamComponents(stream).map(component => `
+        <a class="pill ${escapeHtml(component.platform || "")}" href="${escapeHtml(component.url || stream.url || "#")}" target="_blank" rel="noreferrer">${escapeHtml(platformLabel(component.platform))}</a>
+      `).join("");
+    }
+
+    function archiveActionsHtml(stream) {
+      const components = streamComponents(stream);
+      return components.map(component => {
+        const label = components.length > 1 ? `${platformLabel(component.platform)}を開く` : "アーカイブを開く";
+        return `<a class="timeline-link" href="${escapeHtml(component.url || stream.url)}" target="_blank" rel="noreferrer">${escapeHtml(label)}</a>`;
+      }).join("");
+    }
+
+    function editActionsHtml(stream) {
+      const components = streamComponents(stream);
+      return components.map(component => {
+        const label = components.length > 1 ? `${platformLabel(component.platform)}デッキ編集` : "デッキ編集";
+        return `<button class="secondary-button edit-stream-button" type="button" data-stream-key="${escapeHtml(streamKey(component))}">${escapeHtml(label)}</button>`;
+      }).join("");
+    }
+
+    function streamTimestampMs(stream) {
+      const value = stream.occurred_at || stream.started_at || stream.published_at || "";
+      const parsed = Date.parse(value);
+      return Number.isFinite(parsed) ? parsed : null;
+    }
+
+    function streamsAreSimulcast(left, right) {
+      if (new Set([left.platform, right.platform]).size !== 2 || !["youtube", "twitch"].includes(left.platform) || !["youtube", "twitch"].includes(right.platform)) {
+        return false;
+      }
+      if ((left.player_name || "") !== (right.player_name || "") || (left.team || "") !== (right.team || "")) {
+        return false;
+      }
+      const leftTime = streamTimestampMs(left);
+      const rightTime = streamTimestampMs(right);
+      if (leftTime === null || rightTime === null || Math.abs(leftTime - rightTime) > 10 * 60 * 1000) {
+        return false;
+      }
+      const leftDuration = Number(left.duration_sec || 0);
+      const rightDuration = Number(right.duration_sec || 0);
+      if (leftDuration > 0 && rightDuration > 0 && Math.abs(leftDuration - rightDuration) > 20 * 60) {
+        return false;
+      }
+      return true;
+    }
+
+    function mergeDecks(decks) {
+      const seen = new Set();
+      const merged = [];
+      decks.forEach(deck => {
+        const key = deck.deck_key || deck.deck_name || JSON.stringify(deck);
+        if (seen.has(key)) return;
+        seen.add(key);
+        merged.push(deck);
+      });
+      return merged;
+    }
+
+    function mergeSimulcastStreams(streams) {
+      const groups = [];
+      streams.forEach(stream => {
+        let matched = false;
+        for (const group of groups) {
+          if (group.length >= 2) continue;
+          if (group.some(existing => streamsAreSimulcast(stream, existing))) {
+            group.push(stream);
+            matched = true;
+            break;
+          }
+        }
+        if (!matched) {
+          groups.push([stream]);
+        }
+      });
+
+      return groups.map(group => {
+        const primary = group.find(stream => stream.platform === "youtube") || group[0];
+        const merged = {
+          ...primary,
+          duration_sec: Math.max(...group.map(stream => Number(stream.duration_sec || 0))),
+          is_shadowverse_related: group.some(stream => Number(stream.is_shadowverse_related || 0) === 1) ? 1 : 0,
+          decks: mergeDecks(group.flatMap(stream => stream.decks || []))
+        };
+        if (group.length > 1) {
+          merged.simulcast_streams = group.map(stream => ({ ...stream }));
+        }
+        return merged;
+      });
     }
 
     function streamCountLabel(countValue) {
@@ -1689,17 +1849,19 @@ HTML = """<!doctype html>
           stream.team = timeline.team;
           stream.player_name = timeline.player_name;
           stream.player_icon_url = timeline.player_icon_url;
-          const keyValue = streamKey(stream);
-          state.streamsByKey.set(keyValue, stream);
-          (stream.decks || []).forEach(deck => {
-            const normalizedDeck = deckMeta(deck);
-            if (normalizedDeck.deck_key && !state.decksByKey.has(normalizedDeck.deck_key)) {
-              state.decksByKey.set(normalizedDeck.deck_key, normalizedDeck);
-            }
-            const link = linkMeta(keyValue, deck);
-            if (link.deck_key) {
-              state.linksByKey.set(linkKey(keyValue, link.deck_key), link);
-            }
+          streamComponents(stream).forEach(component => {
+            const keyValue = streamKey(component);
+            state.streamsByKey.set(keyValue, component);
+            (component.decks || []).forEach(deck => {
+              const normalizedDeck = deckMeta(deck);
+              if (normalizedDeck.deck_key && !state.decksByKey.has(normalizedDeck.deck_key)) {
+                state.decksByKey.set(normalizedDeck.deck_key, normalizedDeck);
+              }
+              const link = linkMeta(keyValue, deck);
+              if (link.deck_key) {
+                state.linksByKey.set(linkKey(keyValue, link.deck_key), link);
+              }
+            });
           });
         });
       });
@@ -1718,18 +1880,24 @@ HTML = """<!doctype html>
     function materializeDerivedData() {
       state.timelines.forEach(timeline => {
         (timeline.streams || []).forEach(stream => {
-          const keyValue = streamKey(stream);
-          stream.decks = linksForStream(keyValue).map(link => ({
-            ...state.decksByKey.get(link.deck_key),
-            confidence: link.confidence,
-            source_note: link.source_note,
-            display_order: link.display_order
-          }));
+          const components = streamComponents(stream);
+          components.forEach(component => {
+            component.decks = linksForStream(streamKey(component)).map(link => ({
+              ...state.decksByKey.get(link.deck_key),
+              confidence: link.confidence,
+              source_note: link.source_note,
+              display_order: link.display_order
+            }));
+          });
+          stream.decks = mergeDecks(components.flatMap(component => component.decks || []));
+          if (Array.isArray(stream.simulcast_streams) && stream.simulcast_streams.length > 0) {
+            stream.simulcast_streams = components;
+          }
         });
       });
 
       const rows = Array.from(state.decksByKey.values()).map(deck => {
-        const streams = Array.from(state.linksByKey.values())
+        const streams = mergeSimulcastStreams(Array.from(state.linksByKey.values())
           .filter(link => link.deck_key === deck.deck_key)
           .map(link => {
             const stream = state.streamsByKey.get(link.stream_key);
@@ -1753,7 +1921,7 @@ HTML = """<!doctype html>
               display_order: link.display_order
             };
           })
-          .filter(Boolean)
+          .filter(Boolean))
           .sort((a, b) => String(b.occurred_at || "").localeCompare(String(a.occurred_at || "")));
         const players = Array.from(new Set(streams.map(stream => stream.player_name).filter(Boolean))).sort();
         return {
@@ -2182,15 +2350,15 @@ HTML = """<!doctype html>
             <div class="timeline-main">
               <a class="timeline-title" href="${escapeHtml(stream.url)}" target="_blank" rel="noreferrer">${escapeHtml(stream.title || "無題の配信")}</a>
               <div class="timeline-tags">
-                <span class="pill ${escapeHtml(stream.platform || "")}">${escapeHtml(platformLabel(stream.platform))}</span>
+                ${platformLinksHtml(stream)}
                 <span class="pill">${escapeHtml(formatDuration(stream.duration_sec))}</span>
                 ${related}
                 ${deckTags}
               </div>
             </div>
             <div class="stream-actions">
-              <a class="timeline-link" href="${escapeHtml(stream.url)}" target="_blank" rel="noreferrer">アーカイブを開く</a>
-              <button class="secondary-button edit-stream-button" type="button" data-stream-key="${escapeHtml(streamKey(stream))}">デッキ編集</button>
+              ${archiveActionsHtml(stream)}
+              ${editActionsHtml(stream)}
             </div>
           </article>
         `;
@@ -2244,7 +2412,7 @@ HTML = """<!doctype html>
               <a class="timeline-title" href="${escapeHtml(stream.url)}" target="_blank" rel="noreferrer">${escapeHtml(stream.title || "無題の配信")}</a>
               <div class="timeline-meta">${escapeHtml(stream.team || "")} / ${escapeHtml(stream.player_name || "不明な選手")}</div>
               <div class="timeline-tags">
-                <span class="pill ${escapeHtml(stream.platform || "")}">${escapeHtml(platformLabel(stream.platform))}</span>
+                ${platformLinksHtml(stream)}
                 <span class="pill">${escapeHtml(formatDuration(stream.duration_sec))}</span>
                 ${related}
                 ${confidence}
@@ -2252,8 +2420,8 @@ HTML = """<!doctype html>
               ${note}
             </div>
             <div class="stream-actions">
-              <a class="timeline-link" href="${escapeHtml(stream.url)}" target="_blank" rel="noreferrer">アーカイブを開く</a>
-              <button class="secondary-button edit-stream-button" type="button" data-stream-key="${escapeHtml(streamKey(stream))}">デッキ編集</button>
+              ${archiveActionsHtml(stream)}
+              ${editActionsHtml(stream)}
             </div>
           </article>
         `;
