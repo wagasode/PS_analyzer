@@ -28,7 +28,8 @@
         "is_shadowverse_related": 1,
         "confidence": "",
         "source_note": "",
-        "display_order": 1
+        "display_order": 1,
+        "decks": []
       }
     ]
   }

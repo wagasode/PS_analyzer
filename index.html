@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Streaming Report</title>
+  <title>配信レポート</title>
   <style>
     :root {
       color-scheme: light;
@@ -878,62 +878,62 @@
   <header>
     <div class="shell topbar">
       <div>
-        <h1>Streaming Report</h1>
-        <div class="meta" id="metadata">Loading...</div>
+        <h1>配信レポート</h1>
+        <div class="meta" id="metadata">読み込み中...</div>
       </div>
       <div class="actions">
-        <a class="button" href="data/streaming_by_team.json">Team JSON</a>
-        <a class="button" href="data/streaming_by_player.json">Player JSON</a>
-        <a class="button" href="data/streaming_timeline_by_player.json">Timeline JSON</a>
-        <a class="button" href="data/streaming_deck_usage.json">Deck JSON</a>
-        <a class="button" id="run-link" href="#" hidden>Workflow run</a>
+        <a class="button" href="data/streaming_by_team.json">チームJSON</a>
+        <a class="button" href="data/streaming_by_player.json">選手JSON</a>
+        <a class="button" href="data/streaming_timeline_by_player.json">タイムラインJSON</a>
+        <a class="button" href="data/streaming_deck_usage.json">デッキJSON</a>
+        <a class="button" id="run-link" href="#" hidden>ワークフロー実行</a>
       </div>
     </div>
   </header>
 
   <main>
     <div class="shell">
-      <section class="summary" aria-label="Summary">
-        <div class="stat"><span>Teams</span><strong id="team-count">-</strong></div>
-        <div class="stat"><span>Players</span><strong id="player-count">-</strong></div>
-        <div class="stat"><span>Streams</span><strong id="stream-count">-</strong></div>
-        <div class="stat"><span>Total hours</span><strong id="total-hours">-</strong></div>
-        <div class="stat"><span>SV hours</span><strong id="sv-hours">-</strong></div>
+      <section class="summary" aria-label="概要">
+        <div class="stat"><span>チーム数</span><strong id="team-count">-</strong></div>
+        <div class="stat"><span>選手数</span><strong id="player-count">-</strong></div>
+        <div class="stat"><span>配信数</span><strong id="stream-count">-</strong></div>
+        <div class="stat"><span>総配信時間</span><strong id="total-hours">-</strong></div>
+        <div class="stat"><span>SV時間</span><strong id="sv-hours">-</strong></div>
       </section>
 
       <div class="toolbar">
-        <div class="tabs" role="tablist" aria-label="Report views">
-          <button class="tab active" type="button" data-view="team">By team</button>
-          <button class="tab" type="button" data-view="player">By player</button>
-          <button class="tab" type="button" data-view="deck">By deck</button>
+        <div class="tabs" role="tablist" aria-label="表示切り替え">
+          <button class="tab active" type="button" data-view="team">チーム別</button>
+          <button class="tab" type="button" data-view="player">選手別</button>
+          <button class="tab" type="button" data-view="deck">デッキ別</button>
         </div>
-        <input class="search" id="search" type="search" placeholder="Filter by team, player, deck, or status" autocomplete="off">
+        <input class="search" id="search" type="search" placeholder="チーム、選手、デッキ、ステータスで絞り込み" autocomplete="off">
       </div>
 
       <section class="change-bar" id="change-bar" hidden>
-        <div id="change-summary">No unsaved changes.</div>
+        <div id="change-summary">未保存の変更はありません。</div>
         <div class="change-actions">
-          <button class="primary-button open-save-modal-button" id="open-save-modal" type="button">Save changes</button>
-          <button class="secondary-button" id="toggle-draft-panel" type="button">Review changes</button>
-          <button class="danger-button" id="clear-draft" type="button">Clear draft</button>
+          <button class="primary-button open-save-modal-button" id="open-save-modal" type="button">変更を保存</button>
+          <button class="secondary-button" id="toggle-draft-panel" type="button">変更内容を確認</button>
+          <button class="danger-button" id="clear-draft" type="button">下書きを破棄</button>
         </div>
       </section>
 
       <section class="draft-panel" id="draft-panel" hidden>
-        <h3>Pending changes</h3>
+        <h3>未保存の変更</h3>
         <div class="draft-list" id="draft-list"></div>
       </section>
 
       <div class="workspace team-mode" id="workspace">
         <section class="panel">
           <div class="panel-head">
-            <h2 id="table-title">By team</h2>
+            <h2 id="table-title">チーム別</h2>
             <div class="panel-actions">
               <label class="toggle" id="player-details-control" hidden>
                 <input id="show-player-details" type="checkbox">
-                Show details
+                詳細を表示
               </label>
-              <div class="count" id="row-count">0 rows</div>
+              <div class="count" id="row-count">0行</div>
             </div>
           </div>
           <div class="table-wrap" id="table-wrap">
@@ -941,20 +941,20 @@
               <thead id="table-head"></thead>
               <tbody id="table-body"></tbody>
             </table>
-            <div class="empty" id="empty" hidden>No matching rows.</div>
+            <div class="empty" id="empty" hidden>一致する行はありません。</div>
           </div>
         </section>
 
         <section class="panel timeline-panel" id="timeline-panel">
           <div class="panel-head">
             <div>
-              <h2 id="timeline-title">Player timeline</h2>
+              <h2 id="timeline-title">選手タイムライン</h2>
               <div class="timeline-summary" id="timeline-summary"></div>
             </div>
-            <div class="count" id="timeline-count">0 streams</div>
+            <div class="count" id="timeline-count">0配信</div>
           </div>
           <div class="timeline-list" id="timeline-list"></div>
-          <div class="empty" id="timeline-empty" hidden>No stream archives collected.</div>
+          <div class="empty" id="timeline-empty" hidden>収集済みの配信アーカイブはありません。</div>
         </section>
       </div>
     </div>
@@ -964,20 +964,20 @@
     <section class="modal" role="dialog" aria-modal="true" aria-labelledby="save-modal-title">
       <div class="modal-head">
         <div>
-          <h2 id="save-modal-title">Save deck edits</h2>
+          <h2 id="save-modal-title">デッキ編集を保存</h2>
           <div class="timeline-summary" id="save-modal-summary"></div>
         </div>
         <div class="modal-actions">
-          <button class="secondary-button" id="close-save-modal" type="button">Close</button>
+          <button class="secondary-button" id="close-save-modal" type="button">閉じる</button>
         </div>
       </div>
       <div class="modal-body">
         <section class="editor-section">
-          <h3>Save target</h3>
+          <h3>保存先</h3>
           <div class="timeline-summary" id="save-target-summary"></div>
           <div class="save-status" id="save-status"></div>
           <div class="modal-actions">
-            <button class="primary-button" id="save-to-api" type="button">Save changes</button>
+            <button class="primary-button" id="save-to-api" type="button">変更を保存</button>
           </div>
         </section>
       </div>
@@ -988,57 +988,57 @@
     <section class="modal" role="dialog" aria-modal="true" aria-labelledby="deck-editor-title">
       <div class="modal-head">
         <div>
-          <h2 id="deck-editor-title">Edit archive decks</h2>
+          <h2 id="deck-editor-title">アーカイブのデッキを編集</h2>
           <div class="timeline-summary" id="deck-editor-summary"></div>
         </div>
         <div class="modal-actions">
-          <button class="primary-button open-save-modal-button" type="button">Save changes</button>
-          <button class="secondary-button" id="close-deck-editor" type="button">Close</button>
+          <button class="primary-button open-save-modal-button" type="button">変更を保存</button>
+          <button class="secondary-button" id="close-deck-editor" type="button">閉じる</button>
         </div>
       </div>
       <div class="modal-body">
         <section class="editor-section">
-          <h3>Linked decks</h3>
+          <h3>リンク済みデッキ</h3>
           <div class="linked-decks" id="linked-decks"></div>
         </section>
 
         <section class="editor-section">
-          <h3>Add existing deck</h3>
-          <input class="editor-input" id="deck-search-input" type="search" placeholder="Search decks" autocomplete="off">
+          <h3>既存デッキを追加</h3>
+          <input class="editor-input" id="deck-search-input" type="search" placeholder="デッキを検索" autocomplete="off">
           <div class="search-results" id="deck-search-results"></div>
         </section>
 
         <section class="editor-section">
-          <h3>Create new deck</h3>
-          <label class="field">Deck name
+          <h3>新規デッキを作成</h3>
+          <label class="field">デッキ名
             <input id="new-deck-name" type="text" placeholder="連携R" autocomplete="off">
           </label>
           <div class="timeline-summary" id="new-deck-class-hint"></div>
           <div class="modal-actions">
-            <button class="secondary-button" id="toggle-new-deck-advanced" type="button" aria-expanded="false">Advanced input</button>
+            <button class="secondary-button" id="toggle-new-deck-advanced" type="button" aria-expanded="false">詳細入力</button>
           </div>
           <div class="form-grid">
-            <label class="field advanced-deck-field" hidden>Deck key
+            <label class="field advanced-deck-field" hidden>デッキキー
               <input id="new-deck-key" type="text" autocomplete="off">
             </label>
-            <label class="field advanced-deck-field" hidden>Class
+            <label class="field advanced-deck-field" hidden>クラス
               <input id="new-deck-class" type="text" autocomplete="off">
             </label>
-            <label class="field advanced-deck-field" hidden>Archetype
+            <label class="field advanced-deck-field" hidden>アーキタイプ
               <input id="new-deck-archetype" type="text" autocomplete="off">
             </label>
-            <label class="field advanced-deck-field" hidden>Deck URL
+            <label class="field advanced-deck-field" hidden>デッキURL
               <input id="new-deck-url" type="url" autocomplete="off">
             </label>
-            <label class="field advanced-deck-field" hidden>Deck code
+            <label class="field advanced-deck-field" hidden>デッキコード
               <input id="new-deck-code" type="text" autocomplete="off">
             </label>
-            <label class="field full advanced-deck-field" hidden>Notes
+            <label class="field full advanced-deck-field" hidden>メモ
               <textarea id="new-deck-notes"></textarea>
             </label>
           </div>
           <div class="modal-actions">
-            <button class="primary-button" id="create-deck" type="button">Create and link</button>
+            <button class="primary-button" id="create-deck" type="button">作成してリンク</button>
           </div>
         </section>
       </div>
@@ -1090,43 +1090,58 @@
 
     const columns = {
       team: [
-        ["team", "Team"],
-        ["stream_count", "Streams"],
-        ["total_hours", "Total hours"],
-        ["shadowverse_hours", "SV hours"],
-        ["youtube_hours", "YouTube hours"],
-        ["twitch_hours", "Twitch hours"]
+        ["team", "チーム"],
+        ["stream_count", "配信数"],
+        ["total_hours", "総配信時間"],
+        ["shadowverse_hours", "SV時間"],
+        ["youtube_hours", "YouTube時間"],
+        ["twitch_hours", "Twitch時間"]
       ],
       playerCompact: [
-        ["team", "Team"],
-        ["player_name", "Player"],
-        ["timeline", "Timeline"],
-        ["stream_count", "Streams"],
-        ["total_hours", "Total hours"],
-        ["shadowverse_hours", "SV hours"]
+        ["team", "チーム"],
+        ["player_name", "選手"],
+        ["timeline", "タイムライン"],
+        ["stream_count", "配信数"],
+        ["total_hours", "総配信時間"],
+        ["shadowverse_hours", "SV時間"]
       ],
       playerDetail: [
-        ["team", "Team"],
-        ["player_name", "Player"],
-        ["timeline", "Timeline"],
-        ["stream_count", "Streams"],
-        ["total_hours", "Total hours"],
-        ["shadowverse_hours", "SV hours"],
-        ["youtube_hours", "YouTube hours"],
-        ["twitch_hours", "Twitch hours"],
+        ["team", "チーム"],
+        ["player_name", "選手"],
+        ["timeline", "タイムライン"],
+        ["stream_count", "配信数"],
+        ["total_hours", "総配信時間"],
+        ["shadowverse_hours", "SV時間"],
+        ["youtube_hours", "YouTube時間"],
+        ["twitch_hours", "Twitch時間"],
         ["youtube_channel_status", "YouTube"],
         ["twitch_channel_status", "Twitch"],
-        ["youtube_skipped_reason", "YouTube reason"],
-        ["twitch_skipped_reason", "Twitch reason"]
+        ["youtube_skipped_reason", "YouTube理由"],
+        ["twitch_skipped_reason", "Twitch理由"]
       ],
       deck: [
-        ["deck_name", "Deck"],
-        ["class_name", "Class"],
-        ["archetype", "Archetype"],
-        ["deck_usage", "Usage"],
-        ["stream_count", "Streams"],
-        ["player_count", "Players"]
+        ["deck_name", "デッキ"],
+        ["class_name", "クラス"],
+        ["archetype", "アーキタイプ"],
+        ["deck_usage", "利用状況"],
+        ["stream_count", "配信数"],
+        ["player_count", "選手数"]
       ]
+    };
+
+    const viewLabels = {
+      team: "チーム別",
+      player: "選手別",
+      deck: "デッキ別"
+    };
+
+    const statusLabels = {
+      ok: "正常",
+      skipped: "スキップ",
+      failed: "失敗",
+      no_channel: "チャンネルなし",
+      not_checked: "未確認",
+      unknown: "不明"
     };
 
     function activeColumns() {
@@ -1137,11 +1152,11 @@
     }
 
     function formatNumber(value) {
-      return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(value ?? 0);
+      return new Intl.NumberFormat("ja-JP", { maximumFractionDigits: 2 }).format(value ?? 0);
     }
 
     function formatDate(value) {
-      if (!value) return "Unknown";
+      if (!value) return "不明";
       return new Intl.DateTimeFormat("ja-JP", {
         dateStyle: "medium",
         timeStyle: "short"
@@ -1149,7 +1164,18 @@
     }
 
     function statusLabel(value) {
-      return String(value || "unknown").replaceAll("_", " ");
+      const key = String(value || "unknown");
+      return statusLabels[key] || key.replaceAll("_", " ");
+    }
+
+    function confidenceLabel(value) {
+      const labels = {
+        "": "未設定",
+        low: "低",
+        medium: "中",
+        high: "高"
+      };
+      return labels[value] || value;
     }
 
     function playerKey(row) {
@@ -1158,6 +1184,18 @@
 
     function streamKey(stream) {
       return JSON.stringify([stream.platform || "", stream.external_stream_id || ""]);
+    }
+
+    function streamComponents(stream) {
+      const components = Array.isArray(stream.simulcast_streams) && stream.simulcast_streams.length > 0
+        ? stream.simulcast_streams
+        : [stream];
+      return components.map(component => ({
+        ...component,
+        team: component.team || stream.team || "",
+        player_name: component.player_name || stream.player_name || "",
+        player_icon_url: component.player_icon_url || stream.player_icon_url || ""
+      }));
     }
 
     function linkKey(streamKeyValue, deckKey) {
@@ -1199,18 +1237,18 @@
       return `
         <span class="${classes}">
           ${avatarHtml(row.player_name, row.player_icon_url)}
-          <span>${escapeHtml(row.player_name || "Unknown player")}</span>
+          <span>${escapeHtml(row.player_name || "不明な選手")}</span>
         </span>
       `;
     }
 
     function streamThumbnailHtml(stream) {
       if (!stream.thumbnail_url) {
-        return `<div class="timeline-thumbnail missing" aria-hidden="true">No thumbnail</div>`;
+        return `<div class="timeline-thumbnail missing" aria-hidden="true">サムネイルなし</div>`;
       }
       return `
-        <a class="timeline-thumbnail" href="${escapeHtml(stream.url)}" target="_blank" rel="noreferrer" aria-label="${escapeHtml(stream.title || "Open archive")}">
-          <img src="${escapeHtml(stream.thumbnail_url)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.closest('.timeline-thumbnail').classList.add('missing'); this.closest('.timeline-thumbnail').textContent='No thumbnail';">
+        <a class="timeline-thumbnail" href="${escapeHtml(stream.url)}" target="_blank" rel="noreferrer" aria-label="${escapeHtml(stream.title || "アーカイブを開く")}">
+          <img src="${escapeHtml(stream.thumbnail_url)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.closest('.timeline-thumbnail').classList.add('missing'); this.closest('.timeline-thumbnail').textContent='サムネイルなし';">
         </a>
       `;
     }
@@ -1220,15 +1258,115 @@
       const hours = Math.floor(seconds / 3600);
       const minutes = Math.floor((seconds % 3600) / 60);
       if (hours > 0) {
-        return `${hours}h ${String(minutes).padStart(2, "0")}m`;
+        return `${hours}時間${String(minutes).padStart(2, "0")}分`;
       }
-      return `${minutes}m`;
+      return `${minutes}分`;
     }
 
     function platformLabel(value) {
       if (value === "youtube") return "YouTube";
       if (value === "twitch") return "Twitch";
       return statusLabel(value);
+    }
+
+    function platformLinksHtml(stream) {
+      return streamComponents(stream).map(component => `
+        <a class="pill ${escapeHtml(component.platform || "")}" href="${escapeHtml(component.url || stream.url || "#")}" target="_blank" rel="noreferrer">${escapeHtml(platformLabel(component.platform))}</a>
+      `).join("");
+    }
+
+    function archiveActionsHtml(stream) {
+      const components = streamComponents(stream);
+      return components.map(component => {
+        const label = components.length > 1 ? `${platformLabel(component.platform)}を開く` : "アーカイブを開く";
+        return `<a class="timeline-link" href="${escapeHtml(component.url || stream.url)}" target="_blank" rel="noreferrer">${escapeHtml(label)}</a>`;
+      }).join("");
+    }
+
+    function editActionsHtml(stream) {
+      const components = streamComponents(stream);
+      return components.map(component => {
+        const label = components.length > 1 ? `${platformLabel(component.platform)}デッキ編集` : "デッキ編集";
+        return `<button class="secondary-button edit-stream-button" type="button" data-stream-key="${escapeHtml(streamKey(component))}">${escapeHtml(label)}</button>`;
+      }).join("");
+    }
+
+    function streamTimestampMs(stream) {
+      const value = stream.occurred_at || stream.started_at || stream.published_at || "";
+      const parsed = Date.parse(value);
+      return Number.isFinite(parsed) ? parsed : null;
+    }
+
+    function streamsAreSimulcast(left, right) {
+      if (new Set([left.platform, right.platform]).size !== 2 || !["youtube", "twitch"].includes(left.platform) || !["youtube", "twitch"].includes(right.platform)) {
+        return false;
+      }
+      if ((left.player_name || "") !== (right.player_name || "") || (left.team || "") !== (right.team || "")) {
+        return false;
+      }
+      const leftTime = streamTimestampMs(left);
+      const rightTime = streamTimestampMs(right);
+      if (leftTime === null || rightTime === null || Math.abs(leftTime - rightTime) > 10 * 60 * 1000) {
+        return false;
+      }
+      const leftDuration = Number(left.duration_sec || 0);
+      const rightDuration = Number(right.duration_sec || 0);
+      if (leftDuration > 0 && rightDuration > 0 && Math.abs(leftDuration - rightDuration) > 20 * 60) {
+        return false;
+      }
+      return true;
+    }
+
+    function mergeDecks(decks) {
+      const seen = new Set();
+      const merged = [];
+      decks.forEach(deck => {
+        const key = deck.deck_key || deck.deck_name || JSON.stringify(deck);
+        if (seen.has(key)) return;
+        seen.add(key);
+        merged.push(deck);
+      });
+      return merged;
+    }
+
+    function mergeSimulcastStreams(streams) {
+      const groups = [];
+      streams.forEach(stream => {
+        let matched = false;
+        for (const group of groups) {
+          if (group.length >= 2) continue;
+          if (group.some(existing => streamsAreSimulcast(stream, existing))) {
+            group.push(stream);
+            matched = true;
+            break;
+          }
+        }
+        if (!matched) {
+          groups.push([stream]);
+        }
+      });
+
+      return groups.map(group => {
+        const primary = group.find(stream => stream.platform === "youtube") || group[0];
+        const merged = {
+          ...primary,
+          duration_sec: Math.max(...group.map(stream => Number(stream.duration_sec || 0))),
+          is_shadowverse_related: group.some(stream => Number(stream.is_shadowverse_related || 0) === 1) ? 1 : 0,
+          decks: mergeDecks(group.flatMap(stream => stream.decks || []))
+        };
+        if (group.length > 1) {
+          merged.simulcast_streams = group.map(stream => ({ ...stream }));
+        }
+        return merged;
+      });
+    }
+
+    function streamCountLabel(countValue) {
+      return `${formatNumber(countValue)}配信`;
+    }
+
+    function rowCountLabel(countValue) {
+      return `${formatNumber(countValue)}行`;
     }
 
     function deckLabel(deck) {
@@ -1314,17 +1452,19 @@
           stream.team = timeline.team;
           stream.player_name = timeline.player_name;
           stream.player_icon_url = timeline.player_icon_url;
-          const keyValue = streamKey(stream);
-          state.streamsByKey.set(keyValue, stream);
-          (stream.decks || []).forEach(deck => {
-            const normalizedDeck = deckMeta(deck);
-            if (normalizedDeck.deck_key && !state.decksByKey.has(normalizedDeck.deck_key)) {
-              state.decksByKey.set(normalizedDeck.deck_key, normalizedDeck);
-            }
-            const link = linkMeta(keyValue, deck);
-            if (link.deck_key) {
-              state.linksByKey.set(linkKey(keyValue, link.deck_key), link);
-            }
+          streamComponents(stream).forEach(component => {
+            const keyValue = streamKey(component);
+            state.streamsByKey.set(keyValue, component);
+            (component.decks || []).forEach(deck => {
+              const normalizedDeck = deckMeta(deck);
+              if (normalizedDeck.deck_key && !state.decksByKey.has(normalizedDeck.deck_key)) {
+                state.decksByKey.set(normalizedDeck.deck_key, normalizedDeck);
+              }
+              const link = linkMeta(keyValue, deck);
+              if (link.deck_key) {
+                state.linksByKey.set(linkKey(keyValue, link.deck_key), link);
+              }
+            });
           });
         });
       });
@@ -1343,18 +1483,24 @@
     function materializeDerivedData() {
       state.timelines.forEach(timeline => {
         (timeline.streams || []).forEach(stream => {
-          const keyValue = streamKey(stream);
-          stream.decks = linksForStream(keyValue).map(link => ({
-            ...state.decksByKey.get(link.deck_key),
-            confidence: link.confidence,
-            source_note: link.source_note,
-            display_order: link.display_order
-          }));
+          const components = streamComponents(stream);
+          components.forEach(component => {
+            component.decks = linksForStream(streamKey(component)).map(link => ({
+              ...state.decksByKey.get(link.deck_key),
+              confidence: link.confidence,
+              source_note: link.source_note,
+              display_order: link.display_order
+            }));
+          });
+          stream.decks = mergeDecks(components.flatMap(component => component.decks || []));
+          if (Array.isArray(stream.simulcast_streams) && stream.simulcast_streams.length > 0) {
+            stream.simulcast_streams = components;
+          }
         });
       });
 
       const rows = Array.from(state.decksByKey.values()).map(deck => {
-        const streams = Array.from(state.linksByKey.values())
+        const streams = mergeSimulcastStreams(Array.from(state.linksByKey.values())
           .filter(link => link.deck_key === deck.deck_key)
           .map(link => {
             const stream = state.streamsByKey.get(link.stream_key);
@@ -1378,7 +1524,7 @@
               display_order: link.display_order
             };
           })
-          .filter(Boolean)
+          .filter(Boolean))
           .sort((a, b) => String(b.occurred_at || "").localeCompare(String(a.occurred_at || "")));
         const players = Array.from(new Set(streams.map(stream => stream.player_name).filter(Boolean))).sort();
         return {
@@ -1419,7 +1565,7 @@
     function changeDescription(prefix, link) {
       const deck = state.decksByKey.get(link.deck_key) || state.originalDecksByKey.get(link.deck_key) || { deck_name: link.deck_key };
       const stream = state.streamsByKey.get(link.stream_key) || {};
-      return `${prefix}: ${deckLabel(deck)} -> ${describeStream(stream) || "Unknown archive"}`;
+      return `${prefix}: ${deckLabel(deck)} -> ${describeStream(stream) || "不明なアーカイブ"}`;
     }
 
     function renderDraftState() {
@@ -1429,8 +1575,8 @@
       const panel = document.getElementById("draft-panel");
       const list = document.getElementById("draft-list");
       document.getElementById("change-summary").textContent = count === 0
-        ? "No unsaved changes."
-        : `${count} unsaved draft change${count === 1 ? "" : "s"}. Changes are not persisted yet.`;
+        ? "未保存の変更はありません。"
+        : `${count}件の未保存の変更があります。まだ保存されていません。`;
       bar.hidden = count === 0;
       panel.hidden = count === 0 || !state.showDraftPanel;
       if (count === 0) {
@@ -1439,10 +1585,10 @@
       }
 
       const items = [
-        ...changes.addedDecks.map(deck => `New deck: ${deckLabel(deck)}`),
-        ...changes.addedLinks.map(link => changeDescription("Linked", link)),
-        ...changes.removedLinks.map(link => changeDescription("Unlinked", link)),
-        ...changes.updatedLinks.map(link => changeDescription("Updated link", link))
+        ...changes.addedDecks.map(deck => `新規デッキ: ${deckLabel(deck)}`),
+        ...changes.addedLinks.map(link => changeDescription("リンク追加", link)),
+        ...changes.removedLinks.map(link => changeDescription("リンク解除", link)),
+        ...changes.updatedLinks.map(link => changeDescription("リンク更新", link))
       ];
       list.innerHTML = items.map(item => `<div class="draft-item">${escapeHtml(item)}</div>`).join("");
     }
@@ -1493,24 +1639,24 @@
       const errors = [];
       const deckKeys = new Set();
       state.decksByKey.forEach(deck => {
-        if (!deck.deck_key) errors.push("Deck key is required.");
-        if (!deck.deck_name) errors.push(`Deck name is required for ${deck.deck_key || "a deck"}.`);
-        if (deckKeys.has(deck.deck_key)) errors.push(`Duplicate deck key: ${deck.deck_key}`);
+        if (!deck.deck_key) errors.push("デッキキーが必要です。");
+        if (!deck.deck_name) errors.push(`${deck.deck_key || "デッキ"} のデッキ名が必要です。`);
+        if (deckKeys.has(deck.deck_key)) errors.push(`デッキキーが重複しています: ${deck.deck_key}`);
         deckKeys.add(deck.deck_key);
       });
 
       const linkKeys = new Set();
       state.linksByKey.forEach(link => {
         const stream = state.streamsByKey.get(link.stream_key);
-        if (!deckKeys.has(link.deck_key)) errors.push(`Linked deck is missing: ${link.deck_key}`);
+        if (!deckKeys.has(link.deck_key)) errors.push(`リンク先デッキが見つかりません: ${link.deck_key}`);
         if (!stream) {
-          errors.push(`Linked stream is missing for ${link.deck_key}.`);
+          errors.push(`${link.deck_key} のリンク先配信が見つかりません。`);
           return;
         }
-        if (!["youtube", "twitch"].includes(stream.platform)) errors.push(`Invalid platform: ${stream.platform || "empty"}`);
-        if (!stream.external_stream_id) errors.push(`External stream id is required for ${stream.title || "a stream"}.`);
+        if (!["youtube", "twitch"].includes(stream.platform)) errors.push(`不正なプラットフォームです: ${stream.platform || "空"}`);
+        if (!stream.external_stream_id) errors.push(`${stream.title || "配信"} の外部配信IDが必要です。`);
         const keyValue = `${stream.platform}/${stream.external_stream_id}/${link.deck_key}`;
-        if (linkKeys.has(keyValue)) errors.push(`Duplicate stream deck link: ${keyValue}`);
+        if (linkKeys.has(keyValue)) errors.push(`配信とデッキのリンクが重複しています: ${keyValue}`);
         linkKeys.add(keyValue);
       });
       return Array.from(new Set(errors));
@@ -1529,14 +1675,14 @@
       const endpoint = normalizeText(state.metadata.save_api_endpoint || "");
       const repository = normalizeText(state.metadata.repository || "");
       const branch = normalizeText(state.metadata.branch_name || "");
-      document.getElementById("save-modal-summary").textContent = `${changeCount(changes)} pending changes will update data/decks.csv and data/stream_session_decks.csv.`;
+      document.getElementById("save-modal-summary").textContent = `${changeCount(changes)}件の変更で data/decks.csv と data/stream_session_decks.csv を更新します。`;
       document.getElementById("save-target-summary").textContent = repository && branch
         ? `${repository} / ${branch}`
-        : "Repository or branch metadata is missing.";
+        : "リポジトリまたはブランチ情報が見つかりません。";
       document.getElementById("save-to-api").disabled = !endpoint;
       setSaveStatus(endpoint
-        ? "Changes will be sent to the configured save API. No GitHub token is entered in this browser."
-        : "Save API endpoint is not configured for this dashboard.", endpoint ? "" : "error");
+        ? "設定済みの保存APIへ変更を送信します。このブラウザでGitHubトークンを入力する必要はありません。"
+        : "このダッシュボードには保存APIエンドポイントが設定されていません。", endpoint ? "" : "error");
       document.getElementById("save-modal").hidden = false;
     }
 
@@ -1556,7 +1702,7 @@
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
-        const message = payload.message || payload.error || `Save API request failed with status ${response.status}.`;
+        const message = payload.message || payload.error || `保存APIリクエストに失敗しました。ステータス: ${response.status}`;
         throw new Error(message);
       }
       return payload;
@@ -1592,10 +1738,10 @@
       const repo = normalizeText(state.metadata.repository || "");
       const branch = normalizeText(state.metadata.branch_name || "");
       const errors = validateSavePayload();
-      if (!repo || !repo.includes("/")) errors.push("Repository must be owner/repo.");
-      if (!branch) errors.push("Branch is required.");
-      if (!endpoint) errors.push("Save API endpoint is not configured.");
-      if (changeCount() === 0) errors.push("There are no draft changes to save.");
+      if (!repo || !repo.includes("/")) errors.push("リポジトリは owner/repo 形式である必要があります。");
+      if (!branch) errors.push("ブランチが必要です。");
+      if (!endpoint) errors.push("このダッシュボードには保存APIエンドポイントが設定されていません。");
+      if (changeCount() === 0) errors.push("保存する下書き変更がありません。");
       if (errors.length > 0) {
         setSaveStatus(errors.join(" "), "error");
         return;
@@ -1603,7 +1749,7 @@
 
       state.saving = true;
       document.getElementById("save-to-api").disabled = true;
-      setSaveStatus("Saving changes...", "");
+      setSaveStatus("保存中...", "");
       try {
         const result = await saveApiJson(endpoint, {
           method: "POST",
@@ -1611,10 +1757,10 @@
           body: JSON.stringify(buildSavePayload())
         });
         markDraftSaved();
-        const detail = result.commit_url ? ` Commit: ${result.commit_url}` : "";
-        setSaveStatus(`Saved. Run Collect streaming data for this branch to rebuild the dashboard.${detail}`, "ok");
+        const detail = result.commit_url ? ` コミット: ${result.commit_url}` : "";
+        setSaveStatus(`保存しました。このブランチで Collect streaming data を実行してダッシュボードを再生成してください。${detail}`, "ok");
       } catch (error) {
-        setSaveStatus(`Save failed: ${error.message}`, "error");
+        setSaveStatus(`保存に失敗しました: ${error.message}`, "error");
       } finally {
         state.saving = false;
         document.getElementById("save-to-api").disabled = !normalizeText(state.metadata.save_api_endpoint || "");
@@ -1645,11 +1791,11 @@
       if (key === "timeline") {
         const keyValue = playerKey(row);
         const active = keyValue === state.selectedPlayerKey ? " active" : "";
-        return `<td class="action"><button class="detail-button${active}" type="button" data-player-key="${escapeHtml(keyValue)}">View</button></td>`;
+        return `<td class="action"><button class="detail-button${active}" type="button" data-player-key="${escapeHtml(keyValue)}">表示</button></td>`;
       }
       if (key === "deck_usage") {
         const active = row.deck_key === state.selectedDeckKey ? " active" : "";
-        return `<td class="action"><button class="detail-button deck-detail-button${active}" type="button" data-deck-key="${escapeHtml(row.deck_key)}">View</button></td>`;
+        return `<td class="action"><button class="detail-button deck-detail-button${active}" type="button" data-deck-key="${escapeHtml(row.deck_key)}">表示</button></td>`;
       }
       if (key === "deck_name" && row.deck_url) {
         return `<td><a class="timeline-title" href="${escapeHtml(row.deck_url)}" target="_blank" rel="noreferrer">${escapeHtml(value)}</a></td>`;
@@ -1707,8 +1853,8 @@
           state.selectedDeckKey = rows[0] ? rows[0].deck_key : "";
         }
       }
-      document.getElementById("table-title").textContent = state.view === "team" ? "By team" : state.view === "player" ? "By player" : "By deck";
-      document.getElementById("row-count").textContent = `${rows.length} rows`;
+      document.getElementById("table-title").textContent = viewLabels[state.view] || "";
+      document.getElementById("row-count").textContent = rowCountLabel(rows.length);
       document.getElementById("empty").hidden = rows.length > 0;
 
       document.getElementById("table-head").innerHTML = `<tr>${activeTableColumns.map(([key, label]) => {
@@ -1777,22 +1923,22 @@
       const empty = document.getElementById("timeline-empty");
 
       if (!timeline) {
-        title.textContent = "Player timeline";
+        title.textContent = "選手タイムライン";
         summary.textContent = "";
-        count.textContent = "0 streams";
+        count.textContent = streamCountLabel(0);
         list.innerHTML = "";
         empty.hidden = false;
         return;
       }
 
       const streams = timeline.streams || [];
-      title.innerHTML = `${playerLabelHtml(timeline, "heading")} <span>timeline</span>`;
+      title.innerHTML = `${playerLabelHtml(timeline, "heading")} <span>タイムライン</span>`;
       summary.textContent = timeline.team;
-      count.textContent = `${streams.length} streams`;
+      count.textContent = streamCountLabel(streams.length);
       empty.hidden = streams.length > 0;
       list.innerHTML = streams.map(stream => {
         const timestamp = stream.occurred_at || stream.started_at || stream.published_at || "";
-        const timestampKind = stream.started_at ? "Started" : stream.published_at ? "Published" : "Date unknown";
+        const timestampKind = stream.started_at ? "開始" : stream.published_at ? "公開" : "日付不明";
         const related = Number(stream.is_shadowverse_related || 0) === 1
           ? `<span class="pill related">Shadowverse</span>`
           : "";
@@ -1805,17 +1951,17 @@
             </div>
             ${streamThumbnailHtml(stream)}
             <div class="timeline-main">
-              <a class="timeline-title" href="${escapeHtml(stream.url)}" target="_blank" rel="noreferrer">${escapeHtml(stream.title || "Untitled stream")}</a>
+              <a class="timeline-title" href="${escapeHtml(stream.url)}" target="_blank" rel="noreferrer">${escapeHtml(stream.title || "無題の配信")}</a>
               <div class="timeline-tags">
-                <span class="pill ${escapeHtml(stream.platform || "")}">${escapeHtml(platformLabel(stream.platform))}</span>
+                ${platformLinksHtml(stream)}
                 <span class="pill">${escapeHtml(formatDuration(stream.duration_sec))}</span>
                 ${related}
                 ${deckTags}
               </div>
             </div>
             <div class="stream-actions">
-              <a class="timeline-link" href="${escapeHtml(stream.url)}" target="_blank" rel="noreferrer">Open archive</a>
-              <button class="secondary-button edit-stream-button" type="button" data-stream-key="${escapeHtml(streamKey(stream))}">Edit decks</button>
+              ${archiveActionsHtml(stream)}
+              ${editActionsHtml(stream)}
             </div>
           </article>
         `;
@@ -1831,24 +1977,24 @@
       const empty = document.getElementById("timeline-empty");
 
       if (!deck) {
-        title.textContent = "Deck usage";
+        title.textContent = "デッキ利用状況";
         summary.textContent = "";
-        count.textContent = "0 streams";
+        count.textContent = streamCountLabel(0);
         list.innerHTML = "";
-        empty.textContent = "No deck selected.";
+        empty.textContent = "デッキが選択されていません。";
         empty.hidden = false;
         return;
       }
 
       const streams = deck.streams || [];
-      title.textContent = `${deck.deck_name} archives`;
+      title.textContent = `${deck.deck_name}のアーカイブ`;
       summary.textContent = [deck.class_name, deck.archetype, deck.notes].filter(Boolean).join(" · ");
-      count.textContent = `${streams.length} streams`;
-      empty.textContent = "No stream archives linked.";
+      count.textContent = streamCountLabel(streams.length);
+      empty.textContent = "紐づいた配信アーカイブはありません。";
       empty.hidden = streams.length > 0;
       list.innerHTML = streams.map(stream => {
         const timestamp = stream.occurred_at || stream.started_at || stream.published_at || "";
-        const timestampKind = stream.started_at ? "Started" : stream.published_at ? "Published" : "Date unknown";
+        const timestampKind = stream.started_at ? "開始" : stream.published_at ? "公開" : "日付不明";
         const related = Number(stream.is_shadowverse_related || 0) === 1
           ? `<span class="pill related">Shadowverse</span>`
           : "";
@@ -1866,10 +2012,10 @@
             </div>
             ${streamThumbnailHtml(stream)}
             <div class="timeline-main">
-              <a class="timeline-title" href="${escapeHtml(stream.url)}" target="_blank" rel="noreferrer">${escapeHtml(stream.title || "Untitled stream")}</a>
-              <div class="timeline-meta">${escapeHtml(stream.team || "")} / ${escapeHtml(stream.player_name || "Unknown player")}</div>
+              <a class="timeline-title" href="${escapeHtml(stream.url)}" target="_blank" rel="noreferrer">${escapeHtml(stream.title || "無題の配信")}</a>
+              <div class="timeline-meta">${escapeHtml(stream.team || "")} / ${escapeHtml(stream.player_name || "不明な選手")}</div>
               <div class="timeline-tags">
-                <span class="pill ${escapeHtml(stream.platform || "")}">${escapeHtml(platformLabel(stream.platform))}</span>
+                ${platformLinksHtml(stream)}
                 <span class="pill">${escapeHtml(formatDuration(stream.duration_sec))}</span>
                 ${related}
                 ${confidence}
@@ -1877,8 +2023,8 @@
               ${note}
             </div>
             <div class="stream-actions">
-              <a class="timeline-link" href="${escapeHtml(stream.url)}" target="_blank" rel="noreferrer">Open archive</a>
-              <button class="secondary-button edit-stream-button" type="button" data-stream-key="${escapeHtml(streamKey(stream))}">Edit decks</button>
+              ${archiveActionsHtml(stream)}
+              ${editActionsHtml(stream)}
             </div>
           </article>
         `;
@@ -1907,7 +2053,7 @@
         return;
       }
 
-      document.getElementById("deck-editor-title").textContent = "Edit archive decks";
+      document.getElementById("deck-editor-title").textContent = "アーカイブのデッキを編集";
       document.getElementById("deck-editor-summary").textContent = describeStream(stream);
       renderLinkedDecks();
 
@@ -1929,22 +2075,22 @@
       const inferredClass = inferClassName(state.newDeckDraft.deck_name);
       const className = state.newDeckDraft.class_name || inferredClass;
       document.getElementById("new-deck-class-hint").textContent = state.newDeckDraft.deck_name
-        ? `Class guess: ${className || "unknown"}`
-        : "Class guess appears after entering a deck name.";
+        ? `推定クラス: ${className || "不明"}`
+        : "デッキ名を入力すると推定クラスが表示されます。";
       document.querySelectorAll(".advanced-deck-field").forEach(field => {
         field.hidden = !state.showNewDeckAdvanced;
       });
       document.getElementById("toggle-new-deck-advanced").setAttribute("aria-expanded", String(state.showNewDeckAdvanced));
       document.getElementById("toggle-new-deck-advanced").textContent = state.showNewDeckAdvanced
-        ? "Hide advanced input"
-        : "Advanced input";
+        ? "詳細入力を閉じる"
+        : "詳細入力";
     }
 
     function renderLinkedDecks() {
       const container = document.getElementById("linked-decks");
       const links = linksForStream(state.editingStreamKey);
       if (links.length === 0) {
-        container.innerHTML = `<div class="empty">No linked decks.</div>`;
+        container.innerHTML = `<div class="empty">リンク済みデッキはありません。</div>`;
         return;
       }
 
@@ -1954,15 +2100,15 @@
         const expanded = state.expandedLinkedDeckKeys.has(keyValue);
         const detailForm = expanded ? `
           <div class="form-grid">
-            <label class="field">Confidence
+            <label class="field">信頼度
               <select class="link-field" data-link-key="${escapeHtml(keyValue)}" data-field="confidence">
-                ${["", "low", "medium", "high"].map(value => `<option value="${escapeHtml(value)}"${value === link.confidence ? " selected" : ""}>${escapeHtml(value || "unset")}</option>`).join("")}
+                ${["", "low", "medium", "high"].map(value => `<option value="${escapeHtml(value)}"${value === link.confidence ? " selected" : ""}>${escapeHtml(confidenceLabel(value))}</option>`).join("")}
               </select>
             </label>
-            <label class="field">Display order
+            <label class="field">表示順
               <input class="link-field" data-link-key="${escapeHtml(keyValue)}" data-field="display_order" type="number" min="0" step="1" value="${escapeHtml(link.display_order)}">
             </label>
-            <label class="field full">Note
+            <label class="field full">メモ
               <textarea class="link-field" data-link-key="${escapeHtml(keyValue)}" data-field="source_note">${escapeHtml(link.source_note)}</textarea>
             </label>
           </div>
@@ -1975,8 +2121,8 @@
                 <span>${escapeHtml([deck.class_name, deck.archetype].filter(Boolean).join(" / ") || link.deck_key)}</span>
               </div>
               <div class="linked-deck-actions">
-                <button class="secondary-button toggle-link-details" type="button" data-link-key="${escapeHtml(keyValue)}">${expanded ? "Hide details" : "Details"}</button>
-                <button class="danger-button unlink-deck" type="button" data-link-key="${escapeHtml(keyValue)}">Unlink</button>
+                <button class="secondary-button toggle-link-details" type="button" data-link-key="${escapeHtml(keyValue)}">${expanded ? "詳細を閉じる" : "詳細"}</button>
+                <button class="danger-button unlink-deck" type="button" data-link-key="${escapeHtml(keyValue)}">リンク解除</button>
               </div>
             </div>
             ${detailForm}
@@ -2026,7 +2172,7 @@
         .slice(0, 8);
 
       if (decks.length === 0) {
-        container.innerHTML = `<div class="empty">No existing decks found.</div>`;
+        container.innerHTML = `<div class="empty">既存デッキが見つかりません。</div>`;
         return;
       }
 
@@ -2038,7 +2184,7 @@
               <strong>${escapeHtml(deck.deck_name)}</strong>
               <span>${escapeHtml([deck.class_name, deck.archetype].filter(Boolean).join(" / ") || deck.deck_key)}</span>
             </div>
-            <button class="secondary-button add-existing-deck" type="button" data-deck-key="${escapeHtml(deck.deck_key)}"${alreadyLinked ? " disabled" : ""}>${alreadyLinked ? "Linked" : "Add"}</button>
+            <button class="secondary-button add-existing-deck" type="button" data-deck-key="${escapeHtml(deck.deck_key)}"${alreadyLinked ? " disabled" : ""}>${alreadyLinked ? "リンク済み" : "追加"}</button>
           </div>
         `;
       }).join("");
@@ -2096,11 +2242,11 @@
         draft.deck_key = generatedDeckKey(draft.deck_name);
       }
       if (!draft.deck_key || !draft.deck_name) {
-        window.alert("Deck name is required.");
+        window.alert("デッキ名が必要です。");
         return;
       }
       if (state.decksByKey.has(draft.deck_key)) {
-        window.alert("Deck key already exists.");
+        window.alert("同じデッキキーが既に存在します。");
         return;
       }
       state.decksByKey.set(draft.deck_key, draft);
@@ -2131,7 +2277,7 @@
 
     function renderMetadata() {
       const meta = state.metadata;
-      document.getElementById("metadata").textContent = `Updated ${formatDate(meta.generated_at)}${meta.run_number ? ` · Run #${meta.run_number}` : ""}`;
+      document.getElementById("metadata").textContent = `更新: ${formatDate(meta.generated_at)}${meta.run_number ? ` · 実行 #${meta.run_number}` : ""}`;
       document.getElementById("team-count").textContent = formatNumber(meta.team_count);
       document.getElementById("player-count").textContent = formatNumber(meta.player_count);
       document.getElementById("stream-count").textContent = formatNumber(meta.total_streams);
@@ -2244,7 +2390,7 @@
     document.getElementById("create-deck").addEventListener("click", createAndLinkDeck);
 
     loadData().catch(error => {
-      document.getElementById("metadata").textContent = "Failed to load report data.";
+      document.getElementById("metadata").textContent = "レポートデータの読み込みに失敗しました。";
       document.getElementById("empty").hidden = false;
       document.getElementById("empty").textContent = error.message;
     });
