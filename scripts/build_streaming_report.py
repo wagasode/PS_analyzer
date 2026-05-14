@@ -4,8 +4,9 @@ import argparse
 import csv
 import os
 from pathlib import Path
+from typing import Any
 
-from common import DEFAULT_DB_PATH, ROOT_DIR, connect, init_schema
+from common import DEFAULT_DB_PATH, ROOT_DIR, connect, dedupe_simulcast_groups, init_schema
 
 
 REPORTS_DIR = ROOT_DIR / "reports"
@@ -13,6 +14,41 @@ REPORTS_DIR = ROOT_DIR / "reports"
 
 def hours_expr(column: str = "duration_sec") -> str:
     return f"ROUND(SUM({column}) / 3600.0, 2)"
+
+
+def hours(seconds: int) -> float:
+    return round(seconds / 3600.0, 2)
+
+
+def build_player_stream_metrics(stream_rows: list[dict[str, Any]]) -> dict[int, dict[str, float | int]]:
+    streams_by_player: dict[int, list[dict[str, Any]]] = {}
+    for row in stream_rows:
+        streams_by_player.setdefault(int(row["player_id"]), []).append(row)
+
+    metrics: dict[int, dict[str, float | int]] = {}
+    for player_id, streams in streams_by_player.items():
+        stream_count = 0
+        total_duration = 0
+        shadowverse_duration = 0
+        youtube_duration = 0
+        twitch_duration = 0
+        for group in dedupe_simulcast_groups(streams):
+            stream_count += 1
+            group_duration = max(int(stream.get("duration_sec") or 0) for stream in group)
+            total_duration += group_duration
+            if any(int(stream.get("is_shadowverse_related") or 0) == 1 for stream in group):
+                shadowverse_duration += group_duration
+            youtube_duration += sum(int(stream.get("duration_sec") or 0) for stream in group if stream.get("platform") == "youtube")
+            twitch_duration += sum(int(stream.get("duration_sec") or 0) for stream in group if stream.get("platform") == "twitch")
+
+        metrics[player_id] = {
+            "stream_count": stream_count,
+            "total_hours": hours(total_duration),
+            "shadowverse_hours": hours(shadowverse_duration),
+            "youtube_hours": hours(youtube_duration),
+            "twitch_hours": hours(twitch_duration),
+        }
+    return metrics
 
 
 def write_csv(path: Path, rows, fieldnames: list[str]) -> None:
@@ -84,20 +120,31 @@ def main() -> None:
     conn = connect(args.db)
     init_schema(conn)
 
-    by_player = conn.execute(
-        f"""
-        WITH player_streams AS (
+    stream_rows = [
+        dict(row)
+        for row in conn.execute(
+            """
             SELECT
                 player_id,
-                COUNT(*) AS stream_count,
-                {hours_expr()} AS total_hours,
-                ROUND(SUM(CASE WHEN is_shadowverse_related = 1 THEN duration_sec ELSE 0 END) / 3600.0, 2) AS shadowverse_hours,
-                ROUND(SUM(CASE WHEN platform = 'youtube' THEN duration_sec ELSE 0 END) / 3600.0, 2) AS youtube_hours,
-                ROUND(SUM(CASE WHEN platform = 'twitch' THEN duration_sec ELSE 0 END) / 3600.0, 2) AS twitch_hours
+                platform,
+                external_stream_id,
+                title,
+                started_at,
+                published_at,
+                COALESCE(started_at, published_at, '') AS occurred_at,
+                duration_sec,
+                is_shadowverse_related
             FROM stream_sessions
             WHERE is_live_archive = 1
-            GROUP BY player_id
-        ),
+            ORDER BY player_id, COALESCE(started_at, published_at, '') DESC, stream_session_id DESC
+            """
+        ).fetchall()
+    ]
+    player_metrics = build_player_stream_metrics(stream_rows)
+
+    player_rows = conn.execute(
+        """
+        WITH
         channel_status AS (
             SELECT
                 player_id,
@@ -125,14 +172,10 @@ def main() -> None:
             GROUP BY player_id
         )
         SELECT
+            p.player_id,
             p.team,
             p.player_name,
             COALESCE(ci.player_icon_url, '') AS player_icon_url,
-            COALESCE(ps.stream_count, 0) AS stream_count,
-            COALESCE(ps.total_hours, 0.0) AS total_hours,
-            COALESCE(ps.shadowverse_hours, 0.0) AS shadowverse_hours,
-            COALESCE(ps.youtube_hours, 0.0) AS youtube_hours,
-            COALESCE(ps.twitch_hours, 0.0) AS twitch_hours,
             COALESCE(cs.has_youtube_channel, 0) AS has_youtube_channel,
             COALESCE(cs.has_twitch_channel, 0) AS has_twitch_channel,
             CASE
@@ -146,12 +189,21 @@ def main() -> None:
             COALESCE(cs.youtube_skipped_reason, '') AS youtube_skipped_reason,
             COALESCE(cs.twitch_skipped_reason, '') AS twitch_skipped_reason
         FROM players p
-        LEFT JOIN player_streams ps USING(player_id)
         LEFT JOIN channel_status cs USING(player_id)
         LEFT JOIN channel_icons ci USING(player_id)
-        ORDER BY total_hours DESC, p.team, p.player_name
         """
     ).fetchall()
+    by_player = []
+    for row in player_rows:
+        row_dict = dict(row)
+        metrics = player_metrics.get(
+            int(row_dict["player_id"]),
+            {"stream_count": 0, "total_hours": 0.0, "shadowverse_hours": 0.0, "youtube_hours": 0.0, "twitch_hours": 0.0},
+        )
+        row_dict.update(metrics)
+        row_dict.pop("player_id")
+        by_player.append(row_dict)
+    by_player.sort(key=lambda row: (-float(row["total_hours"]), row["team"], row["player_name"]))
     player_fields = [
         "team",
         "player_name",
@@ -174,33 +226,17 @@ def main() -> None:
         player_fields,
     )
 
-    by_team = conn.execute(
-        f"""
-        WITH player_streams AS (
-            SELECT
-                player_id,
-                COUNT(*) AS stream_count,
-                SUM(duration_sec) AS total_duration_sec,
-                SUM(CASE WHEN is_shadowverse_related = 1 THEN duration_sec ELSE 0 END) AS shadowverse_duration_sec,
-                SUM(CASE WHEN platform = 'youtube' THEN duration_sec ELSE 0 END) AS youtube_duration_sec,
-                SUM(CASE WHEN platform = 'twitch' THEN duration_sec ELSE 0 END) AS twitch_duration_sec
-            FROM stream_sessions
-            WHERE is_live_archive = 1
-            GROUP BY player_id
+    by_team_map: dict[str, dict[str, float | int | str]] = {}
+    for row in by_player:
+        team = str(row["team"])
+        team_row = by_team_map.setdefault(
+            team,
+            {"team": team, "stream_count": 0, "total_hours": 0.0, "shadowverse_hours": 0.0, "youtube_hours": 0.0, "twitch_hours": 0.0},
         )
-        SELECT
-            p.team,
-            COALESCE(SUM(ps.stream_count), 0) AS stream_count,
-            ROUND(COALESCE(SUM(ps.total_duration_sec), 0) / 3600.0, 2) AS total_hours,
-            ROUND(COALESCE(SUM(ps.shadowverse_duration_sec), 0) / 3600.0, 2) AS shadowverse_hours,
-            ROUND(COALESCE(SUM(ps.youtube_duration_sec), 0) / 3600.0, 2) AS youtube_hours,
-            ROUND(COALESCE(SUM(ps.twitch_duration_sec), 0) / 3600.0, 2) AS twitch_hours
-        FROM players p
-        LEFT JOIN player_streams ps USING(player_id)
-        GROUP BY p.team
-        ORDER BY total_hours DESC, p.team
-        """
-    ).fetchall()
+        team_row["stream_count"] = int(team_row["stream_count"]) + int(row["stream_count"])
+        for field in ("total_hours", "shadowverse_hours", "youtube_hours", "twitch_hours"):
+            team_row[field] = round(float(team_row[field]) + float(row[field]), 2)
+    by_team = sorted(by_team_map.values(), key=lambda row: (-float(row["total_hours"]), str(row["team"])))
     write_csv(
         args.out_dir / "streaming_by_team.csv",
         by_team,

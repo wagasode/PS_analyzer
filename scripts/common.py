@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+from difflib import SequenceMatcher
 import json
 import os
 import re
@@ -28,6 +29,8 @@ SHADOWVERSE_TERMS = (
     "svwb",
     "シャドバwb",
 )
+SIMULCAST_START_TOLERANCE_SECONDS = 10 * 60
+SIMULCAST_DURATION_TOLERANCE_SECONDS = 20 * 60
 
 
 class ApiError(RuntimeError):
@@ -135,6 +138,90 @@ def twitch_archive_url(video_id: str, url: str = "") -> str:
     if not video_id:
         return url.strip()
     return f"https://www.twitch.tv/videos/{urllib.parse.quote(video_id, safe='')}"
+
+
+def parse_stream_timestamp(value: object) -> datetime | None:
+    text = str(value or "").strip()
+    if not text:
+        return None
+    try:
+        return datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
+def stream_timestamp(stream: dict[str, Any]) -> datetime | None:
+    for field in ("occurred_at", "started_at", "published_at"):
+        parsed = parse_stream_timestamp(stream.get(field))
+        if parsed is not None:
+            return parsed
+    return None
+
+
+def normalized_stream_title(value: object) -> str:
+    text = str(value or "").lower()
+    text = re.sub(r"https?://\S+", " ", text)
+    text = re.sub(r"[\W_]+", " ", text, flags=re.UNICODE)
+    return " ".join(text.split())
+
+
+def _same_stream_owner(left: dict[str, Any], right: dict[str, Any]) -> bool:
+    for key in ("player_id", "player_name"):
+        left_value = left.get(key)
+        right_value = right.get(key)
+        if left_value and right_value and left_value != right_value:
+            return False
+    return True
+
+
+def _titles_compatible(left: dict[str, Any], right: dict[str, Any]) -> bool:
+    left_title = normalized_stream_title(left.get("title"))
+    right_title = normalized_stream_title(right.get("title"))
+    if not left_title or not right_title:
+        return True
+    if left_title == right_title:
+        return True
+    return SequenceMatcher(None, left_title, right_title).ratio() >= 0.62
+
+
+def streams_are_simulcast(left: dict[str, Any], right: dict[str, Any]) -> bool:
+    if {left.get("platform"), right.get("platform")} != {"youtube", "twitch"}:
+        return False
+    if not _same_stream_owner(left, right):
+        return False
+
+    left_time = stream_timestamp(left)
+    right_time = stream_timestamp(right)
+    if left_time is None or right_time is None:
+        return False
+    started_delta = abs((left_time - right_time).total_seconds())
+    if started_delta > SIMULCAST_START_TOLERANCE_SECONDS:
+        return False
+
+    left_duration = int(left.get("duration_sec") or 0)
+    right_duration = int(right.get("duration_sec") or 0)
+    if left_duration > 0 and right_duration > 0:
+        duration_delta = abs(left_duration - right_duration)
+        if duration_delta > SIMULCAST_DURATION_TOLERANCE_SECONDS:
+            return False
+
+    return _titles_compatible(left, right)
+
+
+def dedupe_simulcast_groups(streams: list[dict[str, Any]]) -> list[list[dict[str, Any]]]:
+    groups: list[list[dict[str, Any]]] = []
+    for stream in streams:
+        matched = False
+        for group in groups:
+            if len(group) >= 2:
+                continue
+            if any(streams_are_simulcast(stream, existing) for existing in group):
+                group.append(stream)
+                matched = True
+                break
+        if not matched:
+            groups.append([stream])
+    return groups
 
 
 def parse_iso8601_duration(value: str | None) -> int:
