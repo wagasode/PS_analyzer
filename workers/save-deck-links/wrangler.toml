@@ -4,5 +4,5 @@ compatibility_date = "2026-05-13"
 
 [vars]
 ALLOWED_REPOSITORY = "wagasode/PS_analyzer"
-ALLOWED_BRANCHES = "codex/issue-11-save-deck-edits"
+ALLOWED_BRANCHES = "main"
 ALLOWED_ORIGINS = "https://wagasode.github.io"

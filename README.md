@@ -152,12 +152,16 @@ npx wrangler secret put GITHUB_TOKEN
 npx wrangler deploy
 ```
 
-For initial branch testing, keep `ALLOWED_BRANCHES` limited to the preview
-branch, for example:
+For the production dashboard, allow the branch that is published at the root
+dashboard URL:
 
 ```toml
-ALLOWED_BRANCHES = "codex/issue-11-save-deck-edits"
+ALLOWED_BRANCHES = "main"
 ```
+
+For branch-preview testing, temporarily add the preview branch to the
+comma-separated `ALLOWED_BRANCHES` value while the preview is being tested, then
+remove it after the test is complete.
 
 After deploying the Worker, add the Worker URL as a GitHub Actions repository
 variable:
