@@ -1075,6 +1075,10 @@ HTML = """<!doctype html>
       box-shadow: 0 24px 80px rgba(15, 23, 42, 0.25);
     }
 
+    #deck-editor-modal .modal {
+      width: min(1180px, 100%);
+    }
+
     .modal-head {
       display: flex;
       align-items: flex-start;
@@ -1091,6 +1095,19 @@ HTML = """<!doctype html>
       overflow: auto;
     }
 
+    .deck-editor-layout {
+      display: grid;
+      grid-template-columns: minmax(340px, 0.95fr) minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .editor-form-stack {
+      display: grid;
+      gap: 18px;
+      min-width: 0;
+    }
+
     .editor-section {
       display: grid;
       gap: 10px;
@@ -1099,6 +1116,68 @@ HTML = """<!doctype html>
     .editor-section h3 {
       margin: 0;
       font-size: 15px;
+    }
+
+    .video-panel {
+      display: grid;
+      gap: 12px;
+      min-width: 0;
+      position: sticky;
+      top: 0;
+      align-self: start;
+    }
+
+    .video-platforms,
+    .video-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .platform-choice.active {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .video-frame {
+      display: grid;
+      place-items: center;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #0f172a;
+      color: #e2e8f0;
+    }
+
+    .video-frame iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      display: block;
+    }
+
+    .video-placeholder {
+      display: grid;
+      gap: 6px;
+      padding: 18px;
+      text-align: center;
+      color: #e2e8f0;
+    }
+
+    .video-placeholder strong {
+      font-size: 15px;
+    }
+
+    .video-placeholder span,
+    .video-meta {
+      color: var(--muted);
+      font-size: 13px;
+      overflow-wrap: anywhere;
     }
 
     .form-grid {
@@ -1232,6 +1311,14 @@ HTML = """<!doctype html>
 
       .modal {
         max-height: calc(100vh - 20px);
+      }
+
+      .deck-editor-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .video-panel {
+        position: static;
       }
 
       .form-grid {
@@ -1394,50 +1481,62 @@ HTML = """<!doctype html>
         </div>
       </div>
       <div class="modal-body">
-        <section class="editor-section">
-          <h3>リンク済みデッキ</h3>
-          <div class="linked-decks" id="linked-decks"></div>
-        </section>
+        <div class="deck-editor-layout">
+          <section class="editor-section video-panel" aria-label="アーカイブ視聴">
+            <h3>アーカイブ視聴</h3>
+            <div class="video-platforms" id="video-platforms"></div>
+            <div class="video-frame" id="video-frame"></div>
+            <div class="video-meta" id="video-meta"></div>
+            <div class="video-actions" id="video-actions"></div>
+          </section>
 
-        <section class="editor-section">
-          <h3>既存デッキを追加</h3>
-          <input class="editor-input" id="deck-search-input" type="search" placeholder="デッキを検索" autocomplete="off">
-          <div class="search-results" id="deck-search-results"></div>
-        </section>
+          <div class="editor-form-stack">
+            <section class="editor-section">
+              <h3>リンク済みデッキ</h3>
+              <div class="linked-decks" id="linked-decks"></div>
+            </section>
 
-        <section class="editor-section">
-          <h3>新規デッキを作成</h3>
-          <label class="field">デッキ名
-            <input id="new-deck-name" type="text" placeholder="連携R" autocomplete="off">
-          </label>
-          <div class="timeline-summary" id="new-deck-class-hint"></div>
-          <div class="modal-actions">
-            <button class="secondary-button" id="toggle-new-deck-advanced" type="button" aria-expanded="false">詳細入力</button>
+            <section class="editor-section">
+              <h3>既存デッキを追加</h3>
+              <input class="editor-input" id="deck-search-input" type="search" placeholder="デッキを検索" autocomplete="off">
+              <div class="search-results" id="deck-search-results"></div>
+            </section>
+
+            <section class="editor-section">
+              <h3>新規デッキを作成</h3>
+              <label class="field">デッキ名
+                <input id="new-deck-name" type="text" placeholder="連携R" autocomplete="off">
+              </label>
+              <div class="timeline-summary" id="new-deck-class-hint"></div>
+              <div class="modal-actions">
+                <button class="secondary-button" id="toggle-new-deck-advanced" type="button" aria-expanded="false">詳細入力</button>
+              </div>
+              <div class="form-grid">
+                <label class="field advanced-deck-field" hidden>デッキキー
+                  <input id="new-deck-key" type="text" autocomplete="off">
+                </label>
+                <label class="field advanced-deck-field" hidden>クラス
+                  <input id="new-deck-class" type="text" autocomplete="off">
+                </label>
+                <label class="field advanced-deck-field" hidden>アーキタイプ
+                  <input id="new-deck-archetype" type="text" autocomplete="off">
+                </label>
+                <label class="field advanced-deck-field" hidden>デッキURL
+                  <input id="new-deck-url" type="url" autocomplete="off">
+                </label>
+                <label class="field advanced-deck-field" hidden>デッキコード
+                  <input id="new-deck-code" type="text" autocomplete="off">
+                </label>
+                <label class="field full advanced-deck-field" hidden>メモ
+                  <textarea id="new-deck-notes"></textarea>
+                </label>
+              </div>
+              <div class="modal-actions">
+                <button class="primary-button" id="create-deck" type="button">作成してリンク</button>
+              </div>
+            </section>
           </div>
-          <div class="form-grid">
-            <label class="field advanced-deck-field" hidden>デッキキー
-              <input id="new-deck-key" type="text" autocomplete="off">
-            </label>
-            <label class="field advanced-deck-field" hidden>クラス
-              <input id="new-deck-class" type="text" autocomplete="off">
-            </label>
-            <label class="field advanced-deck-field" hidden>アーキタイプ
-              <input id="new-deck-archetype" type="text" autocomplete="off">
-            </label>
-            <label class="field advanced-deck-field" hidden>デッキURL
-              <input id="new-deck-url" type="url" autocomplete="off">
-            </label>
-            <label class="field advanced-deck-field" hidden>デッキコード
-              <input id="new-deck-code" type="text" autocomplete="off">
-            </label>
-            <label class="field full advanced-deck-field" hidden>メモ
-              <textarea id="new-deck-notes"></textarea>
-            </label>
-          </div>
-          <div class="modal-actions">
-            <button class="primary-button" id="create-deck" type="button">作成してリンク</button>
-          </div>
-        </section>
+        </div>
       </div>
     </section>
   </div>
@@ -1464,6 +1563,7 @@ HTML = """<!doctype html>
       selectedPlayerKey: "",
       selectedDeckKey: "",
       editingStreamKey: "",
+      previewStreamKey: "",
       deckSearchQuery: "",
       expandedLinkedDeckKeys: new Set(),
       showDraftPanel: false,
@@ -1595,6 +1695,14 @@ HTML = """<!doctype html>
       }));
     }
 
+    function cleanStreamComponents(stream) {
+      return streamComponents(stream).map(component => {
+        const cleaned = { ...component };
+        delete cleaned.simulcast_streams;
+        return cleaned;
+      });
+    }
+
     function linkKey(streamKeyValue, deckKey) {
       return JSON.stringify([streamKeyValue, deckKey]);
     }
@@ -1686,6 +1794,65 @@ HTML = """<!doctype html>
         const label = components.length > 1 ? `${platformLabel(component.platform)}デッキ編集` : "デッキ編集";
         return `<button class="secondary-button edit-stream-button" type="button" data-stream-key="${escapeHtml(streamKey(component))}">${escapeHtml(label)}</button>`;
       }).join("");
+    }
+
+    function youtubeVideoId(stream) {
+      const externalId = normalizeText(stream.external_stream_id || "");
+      if (externalId) return externalId;
+      try {
+        const url = new URL(stream.url || "", window.location.href);
+        if (url.hostname.includes("youtu.be")) {
+          return url.pathname.split("/").filter(Boolean)[0] || "";
+        }
+        if (url.hostname.includes("youtube.com")) {
+          const fromQuery = url.searchParams.get("v");
+          if (fromQuery) return fromQuery;
+          const parts = url.pathname.split("/").filter(Boolean);
+          if (["live", "embed", "shorts"].includes(parts[0])) {
+            return parts[1] || "";
+          }
+        }
+      } catch {
+        return "";
+      }
+      return "";
+    }
+
+    function twitchVideoId(stream) {
+      const externalId = normalizeText(stream.external_stream_id || "");
+      if (externalId) return externalId;
+      try {
+        const url = new URL(stream.url || "", window.location.href);
+        const parts = url.pathname.split("/").filter(Boolean);
+        if (parts[0] === "videos") {
+          return parts[1] || "";
+        }
+      } catch {
+        return "";
+      }
+      return "";
+    }
+
+    function streamEmbedUrl(stream) {
+      if (stream.platform === "youtube") {
+        const videoId = youtubeVideoId(stream);
+        return videoId ? `https://www.youtube.com/embed/${encodeURIComponent(videoId)}` : "";
+      }
+      if (stream.platform === "twitch") {
+        const videoId = twitchVideoId(stream);
+        const parent = window.location.hostname;
+        return videoId && parent
+          ? `https://player.twitch.tv/?video=${encodeURIComponent(videoId)}&parent=${encodeURIComponent(parent)}`
+          : "";
+      }
+      return "";
+    }
+
+    function embedUnavailableMessage(stream) {
+      if (stream.platform === "twitch" && !window.location.hostname) {
+        return "Twitchの埋め込みには公開ホスト名が必要です。";
+      }
+      return "このアーカイブは埋め込み表示できません。";
     }
 
     function streamTimestampMs(stream) {
@@ -1849,9 +2016,13 @@ HTML = """<!doctype html>
           stream.team = timeline.team;
           stream.player_name = timeline.player_name;
           stream.player_icon_url = timeline.player_icon_url;
-          streamComponents(stream).forEach(component => {
+          const components = cleanStreamComponents(stream);
+          components.forEach(component => {
             const keyValue = streamKey(component);
-            state.streamsByKey.set(keyValue, component);
+            const componentForEditor = components.length > 1
+              ? { ...component, simulcast_streams: components.map(item => ({ ...item })) }
+              : component;
+            state.streamsByKey.set(keyValue, componentForEditor);
             (component.decks || []).forEach(deck => {
               const normalizedDeck = deckMeta(deck);
               if (normalizedDeck.deck_key && !state.decksByKey.has(normalizedDeck.deck_key)) {
@@ -2433,6 +2604,7 @@ HTML = """<!doctype html>
         return;
       }
       state.editingStreamKey = streamKeyValue;
+      state.previewStreamKey = streamKeyValue;
       state.deckSearchQuery = "";
       renderDeckEditor();
       document.getElementById("deck-editor-modal").hidden = false;
@@ -2440,7 +2612,56 @@ HTML = """<!doctype html>
 
     function closeDeckEditor() {
       state.editingStreamKey = "";
+      state.previewStreamKey = "";
       document.getElementById("deck-editor-modal").hidden = true;
+    }
+
+    function previewStreamForEditor() {
+      return state.streamsByKey.get(state.previewStreamKey)
+        || state.streamsByKey.get(state.editingStreamKey);
+    }
+
+    function renderVideoPreview() {
+      const editingStream = state.streamsByKey.get(state.editingStreamKey);
+      if (!editingStream) {
+        return;
+      }
+      const components = cleanStreamComponents(editingStream);
+      if (!components.some(component => streamKey(component) === state.previewStreamKey)) {
+        state.previewStreamKey = state.editingStreamKey;
+      }
+      const previewStream = previewStreamForEditor() || editingStream;
+      const embedUrl = streamEmbedUrl(previewStream);
+      const platforms = document.getElementById("video-platforms");
+      const frame = document.getElementById("video-frame");
+      const meta = document.getElementById("video-meta");
+      const actions = document.getElementById("video-actions");
+
+      platforms.innerHTML = components.length > 1
+        ? components.map(component => {
+            const keyValue = streamKey(component);
+            const active = keyValue === state.previewStreamKey ? " active" : "";
+            return `<button class="secondary-button platform-choice${active}" type="button" data-preview-stream-key="${escapeHtml(keyValue)}">${escapeHtml(platformLabel(component.platform))}</button>`;
+          }).join("")
+        : `<span class="pill ${escapeHtml(previewStream.platform || "")}">${escapeHtml(platformLabel(previewStream.platform))}</span>`;
+
+      frame.innerHTML = embedUrl
+        ? `<iframe src="${escapeHtml(embedUrl)}" title="${escapeHtml(previewStream.title || "アーカイブ動画")}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share" allowfullscreen></iframe>`
+        : `<div class="video-placeholder"><strong>${escapeHtml(embedUnavailableMessage(previewStream))}</strong><span>外部リンクからアーカイブを開けます。</span></div>`;
+
+      meta.textContent = [
+        platformLabel(previewStream.platform),
+        formatDate(previewStream.occurred_at || previewStream.started_at || previewStream.published_at || ""),
+        previewStream.title || "無題の配信"
+      ].filter(Boolean).join(" / ");
+      actions.innerHTML = `<a class="timeline-link" href="${escapeHtml(previewStream.url || "#")}" target="_blank" rel="noreferrer">外部で開く</a>`;
+
+      document.querySelectorAll(".platform-choice").forEach(button => {
+        button.addEventListener("click", () => {
+          state.previewStreamKey = button.dataset.previewStreamKey || state.editingStreamKey;
+          renderVideoPreview();
+        });
+      });
     }
 
     function renderDeckEditor() {
@@ -2452,6 +2673,7 @@ HTML = """<!doctype html>
 
       document.getElementById("deck-editor-title").textContent = "アーカイブのデッキを編集";
       document.getElementById("deck-editor-summary").textContent = describeStream(stream);
+      renderVideoPreview();
       renderLinkedDecks();
 
       const searchInput = document.getElementById("deck-search-input");
