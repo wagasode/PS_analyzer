@@ -557,6 +557,45 @@ HTML = """<!doctype html>
       box-shadow: var(--shadow);
     }
 
+    .debug-info {
+      margin-top: 10px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .debug-info summary {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      cursor: pointer;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .debug-list {
+      display: grid;
+      grid-template-columns: max-content minmax(0, 1fr);
+      gap: 4px 10px;
+      margin: 8px 0 10px;
+      max-width: 720px;
+    }
+
+    .debug-list dt {
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .debug-list dd {
+      margin: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .debug-links {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
     main {
       padding: 24px 0 40px;
     }
@@ -1224,6 +1263,30 @@ HTML = """<!doctype html>
       font-weight: 700;
     }
 
+    .status-details {
+      margin-top: 6px;
+      color: var(--text);
+      font-weight: 400;
+    }
+
+    .status-details summary {
+      cursor: pointer;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .status-details pre {
+      margin: 6px 0 0;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: #f8fafc;
+      color: var(--text);
+      font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
     .draft-panel {
       margin: -6px 0 18px;
       border: 1px solid var(--border);
@@ -1580,13 +1643,17 @@ HTML = """<!doctype html>
       <div>
         <h1>配信レポート</h1>
         <div class="meta" id="metadata">読み込み中...</div>
-      </div>
-      <div class="actions">
-        <a class="button" href="data/streaming_by_team.json">チームJSON</a>
-        <a class="button" href="data/streaming_by_player.json">選手JSON</a>
-        <a class="button" href="data/streaming_timeline_by_player.json">タイムラインJSON</a>
-        <a class="button" href="data/streaming_deck_usage.json">デッキJSON</a>
-        <a class="button" id="run-link" href="#" hidden>ワークフロー実行</a>
+        <details class="debug-info" id="debug-info" hidden>
+          <summary>運用情報</summary>
+          <dl class="debug-list" id="debug-list"></dl>
+          <div class="debug-links" id="debug-links">
+            <a class="button" href="data/streaming_by_team.json">チームJSON</a>
+            <a class="button" href="data/streaming_by_player.json">選手JSON</a>
+            <a class="button" href="data/streaming_timeline_by_player.json">タイムラインJSON</a>
+            <a class="button" href="data/streaming_deck_usage.json">デッキJSON</a>
+            <a class="button" id="run-link" href="#" hidden>ワークフロー実行</a>
+          </div>
+        </details>
       </div>
     </div>
   </header>
@@ -1768,6 +1835,7 @@ HTML = """<!doctype html>
       saving: false,
       saveStatus: "",
       saveStatusKind: "",
+      saveStatusDetail: "",
       newDeckDraft: {
         deck_key: "",
         deck_name: "",
@@ -2543,15 +2611,60 @@ HTML = """<!doctype html>
       });
     }
 
-    function setSaveStatus(message, kind = "") {
+    function setSaveStatus(message, kind = "", detail = "") {
       state.saveStatus = message;
       state.saveStatusKind = kind;
+      state.saveStatusDetail = detail;
       document.querySelectorAll("[data-save-status]").forEach(status => {
-        status.textContent = message;
-        status.hidden = !message;
+        status.replaceChildren();
+        if (message) {
+          const messageText = document.createElement("span");
+          messageText.textContent = message;
+          status.appendChild(messageText);
+        }
+        if (detail) {
+          const details = document.createElement("details");
+          details.className = "status-details";
+          const summary = document.createElement("summary");
+          summary.textContent = "調査用の詳細";
+          const pre = document.createElement("pre");
+          pre.textContent = detail;
+          details.append(summary, pre);
+          status.appendChild(details);
+        }
+        status.hidden = !message && !detail;
         status.classList.toggle("ok", kind === "ok");
         status.classList.toggle("error", kind === "error");
       });
+    }
+
+    function publicSaveApiMessage(status, payloadMessage) {
+      if (/branch is not allowed/i.test(payloadMessage)) {
+        return "保存先ブランチが保存APIで許可されていません。";
+      }
+      if (/repository is not allowed/i.test(payloadMessage)) {
+        return "保存先リポジトリが保存APIで許可されていません。";
+      }
+      if (status === 401 || status === 403) {
+        return "保存APIへの権限がありません。";
+      }
+      if (status === 404) {
+        return "保存APIの保存先が見つかりません。";
+      }
+      if (status >= 500) {
+        return "保存API側でエラーが発生しました。";
+      }
+      return `保存APIリクエストに失敗しました。ステータス: ${status}`;
+    }
+
+    function saveApiErrorDetail(status, statusText, payloadMessage) {
+      const lines = [
+        `HTTP status: ${status}${statusText ? ` ${statusText}` : ""}`
+      ];
+      if (payloadMessage) {
+        lines.push(`API message: ${payloadMessage}`);
+      }
+      return lines.join("\\n");
     }
 
     async function saveApiJson(url, options = {}) {
@@ -2563,19 +2676,32 @@ HTML = """<!doctype html>
           ...(options.headers || {})
         }
       });
-      const payload = await response.json().catch(() => ({}));
+      const payload = await response.json().catch(() => null);
       if (!response.ok) {
-        const message = payload.message || payload.error || `保存APIリクエストに失敗しました。ステータス: ${response.status}`;
-        throw new Error(message);
+        const payloadMessage = payload && typeof payload === "object"
+          ? normalizeText(payload.message || payload.error || "")
+          : "";
+        const error = new Error(publicSaveApiMessage(response.status, payloadMessage));
+        error.debugDetail = saveApiErrorDetail(response.status, response.statusText, payloadMessage);
+        throw error;
       }
       return payload;
     }
 
-    function conciseSaveErrorMessage(error) {
+    function publicSaveErrorMessage(error) {
+      if (error && !error.debugDetail && error.name === "TypeError") {
+        return "保存APIへの接続に失敗しました。";
+      }
       const message = normalizeText(error && error.message ? error.message : error);
-      if (!message) return "原因を確認できませんでした。";
+      if (!message) return "保存APIへの接続に失敗しました。";
       const firstLine = message.split(/\\r?\\n/)[0];
       return firstLine.length > 140 ? `${firstLine.slice(0, 137)}...` : firstLine;
+    }
+
+    function saveErrorDetail(error) {
+      const detail = normalizeText(error && error.debugDetail ? error.debugDetail : error && error.message ? error.message : "");
+      if (!detail) return "";
+      return detail.length > 600 ? `${detail.slice(0, 597)}...` : detail;
     }
 
     function saveValidationMessage(errors) {
@@ -2637,7 +2763,7 @@ HTML = """<!doctype html>
         markDraftSaved();
         setSaveStatus("保存しました。", "ok");
       } catch (error) {
-        setSaveStatus(`保存に失敗しました: ${conciseSaveErrorMessage(error)}`, "error");
+        setSaveStatus(`保存に失敗しました: ${publicSaveErrorMessage(error)}`, "error", saveErrorDetail(error));
       } finally {
         state.saving = false;
         updateSaveControls();
@@ -3206,12 +3332,23 @@ HTML = """<!doctype html>
 
     function renderMetadata() {
       const meta = state.metadata;
-      document.getElementById("metadata").textContent = `更新: ${formatDate(meta.generated_at)}${meta.run_number ? ` · 実行 #${meta.run_number}` : ""}`;
+      document.getElementById("metadata").textContent = `更新: ${formatDate(meta.generated_at)}`;
       document.getElementById("team-count").textContent = formatNumber(meta.team_count);
       document.getElementById("player-count").textContent = formatNumber(meta.player_count);
       document.getElementById("stream-count").textContent = formatNumber(meta.total_streams);
       document.getElementById("total-hours").textContent = formatNumber(meta.total_hours);
       document.getElementById("sv-hours").textContent = formatNumber(meta.shadowverse_hours);
+      const debugRows = [
+        ["生成日時", formatDate(meta.generated_at)],
+        ["リポジトリ", meta.repository || "未設定"],
+        ["ブランチ", meta.branch_name || "未設定"],
+        ["ワークフロー実行", meta.run_number ? `#${meta.run_number}` : "未設定"],
+        ["保存API", meta.save_api_endpoint ? "設定済み" : "未設定"]
+      ];
+      document.getElementById("debug-list").innerHTML = debugRows
+        .map(([label, value]) => `<dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd>`)
+        .join("");
+      document.getElementById("debug-info").hidden = false;
       if (meta.run_url) {
         const link = document.getElementById("run-link");
         link.href = meta.run_url;
