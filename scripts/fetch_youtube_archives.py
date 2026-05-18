@@ -26,6 +26,10 @@ from common import (
 SKIPPED_CHANNELS_REPORT = ROOT_DIR / "reports" / "youtube_skipped_channels.csv"
 
 
+class ChannelNotFoundError(RuntimeError):
+    pass
+
+
 def best_thumbnail_url(thumbnails: dict) -> str:
     for key in ("maxres", "standard", "high", "medium", "default"):
         url = thumbnails.get(key, {}).get("url")
@@ -61,7 +65,7 @@ def resolve_channel(conn: sqlite3.Connection, channel: sqlite3.Row, api_key: str
     payload = youtube_api("channels", params, api_key)
     items = payload.get("items", [])
     if not items:
-        raise RuntimeError(f"YouTube channel not found: {channel['player_name']} {identifier}")
+        raise ChannelNotFoundError(f"YouTube channel not found: {channel['player_name']} {identifier}")
     item = items[0]
     external_channel_id = item["id"]
     uploads_playlist_id = item["contentDetails"]["relatedPlaylists"]["uploads"]
@@ -120,7 +124,8 @@ def action_escape(value: str) -> str:
 def warn_skipped_channel(skip: dict[str, str]) -> None:
     message = (
         f"{skip['player_name']} ({skip['team']}) was skipped: "
-        f"{skip['reason']} playlist_id={skip['uploads_playlist_id']} identifier={skip['platform_identifier']}"
+        f"{skip['reason']} playlist_id={skip['uploads_playlist_id']} "
+        f"identifier={skip['platform_identifier']} detail={skip['detail']}"
     )
     print(f"::warning title=Skipped YouTube channel::{action_escape(message)}")
 
@@ -158,6 +163,38 @@ def write_skipped_channels_report(skipped_channels: list[dict[str, str]]) -> Non
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(skipped_channels)
+
+
+def record_skipped_channel(
+    conn: sqlite3.Connection,
+    channel: sqlite3.Row,
+    skipped_channels: list[dict[str, str]],
+    *,
+    reason: str,
+    detail: str,
+    external_channel_id: str = "",
+    uploads_playlist_id: str = "",
+) -> None:
+    skip = {
+        "team": channel["team"],
+        "player_name": channel["player_name"],
+        "platform_identifier": channel["platform_identifier"],
+        "external_channel_id": external_channel_id,
+        "uploads_playlist_id": uploads_playlist_id,
+        "reason": reason,
+        "detail": detail,
+    }
+    skipped_channels.append(skip)
+    update_channel_status(
+        conn,
+        channel["channel_id"],
+        "skipped",
+        skip["reason"],
+        skip["detail"],
+        0,
+    )
+    conn.commit()
+    warn_skipped_channel(skip)
 
 
 def append_github_step_summary(skipped_channels: list[dict[str, str]], channels_checked: int, items_seen: int, items_upserted: int) -> None:
@@ -274,38 +311,38 @@ def main() -> None:
     try:
         for channel in youtube_channels(conn, args.player):
             channels_checked += 1
-            uploads_playlist_id = channel["uploads_playlist_id"]
-            if not uploads_playlist_id:
-                external_channel_id, uploads_playlist_id = resolve_channel(conn, channel, api_key)
-            else:
-                external_channel_id = channel["external_channel_id"] or ""
-                if not channel["image_url"]:
+            external_channel_id = channel["external_channel_id"] or ""
+            uploads_playlist_id = channel["uploads_playlist_id"] or ""
+            try:
+                if not uploads_playlist_id:
                     external_channel_id, uploads_playlist_id = resolve_channel(conn, channel, api_key)
+                elif not channel["image_url"]:
+                    external_channel_id, uploads_playlist_id = resolve_channel(conn, channel, api_key)
+            except ChannelNotFoundError:
+                record_skipped_channel(
+                    conn,
+                    channel,
+                    skipped_channels,
+                    reason="channelNotFound",
+                    detail="YouTube channels.list returned no items for this channel identifier.",
+                    external_channel_id=external_channel_id,
+                    uploads_playlist_id=uploads_playlist_id,
+                )
+                continue
             try:
                 video_ids = list_playlist_video_ids(uploads_playlist_id, api_key, args.max_pages)
             except Exception as exc:
                 if not is_skippable_playlist_error(exc):
                     raise
-                skip = {
-                    "team": channel["team"],
-                    "player_name": channel["player_name"],
-                    "platform_identifier": channel["platform_identifier"],
-                    "external_channel_id": external_channel_id,
-                    "uploads_playlist_id": uploads_playlist_id,
-                    "reason": "playlistNotFound",
-                    "detail": "YouTube uploads playlist was returned by channels.list but cannot be read by playlistItems.list.",
-                }
-                skipped_channels.append(skip)
-                update_channel_status(
+                record_skipped_channel(
                     conn,
-                    channel["channel_id"],
-                    "skipped",
-                    skip["reason"],
-                    skip["detail"],
-                    0,
+                    channel,
+                    skipped_channels,
+                    reason="playlistNotFound",
+                    detail="YouTube uploads playlist was returned by channels.list but cannot be read by playlistItems.list.",
+                    external_channel_id=external_channel_id,
+                    uploads_playlist_id=uploads_playlist_id,
                 )
-                conn.commit()
-                warn_skipped_channel(skip)
                 continue
             videos = fetch_videos(video_ids, api_key)
             items_seen += len(videos)
