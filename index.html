@@ -257,7 +257,7 @@
     }
 
     .deck-table-wrap table {
-      min-width: 760px;
+      min-width: 640px;
     }
 
     .player-detail-table-wrap table {
@@ -313,6 +313,14 @@
 
     tbody tr:hover {
       background: #f8fafc;
+    }
+
+    tbody tr.deck-class-row {
+      background: linear-gradient(90deg, var(--deck-class-border, var(--border)) 0 6px, var(--deck-class-row, #fff) 6px 38px, #fff 38px);
+    }
+
+    tbody tr.deck-class-row:hover {
+      background: linear-gradient(90deg, var(--deck-class-border, var(--border)) 0 6px, var(--deck-class-soft, #f8fafc) 6px 38px, #f8fafc 38px);
     }
 
     td.num {
@@ -546,9 +554,127 @@
     }
 
     .pill.deck {
-      background: #e0f2fe;
-      color: #075985;
+      border: 1px solid var(--deck-class-border, #bae6fd);
+      background: var(--deck-class-soft, #e0f2fe);
+      color: var(--deck-class-color, #075985);
       text-decoration: none;
+    }
+
+    .deck-class-e {
+      --deck-class-color: #166534;
+      --deck-class-soft: #dcfce7;
+      --deck-class-border: #86efac;
+      --deck-class-row: #f2fbf4;
+    }
+
+    .deck-class-r {
+      --deck-class-color: #854d0e;
+      --deck-class-soft: #fef9c3;
+      --deck-class-border: #fde047;
+      --deck-class-row: #fffbea;
+    }
+
+    .deck-class-w {
+      --deck-class-color: #1d4ed8;
+      --deck-class-soft: #dbeafe;
+      --deck-class-border: #93c5fd;
+      --deck-class-row: #f1f7ff;
+    }
+
+    .deck-class-d {
+      --deck-class-color: #c2410c;
+      --deck-class-soft: #ffedd5;
+      --deck-class-border: #fdba74;
+      --deck-class-row: #fff7ed;
+    }
+
+    .deck-class-ni {
+      --deck-class-color: #78350f;
+      --deck-class-soft: #f3e4d0;
+      --deck-class-border: #d6a977;
+      --deck-class-row: #fbf4ec;
+    }
+
+    .deck-class-b {
+      --deck-class-color: #475569;
+      --deck-class-soft: #e2e8f0;
+      --deck-class-border: #94a3b8;
+      --deck-class-row: #f4f7fb;
+    }
+
+    .deck-class-nm {
+      --deck-class-color: #0e7490;
+      --deck-class-soft: #cffafe;
+      --deck-class-border: #67e8f9;
+      --deck-class-row: #ecfeff;
+    }
+
+    .deck-class-unknown {
+      --deck-class-color: var(--none);
+      --deck-class-soft: var(--none-soft);
+      --deck-class-border: var(--border);
+      --deck-class-row: #f8fafc;
+    }
+
+    .deck-cell {
+      display: grid;
+      gap: 4px;
+      min-width: 0;
+    }
+
+    .deck-cell-main {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      flex-wrap: wrap;
+    }
+
+    .deck-cell-meta {
+      color: var(--muted);
+      font-size: 12px;
+      overflow-wrap: anywhere;
+      white-space: normal;
+    }
+
+    .deck-class-badge,
+    .deck-legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 24px;
+      max-width: 100%;
+      border: 1px solid var(--deck-class-border, var(--border));
+      border-radius: 999px;
+      padding: 0 8px;
+      background: var(--deck-class-soft, var(--none-soft));
+      color: var(--deck-class-color, var(--none));
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+
+    .deck-class-dot {
+      flex: 0 0 auto;
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--deck-class-color, var(--none));
+    }
+
+    .deck-class-badge strong,
+    .deck-legend-item strong {
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .deck-class-legend {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 6px;
+      flex-wrap: wrap;
     }
 
     .timeline-note {
@@ -610,6 +736,18 @@
       overflow-wrap: anywhere;
     }
 
+    .save-status[hidden] {
+      display: none;
+    }
+
+    .save-feedback {
+      margin: -4px 0 12px;
+    }
+
+    .modal-save-feedback {
+      margin-top: 6px;
+    }
+
     .save-status.ok {
       color: var(--accent);
       font-weight: 700;
@@ -660,10 +798,6 @@
       place-items: center;
       padding: 20px;
       background: rgba(15, 23, 42, 0.42);
-    }
-
-    #save-modal {
-      z-index: 30;
     }
 
     .modal {
@@ -836,6 +970,11 @@
       background: #f8fafc;
     }
 
+    .deck-card {
+      border-color: var(--deck-class-border, var(--border));
+      background: linear-gradient(90deg, var(--deck-class-border, var(--border)) 0 5px, var(--deck-class-row, #f8fafc) 5px);
+    }
+
     .linked-deck-head,
     .search-result {
       display: flex;
@@ -858,12 +997,20 @@
       min-width: 0;
     }
 
-    .deck-heading strong,
-    .deck-heading span {
+    .deck-heading-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      flex-wrap: wrap;
+    }
+
+    .deck-heading-title > strong,
+    .deck-heading > span {
       overflow-wrap: anywhere;
     }
 
-    .deck-heading span {
+    .deck-heading > span {
       color: var(--muted);
       font-size: 13px;
     }
@@ -997,10 +1144,12 @@
         <input class="search" id="search" type="search" placeholder="チーム、選手、デッキ、ステータスで絞り込み" autocomplete="off">
       </div>
 
+      <div class="save-status save-feedback" id="save-status" data-save-status role="status" aria-live="polite" hidden></div>
+
       <section class="change-bar" id="change-bar" hidden>
         <div id="change-summary">未保存の変更はありません。</div>
         <div class="change-actions">
-          <button class="primary-button open-save-modal-button" id="open-save-modal" type="button">変更を保存</button>
+          <button class="primary-button save-button" id="save-changes" type="button">変更を保存</button>
           <button class="secondary-button" id="toggle-draft-panel" type="button">変更内容を確認</button>
           <button class="danger-button" id="clear-draft" type="button">下書きを破棄</button>
         </div>
@@ -1020,6 +1169,7 @@
                 <input id="show-player-details" type="checkbox">
                 詳細を表示
               </label>
+              <div class="deck-class-legend" id="deck-class-legend" hidden></div>
               <div class="count" id="row-count">0行</div>
             </div>
           </div>
@@ -1047,39 +1197,16 @@
     </div>
   </main>
 
-  <div class="modal-backdrop" id="save-modal" hidden>
-    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="save-modal-title">
-      <div class="modal-head">
-        <div>
-          <h2 id="save-modal-title">デッキ編集を保存</h2>
-          <div class="timeline-summary" id="save-modal-summary"></div>
-        </div>
-        <div class="modal-actions">
-          <button class="secondary-button" id="close-save-modal" type="button">閉じる</button>
-        </div>
-      </div>
-      <div class="modal-body">
-        <section class="editor-section">
-          <h3>保存先</h3>
-          <div class="timeline-summary" id="save-target-summary"></div>
-          <div class="save-status" id="save-status"></div>
-          <div class="modal-actions">
-            <button class="primary-button" id="save-to-api" type="button">変更を保存</button>
-          </div>
-        </section>
-      </div>
-    </section>
-  </div>
-
   <div class="modal-backdrop" id="deck-editor-modal" hidden>
     <section class="modal" role="dialog" aria-modal="true" aria-labelledby="deck-editor-title">
       <div class="modal-head">
         <div>
-          <h2 id="deck-editor-title">アーカイブのデッキを編集</h2>
+          <h2 id="deck-editor-title">アーカイブのデッキ情報追加</h2>
           <div class="timeline-summary" id="deck-editor-summary"></div>
+          <div class="save-status modal-save-feedback" id="deck-editor-save-status" data-save-status role="status" aria-live="polite" hidden></div>
         </div>
         <div class="modal-actions">
-          <button class="primary-button open-save-modal-button" type="button">変更を保存</button>
+          <button class="primary-button save-button" type="button">変更を保存</button>
           <button class="secondary-button" id="close-deck-editor" type="button">閉じる</button>
         </div>
       </div>
@@ -1095,12 +1222,12 @@
 
           <div class="editor-form-stack">
             <section class="editor-section">
-              <h3>リンク済みデッキ</h3>
+              <h3>使用デッキ一覧</h3>
               <div class="linked-decks" id="linked-decks"></div>
             </section>
 
             <section class="editor-section">
-              <h3>既存デッキを追加</h3>
+              <h3>登録済みデッキから追加</h3>
               <input class="editor-input" id="deck-search-input" type="search" placeholder="デッキを検索" autocomplete="off">
               <div class="search-results" id="deck-search-results"></div>
             </section>
@@ -1135,7 +1262,7 @@
                 </label>
               </div>
               <div class="modal-actions">
-                <button class="primary-button" id="create-deck" type="button">作成してリンク</button>
+                <button class="primary-button" id="create-deck" type="button">作成して動画内使用デッキとして追加</button>
               </div>
             </section>
           </div>
@@ -1221,8 +1348,6 @@
       ],
       deck: [
         ["deck_name", "デッキ"],
-        ["class_name", "クラス"],
-        ["archetype", "アーキタイプ"],
         ["deck_usage", "利用状況"],
         ["stream_count", "配信数"],
         ["player_count", "選手数"]
@@ -1243,6 +1368,98 @@
       not_checked: "未確認",
       unknown: "不明"
     };
+    const deckClassDefinitions = [
+      {
+            "value": "E",
+            "display_name": "エルフ",
+            "color_name": "緑",
+            "css_class": "deck-class-e",
+            "aliases": [
+                  "E",
+                  "ELF",
+                  "エルフ"
+            ]
+      },
+      {
+            "value": "R",
+            "display_name": "ロイヤル",
+            "color_name": "黄色",
+            "css_class": "deck-class-r",
+            "aliases": [
+                  "R",
+                  "ROYAL",
+                  "ロイヤル"
+            ]
+      },
+      {
+            "value": "W",
+            "display_name": "ウィッチ",
+            "color_name": "青",
+            "css_class": "deck-class-w",
+            "aliases": [
+                  "W",
+                  "WITCH",
+                  "ウィッチ"
+            ]
+      },
+      {
+            "value": "D",
+            "display_name": "ドラゴン",
+            "color_name": "オレンジ",
+            "css_class": "deck-class-d",
+            "aliases": [
+                  "D",
+                  "DRAGON",
+                  "ドラゴン"
+            ]
+      },
+      {
+            "value": "Ni",
+            "display_name": "ナイトメア",
+            "color_name": "茶色",
+            "css_class": "deck-class-ni",
+            "aliases": [
+                  "Ni",
+                  "NI",
+                  "NIGHTMARE",
+                  "ナイトメア",
+                  "Nc",
+                  "NC",
+                  "NECRO",
+                  "NECROMANCER",
+                  "ネクロ",
+                  "ネクロマンサー",
+                  "V",
+                  "VAMPIRE",
+                  "ヴァンプ",
+                  "ヴァンパイア"
+            ]
+      },
+      {
+            "value": "B",
+            "display_name": "ビショップ",
+            "color_name": "灰色",
+            "css_class": "deck-class-b",
+            "aliases": [
+                  "B",
+                  "BISHOP",
+                  "ビショップ"
+            ]
+      },
+      {
+            "value": "Nm",
+            "display_name": "ネメシス",
+            "color_name": "水色",
+            "css_class": "deck-class-nm",
+            "aliases": [
+                  "Nm",
+                  "NM",
+                  "NEMESIS",
+                  "ネメシス"
+            ]
+      }
+];
+    const deckClassByValue = new Map(deckClassDefinitions.map(definition => [definition.value, definition]));
 
     function activeColumns() {
       if (state.view === "player") {
@@ -1394,7 +1611,7 @@
     function editActionsHtml(stream) {
       const components = streamComponents(stream);
       return components.map(component => {
-        const label = components.length > 1 ? `${platformLabel(component.platform)}デッキ編集` : "デッキ編集";
+        const label = components.length > 1 ? `${platformLabel(component.platform)}デッキ情報追加` : "デッキ情報追加";
         return `<button class="secondary-button edit-stream-button" type="button" data-stream-key="${escapeHtml(streamKey(component))}">${escapeHtml(label)}</button>`;
       }).join("");
     }
@@ -1537,39 +1754,147 @@
     }
 
     function deckLabel(deck) {
-      const parts = [deck.class_name, deck.archetype].filter(Boolean).join(" / ");
+      const parts = deckSummary(deck);
       return parts ? `${deck.deck_name} (${parts})` : deck.deck_name;
     }
 
     function deckPillHtml(deck) {
       const label = escapeHtml(deckLabel(deck));
+      const className = `pill deck ${deckClassCssClass(deck)}`;
       if (deck.deck_url) {
-        return `<a class="pill deck" href="${escapeHtml(deck.deck_url)}" target="_blank" rel="noreferrer">${label}</a>`;
+        return `<a class="${className}" href="${escapeHtml(deck.deck_url)}" target="_blank" rel="noreferrer">${label}</a>`;
       }
-      return `<span class="pill deck">${label}</span>`;
+      return `<span class="${className}">${label}</span>`;
     }
 
-    const classAliases = [
-      ["Nm", ["Nm", "NM", "ナイトメア", "NIGHTMARE"]],
-      ["Nc", ["Nc", "NC", "ネクロ", "ネクロマンサー", "NECRO", "NECROMANCER"]],
-      ["R", ["R", "ロイヤル", "ROYAL"]],
-      ["E", ["E", "エルフ", "ELF"]],
-      ["W", ["W", "ウィッチ", "WITCH"]],
-      ["D", ["D", "ドラゴン", "DRAGON"]],
-      ["B", ["B", "ビショップ", "BISHOP"]],
-      ["V", ["V", "ヴァンプ", "ヴァンパイア", "VAMPIRE"]]
-    ];
+    const classAliases = deckClassDefinitions
+      .flatMap(definition => [definition.value, ...(definition.aliases || [])]
+        .map(alias => [definition.value, normalizeClassToken(alias)]))
+      .filter(([, alias]) => alias)
+      .sort((left, right) => right[1].length - left[1].length);
+
+    function normalizeClassToken(value) {
+      return normalizeText(value).normalize("NFKC").toUpperCase();
+    }
+
+    function normalizeClassName(value) {
+      const token = normalizeClassToken(value);
+      if (!token) return "";
+      const direct = deckClassDefinitions.find(definition => normalizeClassToken(definition.value) === token);
+      if (direct) return direct.value;
+      const matched = classAliases.find(([, alias]) => alias === token);
+      return matched ? matched[0] : "";
+    }
+
+    function effectiveDeckClassName(deck) {
+      return normalizeClassName(deck.class_name) || inferClassName(deck.deck_name);
+    }
+
+    function deckClassLabel(className) {
+      const normalized = normalizeClassName(className);
+      const definition = deckClassByValue.get(normalized);
+      return definition ? `${definition.display_name} (${definition.value})` : normalizeText(className);
+    }
+
+    function deckClassLabelForDeck(deck) {
+      const className = effectiveDeckClassName(deck);
+      return className ? deckClassLabel(className) : normalizeText(deck.class_name);
+    }
+
+    function deckClassDefinitionForDeck(deck) {
+      const className = effectiveDeckClassName(deck);
+      return deckClassByValue.get(className) || null;
+    }
+
+    function deckClassCssClass(deck) {
+      const definition = deckClassDefinitionForDeck(deck);
+      return definition ? definition.css_class : "deck-class-unknown";
+    }
+
+    function deckClassBadgeHtml(deck) {
+      const definition = deckClassDefinitionForDeck(deck);
+      const label = definition ? `${definition.display_name} (${definition.value})` : "クラス不明";
+      const displayName = definition ? definition.display_name : "不明";
+      const code = definition ? definition.value : "?";
+      return `
+        <span class="deck-class-badge ${escapeHtml(deckClassCssClass(deck))}" title="${escapeHtml(label)}">
+          <span class="deck-class-dot" aria-hidden="true"></span>
+          <span>${escapeHtml(displayName)}</span>
+          <strong>${escapeHtml(code)}</strong>
+        </span>
+      `;
+    }
+
+    function deckClassLegendHtml() {
+      return deckClassDefinitions.map(definition => `
+        <span class="deck-legend-item ${escapeHtml(definition.css_class)}" title="${escapeHtml(`${definition.display_name} (${definition.value}) / ${definition.color_name}`)}">
+          <span class="deck-class-dot" aria-hidden="true"></span>
+          <span>${escapeHtml(definition.display_name)}</span>
+          <strong>${escapeHtml(definition.value)}</strong>
+        </span>
+      `).join("");
+    }
+
+    function deckSecondarySummary(deck) {
+      return [deck.archetype].filter(Boolean).join(" / ");
+    }
+
+    function deckSummary(deck) {
+      return [deckClassLabelForDeck(deck), deck.archetype].filter(Boolean).join(" / ");
+    }
+
+    function deckNameCellHtml(deck) {
+      const name = escapeHtml(deck.deck_name || deck.deck_key || "不明なデッキ");
+      const title = deck.deck_url
+        ? `<a class="timeline-title" href="${escapeHtml(deck.deck_url)}" target="_blank" rel="noreferrer">${name}</a>`
+        : `<span class="timeline-title">${name}</span>`;
+      const summary = deckSecondarySummary(deck);
+      const meta = summary ? `<div class="deck-cell-meta">${escapeHtml(summary)}</div>` : "";
+      return `
+        <td>
+          <div class="deck-cell">
+            <div class="deck-cell-main">
+              ${deckClassBadgeHtml(deck)}
+              ${title}
+            </div>
+            ${meta}
+          </div>
+        </td>
+      `;
+    }
+
+    function deckHeadingHtml(deck, fallbackKey = "") {
+      const name = deck.deck_name || fallbackKey || "不明なデッキ";
+      const summary = deckSecondarySummary(deck) || fallbackKey;
+      return `
+        <div class="deck-heading">
+          <div class="deck-heading-title">
+            ${deckClassBadgeHtml(deck)}
+            <strong>${escapeHtml(name)}</strong>
+          </div>
+          ${summary ? `<span>${escapeHtml(summary)}</span>` : ""}
+        </div>
+      `;
+    }
+
+    function rowAttributes(row) {
+      if (state.view !== "deck") return "";
+      return ` class="deck-class-row ${escapeHtml(deckClassCssClass(row))}"`;
+    }
+
+    function isClassSuffixMatch(name, alias) {
+      if (!name.endsWith(alias)) return false;
+      if (name === alias || alias.length > 1) return true;
+      const previous = name.slice(0, -alias.length).slice(-1);
+      return !/^[A-Z0-9]$/.test(previous);
+    }
 
     function inferClassName(deckName) {
-      const name = normalizeText(deckName);
+      const name = normalizeClassToken(deckName);
       if (!name) return "";
-      const upperName = name.toUpperCase();
       for (const [className, aliases] of classAliases) {
-        for (const alias of aliases) {
-          const normalizedAlias = alias.toUpperCase();
-          if (upperName.endsWith(normalizedAlias)) {
-            return className;
-          }
+        if (isClassSuffixMatch(name, aliases)) {
+          return className;
         }
       }
       return "";
@@ -1750,6 +2075,9 @@
         : `${count}件の未保存の変更があります。まだ保存されていません。`;
       bar.hidden = count === 0;
       panel.hidden = count === 0 || !state.showDraftPanel;
+      if (count > 0 && state.saveStatusKind === "ok") {
+        setSaveStatus("");
+      }
       if (count === 0) {
         list.innerHTML = "";
         return;
@@ -1757,9 +2085,9 @@
 
       const items = [
         ...changes.addedDecks.map(deck => `新規デッキ: ${deckLabel(deck)}`),
-        ...changes.addedLinks.map(link => changeDescription("リンク追加", link)),
-        ...changes.removedLinks.map(link => changeDescription("リンク解除", link)),
-        ...changes.updatedLinks.map(link => changeDescription("リンク更新", link))
+        ...changes.addedLinks.map(link => changeDescription("使用デッキ追加", link)),
+        ...changes.removedLinks.map(link => changeDescription("使用デッキから削除", link)),
+        ...changes.updatedLinks.map(link => changeDescription("使用デッキ情報更新", link))
       ];
       list.innerHTML = items.map(item => `<div class="draft-item">${escapeHtml(item)}</div>`).join("");
     }
@@ -1819,47 +2147,35 @@
       const linkKeys = new Set();
       state.linksByKey.forEach(link => {
         const stream = state.streamsByKey.get(link.stream_key);
-        if (!deckKeys.has(link.deck_key)) errors.push(`リンク先デッキが見つかりません: ${link.deck_key}`);
+        if (!deckKeys.has(link.deck_key)) errors.push(`使用デッキが見つかりません: ${link.deck_key}`);
         if (!stream) {
-          errors.push(`${link.deck_key} のリンク先配信が見つかりません。`);
+          errors.push(`${link.deck_key} の使用先アーカイブが見つかりません。`);
           return;
         }
         if (!["youtube", "twitch"].includes(stream.platform)) errors.push(`不正なプラットフォームです: ${stream.platform || "空"}`);
         if (!stream.external_stream_id) errors.push(`${stream.title || "配信"} の外部配信IDが必要です。`);
         const keyValue = `${stream.platform}/${stream.external_stream_id}/${link.deck_key}`;
-        if (linkKeys.has(keyValue)) errors.push(`配信とデッキのリンクが重複しています: ${keyValue}`);
+        if (linkKeys.has(keyValue)) errors.push(`アーカイブと使用デッキの組み合わせが重複しています: ${keyValue}`);
         linkKeys.add(keyValue);
       });
       return Array.from(new Set(errors));
     }
 
+    function updateSaveControls() {
+      document.querySelectorAll(".save-button").forEach(button => {
+        button.disabled = state.saving;
+      });
+    }
+
     function setSaveStatus(message, kind = "") {
       state.saveStatus = message;
       state.saveStatusKind = kind;
-      const status = document.getElementById("save-status");
-      status.textContent = message;
-      status.className = kind ? `save-status ${kind}` : "save-status";
-    }
-
-    function openSaveModal() {
-      const changes = pendingChanges();
-      const endpoint = normalizeText(state.metadata.save_api_endpoint || "");
-      const repository = normalizeText(state.metadata.repository || "");
-      const branch = normalizeText(state.metadata.branch_name || "");
-      document.getElementById("save-modal-summary").textContent = `${changeCount(changes)}件の変更で data/decks.csv と data/stream_session_decks.csv を更新します。`;
-      document.getElementById("save-target-summary").textContent = repository && branch
-        ? `${repository} / ${branch}`
-        : "リポジトリまたはブランチ情報が見つかりません。";
-      document.getElementById("save-to-api").disabled = !endpoint;
-      setSaveStatus(endpoint
-        ? "設定済みの保存APIへ変更を送信します。このブラウザでGitHubトークンを入力する必要はありません。"
-        : "このダッシュボードには保存APIエンドポイントが設定されていません。", endpoint ? "" : "error");
-      document.getElementById("save-modal").hidden = false;
-    }
-
-    function closeSaveModal() {
-      if (state.saving) return;
-      document.getElementById("save-modal").hidden = true;
+      document.querySelectorAll("[data-save-status]").forEach(status => {
+        status.textContent = message;
+        status.hidden = !message;
+        status.classList.toggle("ok", kind === "ok");
+        status.classList.toggle("error", kind === "error");
+      });
     }
 
     async function saveApiJson(url, options = {}) {
@@ -1877,6 +2193,21 @@
         throw new Error(message);
       }
       return payload;
+    }
+
+    function conciseSaveErrorMessage(error) {
+      const message = normalizeText(error && error.message ? error.message : error);
+      if (!message) return "原因を確認できませんでした。";
+      const firstLine = message.split(/\r?\n/)[0];
+      return firstLine.length > 140 ? `${firstLine.slice(0, 137)}...` : firstLine;
+    }
+
+    function saveValidationMessage(errors) {
+      const messages = errors.slice(0, 2);
+      if (errors.length > 2) {
+        messages.push(`ほか${errors.length - 2}件の確認が必要です。`);
+      }
+      return messages.join(" ");
     }
 
     function buildSavePayload() {
@@ -1914,27 +2245,26 @@
       if (!endpoint) errors.push("このダッシュボードには保存APIエンドポイントが設定されていません。");
       if (changeCount() === 0) errors.push("保存する下書き変更がありません。");
       if (errors.length > 0) {
-        setSaveStatus(errors.join(" "), "error");
+        setSaveStatus(`保存できません: ${saveValidationMessage(errors)}`, "error");
         return;
       }
 
       state.saving = true;
-      document.getElementById("save-to-api").disabled = true;
+      updateSaveControls();
       setSaveStatus("保存中...", "");
       try {
-        const result = await saveApiJson(endpoint, {
+        await saveApiJson(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(buildSavePayload())
         });
         markDraftSaved();
-        const detail = result.commit_url ? ` コミット: ${result.commit_url}` : "";
-        setSaveStatus(`保存しました。このブランチで Collect streaming data を実行してダッシュボードを再生成してください。${detail}`, "ok");
+        setSaveStatus("保存しました。", "ok");
       } catch (error) {
-        setSaveStatus(`保存に失敗しました: ${error.message}`, "error");
+        setSaveStatus(`保存に失敗しました: ${conciseSaveErrorMessage(error)}`, "error");
       } finally {
         state.saving = false;
-        document.getElementById("save-to-api").disabled = !normalizeText(state.metadata.save_api_endpoint || "");
+        updateSaveControls();
       }
     }
 
@@ -1968,11 +2298,14 @@
         const active = row.deck_key === state.selectedDeckKey ? " active" : "";
         return `<td class="action"><button class="detail-button deck-detail-button${active}" type="button" data-deck-key="${escapeHtml(row.deck_key)}">表示</button></td>`;
       }
-      if (key === "deck_name" && row.deck_url) {
-        return `<td><a class="timeline-title" href="${escapeHtml(row.deck_url)}" target="_blank" rel="noreferrer">${escapeHtml(value)}</a></td>`;
+      if (key === "deck_name") {
+        return deckNameCellHtml(row);
       }
       if (key === "player_name") {
         return `<td>${playerLabelHtml(row)}</td>`;
+      }
+      if (key === "class_name") {
+        return `<td>${escapeHtml(deckClassLabelForDeck(row))}</td>`;
       }
       if (numberFields.has(key)) {
         return `<td class="num">${formatNumber(value)}</td>`;
@@ -2005,6 +2338,7 @@
       const workspace = document.getElementById("workspace");
       const tableWrap = document.getElementById("table-wrap");
       const playerDetailsControl = document.getElementById("player-details-control");
+      const deckClassLegend = document.getElementById("deck-class-legend");
       workspace.classList.toggle("player-mode", state.view === "player");
       workspace.classList.toggle("deck-mode", state.view === "deck");
       workspace.classList.toggle("team-mode", state.view === "team");
@@ -2012,6 +2346,8 @@
       tableWrap.classList.toggle("player-detail-table-wrap", state.view === "player" && state.showPlayerDetails);
       tableWrap.classList.toggle("deck-table-wrap", state.view === "deck");
       playerDetailsControl.hidden = state.view !== "player";
+      deckClassLegend.hidden = state.view !== "deck";
+      deckClassLegend.innerHTML = state.view === "deck" ? deckClassLegendHtml() : "";
       if (state.view === "player") {
         const visibleKeys = new Set(rows.map(playerKey));
         if (!visibleKeys.has(state.selectedPlayerKey)) {
@@ -2034,7 +2370,7 @@
       }).join("")}</tr>`;
 
       document.getElementById("table-body").innerHTML = rows.map(row => (
-        `<tr>${activeTableColumns.map(([key]) => cellHtml(row, key)).join("")}</tr>`
+        `<tr${rowAttributes(row)}>${activeTableColumns.map(([key]) => cellHtml(row, key)).join("")}</tr>`
       )).join("");
 
       document.querySelectorAll("th.sortable").forEach(th => {
@@ -2159,7 +2495,7 @@
 
       const streams = deck.streams || [];
       title.textContent = `${deck.deck_name}のアーカイブ`;
-      summary.textContent = [deck.class_name, deck.archetype, deck.notes].filter(Boolean).join(" · ");
+      summary.textContent = [deckClassLabelForDeck(deck), deck.archetype, deck.notes].filter(Boolean).join(" · ");
       count.textContent = streamCountLabel(streams.length);
       empty.textContent = "紐づいた配信アーカイブはありません。";
       empty.hidden = streams.length > 0;
@@ -2274,7 +2610,7 @@
         return;
       }
 
-      document.getElementById("deck-editor-title").textContent = "アーカイブのデッキを編集";
+      document.getElementById("deck-editor-title").textContent = "アーカイブのデッキ情報追加";
       document.getElementById("deck-editor-summary").textContent = describeStream(stream);
       renderVideoPreview();
       renderLinkedDecks();
@@ -2295,9 +2631,9 @@
 
     function renderNewDeckAdvanced() {
       const inferredClass = inferClassName(state.newDeckDraft.deck_name);
-      const className = state.newDeckDraft.class_name || inferredClass;
+      const className = normalizeClassName(state.newDeckDraft.class_name) || inferredClass;
       document.getElementById("new-deck-class-hint").textContent = state.newDeckDraft.deck_name
-        ? `推定クラス: ${className || "不明"}`
+        ? `推定クラス: ${className ? deckClassLabel(className) : "不明"}`
         : "デッキ名を入力すると推定クラスが表示されます。";
       document.querySelectorAll(".advanced-deck-field").forEach(field => {
         field.hidden = !state.showNewDeckAdvanced;
@@ -2312,7 +2648,7 @@
       const container = document.getElementById("linked-decks");
       const links = linksForStream(state.editingStreamKey);
       if (links.length === 0) {
-        container.innerHTML = `<div class="empty">リンク済みデッキはありません。</div>`;
+        container.innerHTML = `<div class="empty">使用デッキはまだありません。</div>`;
         return;
       }
 
@@ -2336,15 +2672,12 @@
           </div>
         ` : "";
         return `
-          <article class="linked-deck">
+          <article class="linked-deck deck-card ${escapeHtml(deckClassCssClass(deck))}">
             <div class="linked-deck-head">
-              <div class="deck-heading">
-                <strong>${escapeHtml(deck.deck_name || link.deck_key)}</strong>
-                <span>${escapeHtml([deck.class_name, deck.archetype].filter(Boolean).join(" / ") || link.deck_key)}</span>
-              </div>
+              ${deckHeadingHtml(deck, link.deck_key)}
               <div class="linked-deck-actions">
                 <button class="secondary-button toggle-link-details" type="button" data-link-key="${escapeHtml(keyValue)}">${expanded ? "詳細を閉じる" : "詳細"}</button>
-                <button class="danger-button unlink-deck" type="button" data-link-key="${escapeHtml(keyValue)}">リンク解除</button>
+                <button class="danger-button unlink-deck" type="button" data-link-key="${escapeHtml(keyValue)}">使用デッキから削除</button>
               </div>
             </div>
             ${detailForm}
@@ -2401,12 +2734,9 @@
       container.innerHTML = decks.map(deck => {
         const alreadyLinked = linked.has(deck.deck_key);
         return `
-          <div class="search-result">
-            <div class="deck-heading">
-              <strong>${escapeHtml(deck.deck_name)}</strong>
-              <span>${escapeHtml([deck.class_name, deck.archetype].filter(Boolean).join(" / ") || deck.deck_key)}</span>
-            </div>
-            <button class="secondary-button add-existing-deck" type="button" data-deck-key="${escapeHtml(deck.deck_key)}"${alreadyLinked ? " disabled" : ""}>${alreadyLinked ? "リンク済み" : "追加"}</button>
+          <div class="search-result deck-card ${escapeHtml(deckClassCssClass(deck))}">
+            ${deckHeadingHtml(deck, deck.deck_key)}
+            <button class="secondary-button add-existing-deck" type="button" data-deck-key="${escapeHtml(deck.deck_key)}"${alreadyLinked ? " disabled" : ""}>${alreadyLinked ? "使用デッキに追加済み" : "動画内使用デッキとして追加"}</button>
           </div>
         `;
       }).join("");
@@ -2457,6 +2787,7 @@
 
     function createAndLinkDeck() {
       const draft = deckMeta(state.newDeckDraft);
+      draft.class_name = normalizeClassName(draft.class_name);
       if (!draft.class_name) {
         draft.class_name = inferClassName(draft.deck_name);
       }
@@ -2556,18 +2887,10 @@
     });
 
     document.getElementById("clear-draft").addEventListener("click", clearDraft);
-    document.querySelectorAll(".open-save-modal-button").forEach(button => {
-      button.addEventListener("click", openSaveModal);
+    document.querySelectorAll(".save-button").forEach(button => {
+      button.addEventListener("click", saveChangesToApi);
     });
-    document.getElementById("close-save-modal").addEventListener("click", closeSaveModal);
-    document.getElementById("save-to-api").addEventListener("click", saveChangesToApi);
     document.getElementById("close-deck-editor").addEventListener("click", closeDeckEditor);
-
-    document.getElementById("save-modal").addEventListener("click", event => {
-      if (event.target.id === "save-modal") {
-        closeSaveModal();
-      }
-    });
 
     document.getElementById("deck-editor-modal").addEventListener("click", event => {
       if (event.target.id === "deck-editor-modal") {

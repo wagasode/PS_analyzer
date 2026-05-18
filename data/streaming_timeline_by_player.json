@@ -660,7 +660,21 @@
     "team": "Crazy Raccoon",
     "player_name": "Winter",
     "player_icon_url": "https://yt3.ggpht.com/Rwhi1Z4rzqOFJRgONJwu_f4nE9IXhECsZTnhZEBFilvBlTV7t1pyPzAHgVcrryYhlTOm-DD4mA=s800-c-k-c0x00ffffff-no-rj",
-    "streams": []
+    "streams": [
+      {
+        "platform": "youtube",
+        "external_stream_id": "ICHK3m2l-SE",
+        "title": "くうちゃん（空白）の配信まで　テスト　Atomのロイヤル　シャドバWB",
+        "url": "https://www.youtube.com/watch?v=ICHK3m2l-SE",
+        "thumbnail_url": "https://i.ytimg.com/vi/ICHK3m2l-SE/maxresdefault_live.jpg",
+        "started_at": "2026-05-18T07:06:18Z",
+        "published_at": "2026-05-18T07:05:34Z",
+        "occurred_at": "2026-05-18T07:06:18Z",
+        "duration_sec": 0,
+        "is_shadowverse_related": 1,
+        "decks": []
+      }
+    ]
   },
   {
     "team": "Crazy Raccoon",
@@ -897,14 +911,40 @@
     "streams": [
       {
         "platform": "youtube",
-        "external_stream_id": "eIYpin1BNL8",
-        "title": "【シャドバWB】OCSエントリー今日まで！みんなちゃんとエントリーした⁈【Shadowverse:WorldsBeyond/ビヨンド】",
-        "url": "https://www.youtube.com/watch?v=eIYpin1BNL8",
-        "thumbnail_url": "https://i.ytimg.com/vi/eIYpin1BNL8/maxresdefault_live.jpg",
-        "started_at": "2026-05-12T16:48:25Z",
-        "published_at": "2026-05-12T16:48:25Z",
-        "occurred_at": "2026-05-12T16:48:25Z",
+        "external_stream_id": "RRbYWemKfgI",
+        "title": "【シャドバWB】OCSお疲れさまでした！明日はU-22の大会らしい、出る人がんばれ～【Shadowverse:WorldsBeyond/ビヨンド】",
+        "url": "https://www.youtube.com/watch?v=RRbYWemKfgI",
+        "thumbnail_url": "https://i.ytimg.com/vi/RRbYWemKfgI/maxresdefault_live.jpg",
+        "started_at": "2026-05-16T16:09:14Z",
+        "published_at": "2026-05-16T16:09:14Z",
+        "occurred_at": "2026-05-16T16:09:14Z",
         "duration_sec": 0,
+        "is_shadowverse_related": 1,
+        "decks": []
+      },
+      {
+        "platform": "youtube",
+        "external_stream_id": "dDtI3RkuKtk",
+        "title": "【シャドバWB】OCSお疲れさまでした！明日はU-22の大会らしい、出る人がんばれ～【Shadowverse:WorldsBeyond/ビヨンド】",
+        "url": "https://www.youtube.com/watch?v=dDtI3RkuKtk",
+        "thumbnail_url": "https://i.ytimg.com/vi/dDtI3RkuKtk/maxresdefault.jpg",
+        "started_at": "2026-05-16T13:25:16Z",
+        "published_at": "2026-05-17T06:39:21Z",
+        "occurred_at": "2026-05-16T13:25:16Z",
+        "duration_sec": 9811,
+        "is_shadowverse_related": 1,
+        "decks": []
+      },
+      {
+        "platform": "youtube",
+        "external_stream_id": "eIYpin1BNL8",
+        "title": "【シャドバWB】進化AFって響きがかっこよくね⁉【Shadowverse:WorldsBeyond/ビヨンド】",
+        "url": "https://www.youtube.com/watch?v=eIYpin1BNL8",
+        "thumbnail_url": "https://i.ytimg.com/vi/eIYpin1BNL8/maxresdefault.jpg",
+        "started_at": "2026-05-14T08:01:23Z",
+        "published_at": "2026-05-14T22:59:07Z",
+        "occurred_at": "2026-05-14T08:01:23Z",
+        "duration_sec": 7438,
         "is_shadowverse_related": 1,
         "decks": []
       },
@@ -1502,6 +1542,19 @@
     "streams": [
       {
         "platform": "youtube",
+        "external_stream_id": "Q8mZ5vWfWaw",
+        "title": "【シャドバWB】DAY2勝ちたい人向け配信",
+        "url": "https://www.youtube.com/watch?v=Q8mZ5vWfWaw",
+        "thumbnail_url": "https://i.ytimg.com/vi/Q8mZ5vWfWaw/sddefault.jpg",
+        "started_at": "2026-05-18T04:39:57Z",
+        "published_at": "2026-05-18T07:22:49Z",
+        "occurred_at": "2026-05-18T04:39:57Z",
+        "duration_sec": 9220,
+        "is_shadowverse_related": 1,
+        "decks": []
+      },
+      {
+        "platform": "youtube",
         "external_stream_id": "8LdKINvbmRk",
         "title": "【シャドバWB】ミルティオビヨンドまで",
         "url": "https://www.youtube.com/watch?v=8LdKINvbmRk",
@@ -1858,6 +1911,19 @@
     "player_name": "ミル",
     "player_icon_url": "https://yt3.ggpht.com/L57St96WAgR7YmzQddit1QTui6nnI4k4IYMwRyiQZhmjE2mC-Mx2LQ1gzTeBUHwjOSfMnu65=s800-c-k-c0x00ffffff-no-rj",
     "streams": [
+      {
+        "platform": "youtube",
+        "external_stream_id": "-hKFrqMi5W8",
+        "title": "格ゲーマー最強決定戦本番 板ザンさんガチ応援【シャドバWB/Shadowverse: Worlds Beyond】",
+        "url": "https://www.youtube.com/watch?v=-hKFrqMi5W8",
+        "thumbnail_url": "https://i.ytimg.com/vi/-hKFrqMi5W8/sddefault.jpg",
+        "started_at": "2026-05-17T08:05:44Z",
+        "published_at": "2026-05-17T15:11:11Z",
+        "occurred_at": "2026-05-17T08:05:44Z",
+        "duration_sec": 23994,
+        "is_shadowverse_related": 1,
+        "decks": []
+      },
       {
         "platform": "youtube",
         "external_stream_id": "rnSwrO32FTE",
@@ -2492,19 +2558,6 @@
         "published_at": "2026-02-27T20:10:09Z",
         "occurred_at": "2026-02-27T05:04:12Z",
         "duration_sec": 10258,
-        "is_shadowverse_related": 1,
-        "decks": []
-      },
-      {
-        "platform": "youtube",
-        "external_stream_id": "p5LZJAP8EmI",
-        "title": "真剣新弾部【シャドバWB/Shadowverse: Worlds Beyond】",
-        "url": "https://www.youtube.com/watch?v=p5LZJAP8EmI",
-        "thumbnail_url": "https://i.ytimg.com/vi/p5LZJAP8EmI/maxresdefault.jpg",
-        "started_at": "2026-02-26T12:25:58Z",
-        "published_at": "2026-02-26T21:32:54Z",
-        "occurred_at": "2026-02-26T12:25:58Z",
-        "duration_sec": 31442,
         "is_shadowverse_related": 1,
         "decks": []
       }
@@ -3174,6 +3227,58 @@
     "streams": [
       {
         "platform": "youtube",
+        "external_stream_id": "EoBh2xeMs1w",
+        "title": "【Spicies' 昼枠】話題の秘術←今日回すデッキが決まらなくて開始遅れました【シャドバWB/Shadowverse: Worlds Beyond】",
+        "url": "https://www.youtube.com/watch?v=EoBh2xeMs1w",
+        "thumbnail_url": "https://i.ytimg.com/vi/EoBh2xeMs1w/maxresdefault_live.jpg",
+        "started_at": "2026-05-18T03:07:51Z",
+        "published_at": "2026-05-18T03:05:20Z",
+        "occurred_at": "2026-05-18T03:07:51Z",
+        "duration_sec": 0,
+        "is_shadowverse_related": 1,
+        "decks": []
+      },
+      {
+        "platform": "youtube",
+        "external_stream_id": "ife71PmBoIc",
+        "title": "【Spicies' 夕枠】格ゲーマー最強決定戦　ウメハラさんが勝ちます【シャドバWB/Shadowverse: Worlds Beyond】",
+        "url": "https://www.youtube.com/watch?v=ife71PmBoIc",
+        "thumbnail_url": "https://i.ytimg.com/vi/ife71PmBoIc/maxresdefault.jpg",
+        "started_at": "2026-05-17T08:07:38Z",
+        "published_at": "2026-05-17T13:22:01Z",
+        "occurred_at": "2026-05-17T08:07:38Z",
+        "duration_sec": 17814,
+        "is_shadowverse_related": 1,
+        "decks": []
+      },
+      {
+        "platform": "youtube",
+        "external_stream_id": "3azZtQ2o6b0",
+        "title": "【Spicies' 昼枠】クレストBが最近話題な気がする【シャドバWB/Shadowverse: Worlds Beyond】",
+        "url": "https://www.youtube.com/watch?v=3azZtQ2o6b0",
+        "thumbnail_url": "https://i.ytimg.com/vi/3azZtQ2o6b0/maxresdefault.jpg",
+        "started_at": "2026-05-17T03:08:48Z",
+        "published_at": "2026-05-17T05:52:10Z",
+        "occurred_at": "2026-05-17T03:08:48Z",
+        "duration_sec": 9269,
+        "is_shadowverse_related": 1,
+        "decks": []
+      },
+      {
+        "platform": "youtube",
+        "external_stream_id": "OJ3LYYzCKjY",
+        "title": "【Spicies' 夕枠】OCS Day1 勝ちました　祝杯【シャドバWB/Shadowverse: Worlds Beyond】",
+        "url": "https://www.youtube.com/watch?v=OJ3LYYzCKjY",
+        "thumbnail_url": "https://i.ytimg.com/vi/OJ3LYYzCKjY/maxresdefault.jpg",
+        "started_at": "2026-05-16T08:31:26Z",
+        "published_at": "2026-05-16T10:57:08Z",
+        "occurred_at": "2026-05-16T08:31:26Z",
+        "duration_sec": 3982,
+        "is_shadowverse_related": 1,
+        "decks": []
+      },
+      {
+        "platform": "youtube",
         "external_stream_id": "W6H5ZRP5kg0",
         "title": "【Spicies' 夕枠】格ゲーマー最強決定戦練習配信　ウメハラさんを優勝させる【シャドバWB/Shadowverse: Worlds Beyond】",
         "url": "https://www.youtube.com/watch?v=W6H5ZRP5kg0",
@@ -3535,45 +3640,6 @@
         "duration_sec": 18094,
         "is_shadowverse_related": 1,
         "decks": []
-      },
-      {
-        "platform": "youtube",
-        "external_stream_id": "2A39ZO5YYSs",
-        "title": "【Spicies' 昼枠】ドラゴンの勝ち方募集【シャドバWB/Shadowverse;   Worlds Beyond】",
-        "url": "https://www.youtube.com/watch?v=2A39ZO5YYSs",
-        "thumbnail_url": "https://i.ytimg.com/vi/2A39ZO5YYSs/maxresdefault.jpg",
-        "started_at": "2026-04-15T03:00:52Z",
-        "published_at": "2026-04-15T09:28:30Z",
-        "occurred_at": "2026-04-15T03:00:52Z",
-        "duration_sec": 21896,
-        "is_shadowverse_related": 1,
-        "decks": []
-      },
-      {
-        "platform": "youtube",
-        "external_stream_id": "lg-CQpMCqj0",
-        "title": "【Spicies' 昼枠】スロース軸進化ネメシス【シャドバWB/Shadowverse;   Worlds Beyond】",
-        "url": "https://www.youtube.com/watch?v=lg-CQpMCqj0",
-        "thumbnail_url": "https://i.ytimg.com/vi/lg-CQpMCqj0/maxresdefault.jpg",
-        "started_at": "2026-04-14T03:01:53Z",
-        "published_at": "2026-04-14T09:09:36Z",
-        "occurred_at": "2026-04-14T03:01:53Z",
-        "duration_sec": 20935,
-        "is_shadowverse_related": 1,
-        "decks": []
-      },
-      {
-        "platform": "youtube",
-        "external_stream_id": "EzVA2qa4_dA",
-        "title": "【Spicies' 昼枠】CR1位～　新緑のフェアリー【シャドバWB/Shadowverse;   Worlds Beyond】",
-        "url": "https://www.youtube.com/watch?v=EzVA2qa4_dA",
-        "thumbnail_url": "https://i.ytimg.com/vi/EzVA2qa4_dA/maxresdefault.jpg",
-        "started_at": "2026-04-13T02:59:26Z",
-        "published_at": "2026-04-13T09:20:58Z",
-        "occurred_at": "2026-04-13T02:59:26Z",
-        "duration_sec": 21725,
-        "is_shadowverse_related": 1,
-        "decks": []
       }
     ]
   },
@@ -3582,6 +3648,60 @@
     "player_name": "Toby",
     "player_icon_url": "https://yt3.ggpht.com/oitmDk9C400RUploTk0r6Qlb3xRD2UZUYUwq30vrU1c2zNCADTU6jaQ8WTpwAc9sZ5aRVaGuCw=s800-c-k-c0x00ffffff-no-rj",
     "streams": [
+      {
+        "platform": "youtube",
+        "external_stream_id": "8wgu4XnICbc",
+        "title": "大会振り返り＆近況報告雑談【シャドバWB/Shadowverse: Worlds Beyond】",
+        "url": "https://www.youtube.com/watch?v=8wgu4XnICbc",
+        "thumbnail_url": "https://i.ytimg.com/vi/8wgu4XnICbc/maxresdefault_live.jpg",
+        "started_at": "2026-05-16T11:09:34Z",
+        "published_at": "2026-05-16T11:09:34Z",
+        "occurred_at": "2026-05-16T11:09:34Z",
+        "duration_sec": 0,
+        "is_shadowverse_related": 1,
+        "decks": []
+      },
+      {
+        "platform": "youtube",
+        "external_stream_id": "H8ViDEkMfEY",
+        "title": "大会振り返り＆近況報告雑談【シャドバWB/Shadowverse: Worlds Beyond】",
+        "url": "https://www.youtube.com/watch?v=H8ViDEkMfEY",
+        "thumbnail_url": "https://i.ytimg.com/vi/H8ViDEkMfEY/maxresdefault.jpg",
+        "started_at": "2026-05-16T09:37:24Z",
+        "published_at": "2026-05-16T10:51:41Z",
+        "occurred_at": "2026-05-16T09:37:24Z",
+        "duration_sec": 3598,
+        "is_shadowverse_related": 1,
+        "decks": [],
+        "simulcast_streams": [
+          {
+            "platform": "twitch",
+            "external_stream_id": "2773302926",
+            "title": "大会振り返り＆近況報告雑談",
+            "url": "https://www.twitch.tv/videos/2773302926",
+            "thumbnail_url": "https://static-cdn.jtvnw.net/cf_vods/d1m7jfoe9zdc1j/ea67ceae19b1e8d5ddd8_toby4108_319414617435_1778924243//thumb/thumb0-320x180.jpg",
+            "started_at": "2026-05-16T09:37:27Z",
+            "published_at": "2026-05-16T09:37:27Z",
+            "occurred_at": "2026-05-16T09:37:27Z",
+            "duration_sec": 3598,
+            "is_shadowverse_related": 0,
+            "decks": []
+          },
+          {
+            "platform": "youtube",
+            "external_stream_id": "H8ViDEkMfEY",
+            "title": "大会振り返り＆近況報告雑談【シャドバWB/Shadowverse: Worlds Beyond】",
+            "url": "https://www.youtube.com/watch?v=H8ViDEkMfEY",
+            "thumbnail_url": "https://i.ytimg.com/vi/H8ViDEkMfEY/maxresdefault.jpg",
+            "started_at": "2026-05-16T09:37:24Z",
+            "published_at": "2026-05-16T10:51:41Z",
+            "occurred_at": "2026-05-16T09:37:24Z",
+            "duration_sec": 3522,
+            "is_shadowverse_related": 1,
+            "decks": []
+          }
+        ]
+      },
       {
         "platform": "youtube",
         "external_stream_id": "KrjQKbnEtt0",
@@ -4452,37 +4572,9 @@
         "started_at": "2026-03-17T08:34:31Z",
         "published_at": "2026-03-17T13:28:04Z",
         "occurred_at": "2026-03-17T08:34:31Z",
-        "duration_sec": 16575,
+        "duration_sec": 16572,
         "is_shadowverse_related": 1,
-        "decks": [],
-        "simulcast_streams": [
-          {
-            "platform": "twitch",
-            "external_stream_id": "2724552054",
-            "title": "【CR2022 7位～】クレストビショップでレート1位行くぜ！！【前期ビショレート最高値記録】",
-            "url": "https://www.twitch.tv/videos/2724552054",
-            "thumbnail_url": "https://static-cdn.jtvnw.net/cf_vods/d1m7jfoe9zdc1j/03b6672efed656bf134b_toby4108_318267999066_1773736470//thumb/thumb0-320x180.jpg",
-            "started_at": "2026-03-17T08:34:35Z",
-            "published_at": "2026-03-17T08:34:35Z",
-            "occurred_at": "2026-03-17T08:34:35Z",
-            "duration_sec": 16575,
-            "is_shadowverse_related": 0,
-            "decks": []
-          },
-          {
-            "platform": "youtube",
-            "external_stream_id": "4FrxriMPGmw",
-            "title": "【CR2022 7位～】クレストビショップでレート1位行くぜ！！【前期ビショレート最高値記録】【シャドバWB/Shadowverse; Worlds Beyond】",
-            "url": "https://www.youtube.com/watch?v=4FrxriMPGmw",
-            "thumbnail_url": "https://i.ytimg.com/vi/4FrxriMPGmw/maxresdefault.jpg",
-            "started_at": "2026-03-17T08:34:31Z",
-            "published_at": "2026-03-17T13:28:04Z",
-            "occurred_at": "2026-03-17T08:34:31Z",
-            "duration_sec": 16572,
-            "is_shadowverse_related": 1,
-            "decks": []
-          }
-        ]
+        "decks": []
       },
       {
         "platform": "youtube",
@@ -4821,32 +4913,6 @@
         "duration_sec": 13926,
         "is_shadowverse_related": 1,
         "decks": []
-      },
-      {
-        "platform": "youtube",
-        "external_stream_id": "IoJQw8xgwjM",
-        "title": "BO3リーグ戦後のチル雑談ランク　ドラゴン。【Shadowverse; Worlds Beyond】",
-        "url": "https://www.youtube.com/watch?v=IoJQw8xgwjM",
-        "thumbnail_url": "https://i.ytimg.com/vi/IoJQw8xgwjM/maxresdefault.jpg",
-        "started_at": "2025-12-05T10:52:56Z",
-        "published_at": "2025-12-05T18:06:50Z",
-        "occurred_at": "2025-12-05T10:52:56Z",
-        "duration_sec": 24816,
-        "is_shadowverse_related": 1,
-        "decks": []
-      },
-      {
-        "platform": "youtube",
-        "external_stream_id": "mB-qs0gYTQI",
-        "title": "【BO3リーグ戦】最強メンバーと本気の対決 vs Era53,CQCQ【Shadowverse; Worlds Beyond】",
-        "url": "https://www.youtube.com/watch?v=mB-qs0gYTQI",
-        "thumbnail_url": "https://i.ytimg.com/vi/mB-qs0gYTQI/maxresdefault.jpg",
-        "started_at": "2025-12-04T10:54:17Z",
-        "published_at": "2025-12-04T13:50:02Z",
-        "occurred_at": "2025-12-04T10:54:17Z",
-        "duration_sec": 9796,
-        "is_shadowverse_related": 1,
-        "decks": []
       }
     ]
   },
@@ -4857,14 +4923,55 @@
     "streams": [
       {
         "platform": "youtube",
+        "external_stream_id": "T9bNr2N0eSg",
+        "title": "健康的なランクマッチ【シャドバWB/Shadowverse: Worlds Beyond】",
+        "url": "https://www.youtube.com/watch?v=T9bNr2N0eSg",
+        "thumbnail_url": "https://i.ytimg.com/vi/T9bNr2N0eSg/maxresdefault_live.jpg",
+        "started_at": "2026-05-18T01:57:27Z",
+        "published_at": "2026-05-17T09:02:24Z",
+        "occurred_at": "2026-05-18T01:57:27Z",
+        "duration_sec": 20872,
+        "is_shadowverse_related": 1,
+        "decks": [],
+        "simulcast_streams": [
+          {
+            "platform": "youtube",
+            "external_stream_id": "T9bNr2N0eSg",
+            "title": "健康的なランクマッチ【シャドバWB/Shadowverse: Worlds Beyond】",
+            "url": "https://www.youtube.com/watch?v=T9bNr2N0eSg",
+            "thumbnail_url": "https://i.ytimg.com/vi/T9bNr2N0eSg/maxresdefault_live.jpg",
+            "started_at": "2026-05-18T01:57:27Z",
+            "published_at": "2026-05-17T09:02:24Z",
+            "occurred_at": "2026-05-18T01:57:27Z",
+            "duration_sec": 0,
+            "is_shadowverse_related": 1,
+            "decks": []
+          },
+          {
+            "platform": "twitch",
+            "external_stream_id": "2774748112",
+            "title": "健康的なランクマッチ【シャドバWB/Shadowverse: Worlds Beyond】",
+            "url": "https://www.twitch.tv/videos/2774748112",
+            "thumbnail_url": "https://vod-secure.twitch.tv/_404/404_processing_320x180.png",
+            "started_at": "2026-05-18T01:57:23Z",
+            "published_at": "2026-05-18T01:57:23Z",
+            "occurred_at": "2026-05-18T01:57:23Z",
+            "duration_sec": 20872,
+            "is_shadowverse_related": 1,
+            "decks": []
+          }
+        ]
+      },
+      {
+        "platform": "youtube",
         "external_stream_id": "eqOEUv01ceU",
-        "title": "マジの朝活【シャドバWB/Shadowverse: Worlds Beyond】",
+        "title": "いつもの昼活【シャドバWB/Shadowverse: Worlds Beyond】",
         "url": "https://www.youtube.com/watch?v=eqOEUv01ceU",
-        "thumbnail_url": "https://i.ytimg.com/vi/eqOEUv01ceU/maxresdefault_live.jpg",
-        "started_at": "2026-05-13T02:50:22Z",
-        "published_at": "2026-05-13T02:50:22Z",
-        "occurred_at": "2026-05-13T02:50:22Z",
-        "duration_sec": 0,
+        "thumbnail_url": "https://i.ytimg.com/vi/eqOEUv01ceU/maxresdefault.jpg",
+        "started_at": "2026-05-17T02:30:40Z",
+        "published_at": "2026-05-17T09:30:37Z",
+        "occurred_at": "2026-05-17T02:30:40Z",
+        "duration_sec": 23516,
         "is_shadowverse_related": 1,
         "decks": [
           {
@@ -4878,6 +4985,47 @@
             "confidence": "",
             "source_note": "",
             "display_order": 1
+          }
+        ],
+        "simulcast_streams": [
+          {
+            "platform": "youtube",
+            "external_stream_id": "eqOEUv01ceU",
+            "title": "いつもの昼活【シャドバWB/Shadowverse: Worlds Beyond】",
+            "url": "https://www.youtube.com/watch?v=eqOEUv01ceU",
+            "thumbnail_url": "https://i.ytimg.com/vi/eqOEUv01ceU/maxresdefault.jpg",
+            "started_at": "2026-05-17T02:30:40Z",
+            "published_at": "2026-05-17T09:30:37Z",
+            "occurred_at": "2026-05-17T02:30:40Z",
+            "duration_sec": 23500,
+            "is_shadowverse_related": 1,
+            "decks": [
+              {
+                "deck_key": "deck-r-1778681117704",
+                "deck_name": "連携R",
+                "class_name": "R",
+                "archetype": "",
+                "deck_url": "",
+                "deck_code": "",
+                "notes": "",
+                "confidence": "",
+                "source_note": "",
+                "display_order": 1
+              }
+            ]
+          },
+          {
+            "platform": "twitch",
+            "external_stream_id": "2773949464",
+            "title": "いつもの昼活【シャドバWB/Shadowverse: Worlds Beyond】",
+            "url": "https://www.twitch.tv/videos/2773949464",
+            "thumbnail_url": "https://static-cdn.jtvnw.net/cf_vods/d3vd9lfkzbru3h/ad015bde7041f41b2dbd_glory__2020_315908167282_1778985010//thumb/thumb0-320x180.jpg",
+            "started_at": "2026-05-17T02:30:16Z",
+            "published_at": "2026-05-17T02:30:16Z",
+            "occurred_at": "2026-05-17T02:30:16Z",
+            "duration_sec": 23516,
+            "is_shadowverse_related": 1,
+            "decks": []
           }
         ]
       },
@@ -6539,37 +6687,9 @@
         "started_at": "2026-03-18T06:29:06Z",
         "published_at": "2026-03-18T11:10:13Z",
         "occurred_at": "2026-03-18T06:29:06Z",
-        "duration_sec": 16081,
+        "duration_sec": 16079,
         "is_shadowverse_related": 1,
-        "decks": [],
-        "simulcast_streams": [
-          {
-            "platform": "youtube",
-            "external_stream_id": "DffTUWxsXvg",
-            "title": "ミルティオナイトメア【Shadowverse: Worlds Beyond】",
-            "url": "https://www.youtube.com/watch?v=DffTUWxsXvg",
-            "thumbnail_url": "https://i.ytimg.com/vi/DffTUWxsXvg/maxresdefault.jpg",
-            "started_at": "2026-03-18T06:29:06Z",
-            "published_at": "2026-03-18T11:10:13Z",
-            "occurred_at": "2026-03-18T06:29:06Z",
-            "duration_sec": 16079,
-            "is_shadowverse_related": 1,
-            "decks": []
-          },
-          {
-            "platform": "twitch",
-            "external_stream_id": "2725337507",
-            "title": "ミルティオナイトメア【Shadowverse: Worlds Beyond】",
-            "url": "https://www.twitch.tv/videos/2725337507",
-            "thumbnail_url": "https://static-cdn.jtvnw.net/cf_vods/d3vd9lfkzbru3h/4987b8defd69608afb8b_glory__hs_315623796977_1773815338//thumb/thumb0-320x180.jpg",
-            "started_at": "2026-03-18T06:29:04Z",
-            "published_at": "2026-03-18T06:29:04Z",
-            "occurred_at": "2026-03-18T06:29:04Z",
-            "duration_sec": 16081,
-            "is_shadowverse_related": 1,
-            "decks": []
-          }
-        ]
+        "decks": []
       },
       {
         "platform": "youtube",
@@ -6580,37 +6700,9 @@
         "started_at": "2026-03-17T04:34:20Z",
         "published_at": "2026-03-17T11:13:51Z",
         "occurred_at": "2026-03-17T04:34:20Z",
-        "duration_sec": 22443,
+        "duration_sec": 22427,
         "is_shadowverse_related": 1,
-        "decks": [],
-        "simulcast_streams": [
-          {
-            "platform": "youtube",
-            "external_stream_id": "zv7g9bBl8eo",
-            "title": "偉丈夫ビショップ【Shadowverse: Worlds Beyond】",
-            "url": "https://www.youtube.com/watch?v=zv7g9bBl8eo",
-            "thumbnail_url": "https://i.ytimg.com/vi/zv7g9bBl8eo/maxresdefault.jpg",
-            "started_at": "2026-03-17T04:34:20Z",
-            "published_at": "2026-03-17T11:13:51Z",
-            "occurred_at": "2026-03-17T04:34:20Z",
-            "duration_sec": 22427,
-            "is_shadowverse_related": 1,
-            "decks": []
-          },
-          {
-            "platform": "twitch",
-            "external_stream_id": "2724473256",
-            "title": "恩寵ビショップ【Shadowverse: Worlds Beyond】",
-            "url": "https://www.twitch.tv/videos/2724473256",
-            "thumbnail_url": "https://static-cdn.jtvnw.net/cf_vods/d3vd9lfkzbru3h/12a474c5582f4363838d_glory__hs_315618989937_1773722034//thumb/thumb0-320x180.jpg",
-            "started_at": "2026-03-17T04:34:00Z",
-            "published_at": "2026-03-17T04:34:00Z",
-            "occurred_at": "2026-03-17T04:34:00Z",
-            "duration_sec": 22443,
-            "is_shadowverse_related": 1,
-            "decks": []
-          }
-        ]
+        "decks": []
       },
       {
         "platform": "youtube",
@@ -6623,35 +6715,7 @@
         "occurred_at": "2026-03-15T04:15:26Z",
         "duration_sec": 24481,
         "is_shadowverse_related": 1,
-        "decks": [],
-        "simulcast_streams": [
-          {
-            "platform": "youtube",
-            "external_stream_id": "Bm9NY9wwVrA",
-            "title": "ディスカードドラゴンリベンジ【Shadowverse: Worlds Beyond】",
-            "url": "https://www.youtube.com/watch?v=Bm9NY9wwVrA",
-            "thumbnail_url": "https://i.ytimg.com/vi/Bm9NY9wwVrA/maxresdefault.jpg",
-            "started_at": "2026-03-15T04:15:26Z",
-            "published_at": "2026-03-15T11:32:44Z",
-            "occurred_at": "2026-03-15T04:15:26Z",
-            "duration_sec": 24481,
-            "is_shadowverse_related": 1,
-            "decks": []
-          },
-          {
-            "platform": "twitch",
-            "external_stream_id": "2722767169",
-            "title": "OTK搭載魔手ウィッチ【Shadowverse: Worlds Beyond】",
-            "url": "https://www.twitch.tv/videos/2722767169",
-            "thumbnail_url": "https://static-cdn.jtvnw.net/cf_vods/d3vd9lfkzbru3h/0656e654688da1c6f5a3_glory__hs_315669531123_1773548117//thumb/thumb0-320x180.jpg",
-            "started_at": "2026-03-15T04:15:23Z",
-            "published_at": "2026-03-15T04:15:23Z",
-            "occurred_at": "2026-03-15T04:15:23Z",
-            "duration_sec": 24479,
-            "is_shadowverse_related": 1,
-            "decks": []
-          }
-        ]
+        "decks": []
       },
       {
         "platform": "youtube",
@@ -6691,19 +6755,6 @@
         "duration_sec": 27303,
         "is_shadowverse_related": 1,
         "decks": []
-      },
-      {
-        "platform": "youtube",
-        "external_stream_id": "o880kVm_d34",
-        "title": "魔手ウィッチ【Shadowverse: Worlds Beyond】",
-        "url": "https://www.youtube.com/watch?v=o880kVm_d34",
-        "thumbnail_url": "https://i.ytimg.com/vi/o880kVm_d34/maxresdefault.jpg",
-        "started_at": "2026-03-10T03:07:09Z",
-        "published_at": "2026-03-10T11:56:30Z",
-        "occurred_at": "2026-03-10T03:07:09Z",
-        "duration_sec": 29488,
-        "is_shadowverse_related": 1,
-        "decks": []
       }
     ]
   },
@@ -6712,6 +6763,45 @@
     "player_name": "マイト",
     "player_icon_url": "https://yt3.ggpht.com/IIY9WUc0YhhEFV4EPWfaYLdgTFhmlqVMxP6PUJLLUwv7n_LJKxdhte3y4uCC0ZXMbdKW8JEZzg=s800-c-k-c0x00ffffff-no-rj",
     "streams": [
+      {
+        "platform": "youtube",
+        "external_stream_id": "m-_tmTg9Ut4",
+        "title": "【シャドバWB】今日も今日とて楽しく能力変更後「神殺し・アナテマ / Anathema's Gambit」ランクマ配信【Shadowverse: Worlds Beyond】",
+        "url": "https://www.youtube.com/watch?v=m-_tmTg9Ut4",
+        "thumbnail_url": "https://i.ytimg.com/vi/m-_tmTg9Ut4/maxresdefault.jpg",
+        "started_at": "2026-05-17T14:59:43Z",
+        "published_at": "2026-05-17T21:20:07Z",
+        "occurred_at": "2026-05-17T14:59:43Z",
+        "duration_sec": 21518,
+        "is_shadowverse_related": 1,
+        "decks": []
+      },
+      {
+        "platform": "youtube",
+        "external_stream_id": "zhkMDJagIDg",
+        "title": "【シャドバWB】OCSお疲れさまでした～能力変更後「神殺し・アナテマ / Anathema's Gambit」ランクマ配信【Shadowverse: Worlds Beyond】",
+        "url": "https://www.youtube.com/watch?v=zhkMDJagIDg",
+        "thumbnail_url": "https://i.ytimg.com/vi/zhkMDJagIDg/maxresdefault.jpg",
+        "started_at": "2026-05-16T12:27:53Z",
+        "published_at": "2026-05-16T16:46:01Z",
+        "occurred_at": "2026-05-16T12:27:53Z",
+        "duration_sec": 14652,
+        "is_shadowverse_related": 1,
+        "decks": []
+      },
+      {
+        "platform": "youtube",
+        "external_stream_id": "7Pe6qZ-e6P4",
+        "title": "【シャドバWB】久々の深夜配信です能力変更後「神殺し・アナテマ / Anathema's Gambit」ランクマ配信【Shadowverse: Worlds Beyond】",
+        "url": "https://www.youtube.com/watch?v=7Pe6qZ-e6P4",
+        "thumbnail_url": "https://i.ytimg.com/vi/7Pe6qZ-e6P4/maxresdefault.jpg",
+        "started_at": "2026-05-14T14:13:41Z",
+        "published_at": "2026-05-14T17:15:37Z",
+        "occurred_at": "2026-05-14T14:13:41Z",
+        "duration_sec": 5901,
+        "is_shadowverse_related": 1,
+        "decks": []
+      },
       {
         "platform": "youtube",
         "external_stream_id": "AGoU3_8Y5PM",
@@ -6723,7 +6813,20 @@
         "occurred_at": "2026-05-12T08:55:14Z",
         "duration_sec": 21194,
         "is_shadowverse_related": 1,
-        "decks": []
+        "decks": [
+          {
+            "deck_key": "deck-r-1778681117704",
+            "deck_name": "連携R",
+            "class_name": "R",
+            "archetype": "",
+            "deck_url": "",
+            "deck_code": "",
+            "notes": "",
+            "confidence": "",
+            "source_note": "",
+            "display_order": 1
+          }
+        ]
       },
       {
         "platform": "youtube",
@@ -7307,45 +7410,6 @@
         "published_at": "2026-03-24T01:59:09Z",
         "occurred_at": "2026-03-23T16:09:12Z",
         "duration_sec": 33672,
-        "is_shadowverse_related": 1,
-        "decks": []
-      },
-      {
-        "platform": "youtube",
-        "external_stream_id": "KQMdyGRyEPw",
-        "title": "【シャドバWB】レートが溶けたらその分盛ればいい定期！最強を目指す新環境「アポカリプス・パクト」ランクマッチ配信【Shadowverse: Worlds Beyond】",
-        "url": "https://www.youtube.com/watch?v=KQMdyGRyEPw",
-        "thumbnail_url": "https://i.ytimg.com/vi/KQMdyGRyEPw/maxresdefault.jpg",
-        "started_at": "2026-03-22T13:48:58Z",
-        "published_at": "2026-03-22T21:29:38Z",
-        "occurred_at": "2026-03-22T13:48:58Z",
-        "duration_sec": 26421,
-        "is_shadowverse_related": 1,
-        "decks": []
-      },
-      {
-        "platform": "youtube",
-        "external_stream_id": "djAyRdXXuH0",
-        "title": "【シャドバWB】そろそろロイヤル１位を目指すぞ！最強を目指す新環境「アポカリプス・パクト」ランクマッチ配信【Shadowverse: Worlds Beyond】",
-        "url": "https://www.youtube.com/watch?v=djAyRdXXuH0",
-        "thumbnail_url": "https://i.ytimg.com/vi/djAyRdXXuH0/maxresdefault.jpg",
-        "started_at": "2026-03-21T12:43:45Z",
-        "published_at": "2026-03-21T19:02:37Z",
-        "occurred_at": "2026-03-21T12:43:45Z",
-        "duration_sec": 21590,
-        "is_shadowverse_related": 1,
-        "decks": []
-      },
-      {
-        "platform": "youtube",
-        "external_stream_id": "zwgiKYqNBtk",
-        "title": "【シャドバWB】レートが溶けたらそれ以上に盛ればいいエンハンスロイヤル！最強を目指す新環境「アポカリプス・パクト」ランクマッチ配信【Shadowverse: Worlds Beyond】",
-        "url": "https://www.youtube.com/watch?v=zwgiKYqNBtk",
-        "thumbnail_url": "https://i.ytimg.com/vi/zwgiKYqNBtk/maxresdefault.jpg",
-        "started_at": "2026-03-19T13:33:53Z",
-        "published_at": "2026-03-19T21:08:15Z",
-        "occurred_at": "2026-03-19T13:33:53Z",
-        "duration_sec": 26097,
         "is_shadowverse_related": 1,
         "decks": []
       }
@@ -8809,6 +8873,19 @@
     "streams": [
       {
         "platform": "youtube",
+        "external_stream_id": "NAXUkca_EII",
+        "title": "まずはネメシスBEYONDまで【シャドウバース ビヨンド】",
+        "url": "https://www.youtube.com/watch?v=NAXUkca_EII",
+        "thumbnail_url": "https://i.ytimg.com/vi/NAXUkca_EII/sddefault.jpg",
+        "started_at": "2026-05-14T13:22:41Z",
+        "published_at": "2026-05-14T17:49:15Z",
+        "occurred_at": "2026-05-14T13:22:41Z",
+        "duration_sec": 15302,
+        "is_shadowverse_related": 1,
+        "decks": []
+      },
+      {
+        "platform": "youtube",
         "external_stream_id": "nUQIEbmoClY",
         "title": "ナーフ後環境どうなんだい！！【シャドウバース ビヨンド】",
         "url": "https://www.youtube.com/watch?v=nUQIEbmoClY",
@@ -9443,19 +9520,6 @@
         "duration_sec": 20410,
         "is_shadowverse_related": 1,
         "decks": []
-      },
-      {
-        "platform": "youtube",
-        "external_stream_id": "a9YZSCksGt4",
-        "title": "優勝して新カード見る【Shadoｗverse： World Beyond】",
-        "url": "https://www.youtube.com/watch?v=a9YZSCksGt4",
-        "thumbnail_url": "https://i.ytimg.com/vi/a9YZSCksGt4/sddefault.jpg",
-        "started_at": "2025-08-27T12:31:43Z",
-        "published_at": "2025-08-27T15:10:10Z",
-        "occurred_at": "2025-08-27T12:31:43Z",
-        "duration_sec": 8977,
-        "is_shadowverse_related": 1,
-        "decks": []
       }
     ]
   },
@@ -9464,6 +9528,129 @@
     "player_name": "折り紙",
     "player_icon_url": "https://yt3.ggpht.com/0CydEo5Z6M4dkmON0eP4RuoefPcGdyCLRUfYkagturNZHI8pDU2MEKqgqzsQjNKHju1fNqEijA=s800-c-k-c0x00ffffff-no-rj",
     "streams": [
+      {
+        "platform": "youtube",
+        "external_stream_id": "hMXrTNOZPMc",
+        "title": "格ゲーマー最強決定戦本番　ザクレイさん全力応援　Twitch同時配信【シャドバWB】",
+        "url": "https://www.youtube.com/watch?v=hMXrTNOZPMc",
+        "thumbnail_url": "https://i.ytimg.com/vi/hMXrTNOZPMc/maxresdefault.jpg",
+        "started_at": "2026-05-17T08:01:34Z",
+        "published_at": "2026-05-17T15:10:44Z",
+        "occurred_at": "2026-05-17T08:01:34Z",
+        "duration_sec": 24663,
+        "is_shadowverse_related": 1,
+        "decks": [],
+        "simulcast_streams": [
+          {
+            "platform": "twitch",
+            "external_stream_id": "2774101777",
+            "title": "格ゲーマー最強決定戦本番 ザクレイさん全力応援",
+            "url": "https://www.twitch.tv/videos/2774101777",
+            "thumbnail_url": "https://static-cdn.jtvnw.net/cf_vods/d3vd9lfkzbru3h/ed1a7bd15844e6c469a3_origamisv_315901206001_1779004888//thumb/thumb0-320x180.jpg",
+            "started_at": "2026-05-17T08:01:34Z",
+            "published_at": "2026-05-17T08:01:34Z",
+            "occurred_at": "2026-05-17T08:01:34Z",
+            "duration_sec": 24663,
+            "is_shadowverse_related": 0,
+            "decks": []
+          },
+          {
+            "platform": "youtube",
+            "external_stream_id": "hMXrTNOZPMc",
+            "title": "格ゲーマー最強決定戦本番　ザクレイさん全力応援　Twitch同時配信【シャドバWB】",
+            "url": "https://www.youtube.com/watch?v=hMXrTNOZPMc",
+            "thumbnail_url": "https://i.ytimg.com/vi/hMXrTNOZPMc/maxresdefault.jpg",
+            "started_at": "2026-05-17T08:01:34Z",
+            "published_at": "2026-05-17T15:10:44Z",
+            "occurred_at": "2026-05-17T08:01:34Z",
+            "duration_sec": 24658,
+            "is_shadowverse_related": 1,
+            "decks": []
+          }
+        ]
+      },
+      {
+        "platform": "youtube",
+        "external_stream_id": "k62i-k7sdZ8",
+        "title": "格ゲーマー最強決定戦コーチング配信！　ザクレイさん　Twitch同時配信【シャドバWB】",
+        "url": "https://www.youtube.com/watch?v=k62i-k7sdZ8",
+        "thumbnail_url": "https://i.ytimg.com/vi/k62i-k7sdZ8/maxresdefault.jpg",
+        "started_at": "2026-05-15T07:29:59Z",
+        "published_at": "2026-05-15T12:37:35Z",
+        "occurred_at": "2026-05-15T07:29:59Z",
+        "duration_sec": 17619,
+        "is_shadowverse_related": 1,
+        "decks": [],
+        "simulcast_streams": [
+          {
+            "platform": "twitch",
+            "external_stream_id": "2772426830",
+            "title": "格ゲーマー最強決定戦コーチング配信！ ザクレイさん",
+            "url": "https://www.twitch.tv/videos/2772426830",
+            "thumbnail_url": "https://static-cdn.jtvnw.net/cf_vods/d3vd9lfkzbru3h/1bea4c073a0e6a911270_origamisv_315953511795_1778830194//thumb/thumb0-320x180.jpg",
+            "started_at": "2026-05-15T07:29:59Z",
+            "published_at": "2026-05-15T07:29:59Z",
+            "occurred_at": "2026-05-15T07:29:59Z",
+            "duration_sec": 17619,
+            "is_shadowverse_related": 0,
+            "decks": []
+          },
+          {
+            "platform": "youtube",
+            "external_stream_id": "k62i-k7sdZ8",
+            "title": "格ゲーマー最強決定戦コーチング配信！　ザクレイさん　Twitch同時配信【シャドバWB】",
+            "url": "https://www.youtube.com/watch?v=k62i-k7sdZ8",
+            "thumbnail_url": "https://i.ytimg.com/vi/k62i-k7sdZ8/maxresdefault.jpg",
+            "started_at": "2026-05-15T07:29:59Z",
+            "published_at": "2026-05-15T12:37:35Z",
+            "occurred_at": "2026-05-15T07:29:59Z",
+            "duration_sec": 17619,
+            "is_shadowverse_related": 1,
+            "decks": []
+          }
+        ]
+      },
+      {
+        "platform": "youtube",
+        "external_stream_id": "dPI89JU3enA",
+        "title": "進化ナイトメア使ってみる　Twitch同時配信【シャドバWB】",
+        "url": "https://www.youtube.com/watch?v=dPI89JU3enA",
+        "thumbnail_url": "https://i.ytimg.com/vi/dPI89JU3enA/maxresdefault.jpg",
+        "started_at": "2026-05-14T13:28:35Z",
+        "published_at": "2026-05-14T18:13:28Z",
+        "occurred_at": "2026-05-14T13:28:35Z",
+        "duration_sec": 16189,
+        "is_shadowverse_related": 1,
+        "decks": [],
+        "simulcast_streams": [
+          {
+            "platform": "youtube",
+            "external_stream_id": "dPI89JU3enA",
+            "title": "進化ナイトメア使ってみる　Twitch同時配信【シャドバWB】",
+            "url": "https://www.youtube.com/watch?v=dPI89JU3enA",
+            "thumbnail_url": "https://i.ytimg.com/vi/dPI89JU3enA/maxresdefault.jpg",
+            "started_at": "2026-05-14T13:28:35Z",
+            "published_at": "2026-05-14T18:13:28Z",
+            "occurred_at": "2026-05-14T13:28:35Z",
+            "duration_sec": 16189,
+            "is_shadowverse_related": 1,
+            "decks": []
+          },
+          {
+            "platform": "twitch",
+            "external_stream_id": "2771744320",
+            "title": "進化ナイトメアを使ってみる",
+            "url": "https://www.twitch.tv/videos/2771744320",
+            "thumbnail_url": "https://static-cdn.jtvnw.net/cf_vods/d3vd9lfkzbru3h/16922c14b8462edb7e79_origamisv_315896361202_1778765308//thumb/thumb0-320x180.jpg",
+            "started_at": "2026-05-14T13:28:33Z",
+            "published_at": "2026-05-14T13:28:33Z",
+            "occurred_at": "2026-05-14T13:28:33Z",
+            "duration_sec": 16186,
+            "is_shadowverse_related": 0,
+            "decks": []
+          }
+        ]
+      },
       {
         "platform": "youtube",
         "external_stream_id": "4Gxgfw55XRE",
@@ -10922,45 +11109,17 @@
         ]
       },
       {
-        "platform": "youtube",
-        "external_stream_id": "WVE66kn4rrs",
-        "title": "最終全ビヨ＆1位目指す！　魂のビショップ　Twitch同時配信【シャドバWB/アポカリプス・パクト】",
-        "url": "https://www.youtube.com/watch?v=WVE66kn4rrs",
-        "thumbnail_url": "https://i.ytimg.com/vi/WVE66kn4rrs/maxresdefault.jpg",
-        "started_at": "2026-03-27T11:47:32Z",
-        "published_at": "2026-03-27T17:33:28Z",
-        "occurred_at": "2026-03-27T11:47:32Z",
+        "platform": "twitch",
+        "external_stream_id": "2732934597",
+        "title": "1位も取るし、全ビヨも取る",
+        "url": "https://www.twitch.tv/videos/2732934597",
+        "thumbnail_url": "https://static-cdn.jtvnw.net/cf_vods/d3vd9lfkzbru3h/df03a2b0b612939c8f00_origamisv_315725631859_1774612043//thumb/thumb0-320x180.jpg",
+        "started_at": "2026-03-27T11:47:28Z",
+        "published_at": "2026-03-27T11:47:28Z",
+        "occurred_at": "2026-03-27T11:47:28Z",
         "duration_sec": 19866,
-        "is_shadowverse_related": 1,
-        "decks": [],
-        "simulcast_streams": [
-          {
-            "platform": "youtube",
-            "external_stream_id": "WVE66kn4rrs",
-            "title": "最終全ビヨ＆1位目指す！　魂のビショップ　Twitch同時配信【シャドバWB/アポカリプス・パクト】",
-            "url": "https://www.youtube.com/watch?v=WVE66kn4rrs",
-            "thumbnail_url": "https://i.ytimg.com/vi/WVE66kn4rrs/maxresdefault.jpg",
-            "started_at": "2026-03-27T11:47:32Z",
-            "published_at": "2026-03-27T17:33:28Z",
-            "occurred_at": "2026-03-27T11:47:32Z",
-            "duration_sec": 19815,
-            "is_shadowverse_related": 1,
-            "decks": []
-          },
-          {
-            "platform": "twitch",
-            "external_stream_id": "2732934597",
-            "title": "1位も取るし、全ビヨも取る",
-            "url": "https://www.twitch.tv/videos/2732934597",
-            "thumbnail_url": "https://static-cdn.jtvnw.net/cf_vods/d3vd9lfkzbru3h/df03a2b0b612939c8f00_origamisv_315725631859_1774612043//thumb/thumb0-320x180.jpg",
-            "started_at": "2026-03-27T11:47:28Z",
-            "published_at": "2026-03-27T11:47:28Z",
-            "occurred_at": "2026-03-27T11:47:28Z",
-            "duration_sec": 19866,
-            "is_shadowverse_related": 0,
-            "decks": []
-          }
-        ]
+        "is_shadowverse_related": 0,
+        "decks": []
       },
       {
         "platform": "twitch",
@@ -10976,86 +11135,30 @@
         "decks": []
       },
       {
-        "platform": "youtube",
-        "external_stream_id": "3AVvXEfvAI8",
-        "title": "【全ビヨ達成】ミルティオ　達成←進化エルフ2200目指して　Twitch同時配信【シャドバWB/アポカリプス・パクト】",
-        "url": "https://www.youtube.com/watch?v=3AVvXEfvAI8",
-        "thumbnail_url": "https://i.ytimg.com/vi/3AVvXEfvAI8/maxresdefault.jpg",
-        "started_at": "2026-03-25T11:53:02Z",
-        "published_at": "2026-03-25T15:55:29Z",
-        "occurred_at": "2026-03-25T11:53:02Z",
+        "platform": "twitch",
+        "external_stream_id": "2731313794",
+        "title": "【全ビヨ達成】上位目指す",
+        "url": "https://www.twitch.tv/videos/2731313794",
+        "thumbnail_url": "https://static-cdn.jtvnw.net/cf_vods/d3vd9lfkzbru3h/df4b8c8761701c1b31c7_origamisv_315716787059_1774439575//thumb/thumb0-320x180.jpg",
+        "started_at": "2026-03-25T11:53:00Z",
+        "published_at": "2026-03-25T11:53:00Z",
+        "occurred_at": "2026-03-25T11:53:00Z",
         "duration_sec": 13730,
-        "is_shadowverse_related": 1,
-        "decks": [],
-        "simulcast_streams": [
-          {
-            "platform": "youtube",
-            "external_stream_id": "3AVvXEfvAI8",
-            "title": "【全ビヨ達成】ミルティオ　達成←進化エルフ2200目指して　Twitch同時配信【シャドバWB/アポカリプス・パクト】",
-            "url": "https://www.youtube.com/watch?v=3AVvXEfvAI8",
-            "thumbnail_url": "https://i.ytimg.com/vi/3AVvXEfvAI8/maxresdefault.jpg",
-            "started_at": "2026-03-25T11:53:02Z",
-            "published_at": "2026-03-25T15:55:29Z",
-            "occurred_at": "2026-03-25T11:53:02Z",
-            "duration_sec": 13693,
-            "is_shadowverse_related": 1,
-            "decks": []
-          },
-          {
-            "platform": "twitch",
-            "external_stream_id": "2731313794",
-            "title": "【全ビヨ達成】上位目指す",
-            "url": "https://www.twitch.tv/videos/2731313794",
-            "thumbnail_url": "https://static-cdn.jtvnw.net/cf_vods/d3vd9lfkzbru3h/df4b8c8761701c1b31c7_origamisv_315716787059_1774439575//thumb/thumb0-320x180.jpg",
-            "started_at": "2026-03-25T11:53:00Z",
-            "published_at": "2026-03-25T11:53:00Z",
-            "occurred_at": "2026-03-25T11:53:00Z",
-            "duration_sec": 13730,
-            "is_shadowverse_related": 0,
-            "decks": []
-          }
-        ]
+        "is_shadowverse_related": 0,
+        "decks": []
       },
       {
-        "platform": "youtube",
-        "external_stream_id": "7tKJO4182pM",
-        "title": "【全ビヨ達成】アミュビショでbeyond戻る　達成←ネメシスでCR2000目指す　Twitch同時配信【シャドバWB/アポカリプス・パクト】",
-        "url": "https://www.youtube.com/watch?v=7tKJO4182pM",
-        "thumbnail_url": "https://i.ytimg.com/vi/7tKJO4182pM/maxresdefault.jpg",
-        "started_at": "2026-03-23T22:41:40Z",
-        "published_at": "2026-03-24T03:23:10Z",
-        "occurred_at": "2026-03-23T22:41:40Z",
+        "platform": "twitch",
+        "external_stream_id": "2730113043",
+        "title": "【全ビヨ達成】上位目指す",
+        "url": "https://www.twitch.tv/videos/2730113043",
+        "thumbnail_url": "https://static-cdn.jtvnw.net/cf_vods/d3vd9lfkzbru3h/041894992c325eb01d3f_origamisv_315657971058_1774305693//thumb/thumb0-320x180.jpg",
+        "started_at": "2026-03-23T22:41:38Z",
+        "published_at": "2026-03-23T22:41:38Z",
+        "occurred_at": "2026-03-23T22:41:38Z",
         "duration_sec": 15815,
-        "is_shadowverse_related": 1,
-        "decks": [],
-        "simulcast_streams": [
-          {
-            "platform": "youtube",
-            "external_stream_id": "7tKJO4182pM",
-            "title": "【全ビヨ達成】アミュビショでbeyond戻る　達成←ネメシスでCR2000目指す　Twitch同時配信【シャドバWB/アポカリプス・パクト】",
-            "url": "https://www.youtube.com/watch?v=7tKJO4182pM",
-            "thumbnail_url": "https://i.ytimg.com/vi/7tKJO4182pM/maxresdefault.jpg",
-            "started_at": "2026-03-23T22:41:40Z",
-            "published_at": "2026-03-24T03:23:10Z",
-            "occurred_at": "2026-03-23T22:41:40Z",
-            "duration_sec": 15794,
-            "is_shadowverse_related": 1,
-            "decks": []
-          },
-          {
-            "platform": "twitch",
-            "external_stream_id": "2730113043",
-            "title": "【全ビヨ達成】上位目指す",
-            "url": "https://www.twitch.tv/videos/2730113043",
-            "thumbnail_url": "https://static-cdn.jtvnw.net/cf_vods/d3vd9lfkzbru3h/041894992c325eb01d3f_origamisv_315657971058_1774305693//thumb/thumb0-320x180.jpg",
-            "started_at": "2026-03-23T22:41:38Z",
-            "published_at": "2026-03-23T22:41:38Z",
-            "occurred_at": "2026-03-23T22:41:38Z",
-            "duration_sec": 15815,
-            "is_shadowverse_related": 0,
-            "decks": []
-          }
-        ]
+        "is_shadowverse_related": 0,
+        "decks": []
       },
       {
         "platform": "twitch",
@@ -11119,45 +11222,6 @@
         "published_at": "2026-03-19T14:52:03Z",
         "occurred_at": "2026-03-19T14:52:03Z",
         "duration_sec": 20006,
-        "is_shadowverse_related": 0,
-        "decks": []
-      },
-      {
-        "platform": "twitch",
-        "external_stream_id": "2724653328",
-        "title": "現在4クラスBEYOND",
-        "url": "https://www.twitch.tv/videos/2724653328",
-        "thumbnail_url": "https://static-cdn.jtvnw.net/cf_vods/d3vd9lfkzbru3h/b56eccd9919ebe9cc5a6_origamisv_315680706931_1773753307//thumb/thumb0-320x180.jpg",
-        "started_at": "2026-03-17T13:15:13Z",
-        "published_at": "2026-03-17T13:15:13Z",
-        "occurred_at": "2026-03-17T13:15:13Z",
-        "duration_sec": 21209,
-        "is_shadowverse_related": 0,
-        "decks": []
-      },
-      {
-        "platform": "twitch",
-        "external_stream_id": "2723843679",
-        "title": "現在4クラスBEYOND",
-        "url": "https://www.twitch.tv/videos/2723843679",
-        "thumbnail_url": "https://static-cdn.jtvnw.net/cf_vods/d3vd9lfkzbru3h/84ad4a624e6f2f74558f_origamisv_315624795378_1773669017//thumb/thumb0-320x180.jpg",
-        "started_at": "2026-03-16T13:50:23Z",
-        "published_at": "2026-03-16T13:50:23Z",
-        "occurred_at": "2026-03-16T13:50:23Z",
-        "duration_sec": 18618,
-        "is_shadowverse_related": 0,
-        "decks": []
-      },
-      {
-        "platform": "twitch",
-        "external_stream_id": "2723039763",
-        "title": "破壊ネメシスで一旦beyond踏む",
-        "url": "https://www.twitch.tv/videos/2723039763",
-        "thumbnail_url": "https://static-cdn.jtvnw.net/cf_vods/d3vd9lfkzbru3h/f06a685455f076b28d8b_origamisv_315612561393_1773585059//thumb/thumb0-320x180.jpg",
-        "started_at": "2026-03-15T14:31:05Z",
-        "published_at": "2026-03-15T14:31:05Z",
-        "occurred_at": "2026-03-15T14:31:05Z",
-        "duration_sec": 19281,
         "is_shadowverse_related": 0,
         "decks": []
       }
@@ -11853,6 +11917,19 @@
     "streams": [
       {
         "platform": "youtube",
+        "external_stream_id": "Zw0XCJ3rdH0",
+        "title": "【シャドバWB】強すぎてやばいミルティオで一位目指してみる",
+        "url": "https://www.youtube.com/watch?v=Zw0XCJ3rdH0",
+        "thumbnail_url": "https://i.ytimg.com/vi/Zw0XCJ3rdH0/maxresdefault.jpg",
+        "started_at": "2026-05-17T06:18:37Z",
+        "published_at": "2026-05-17T10:40:20Z",
+        "occurred_at": "2026-05-17T06:18:37Z",
+        "duration_sec": 9394,
+        "is_shadowverse_related": 1,
+        "decks": []
+      },
+      {
+        "platform": "youtube",
         "external_stream_id": "_FC7jG1ufJc",
         "title": "【シャドバWB】ナーフ後ミルティオ調査隊",
         "url": "https://www.youtube.com/watch?v=_FC7jG1ufJc",
@@ -12448,19 +12525,6 @@
         "duration_sec": 14935,
         "is_shadowverse_related": 1,
         "decks": []
-      },
-      {
-        "platform": "youtube",
-        "external_stream_id": "FJR3gZ_ksTw",
-        "title": "【シャドバWB】財宝の王",
-        "url": "https://www.youtube.com/watch?v=FJR3gZ_ksTw",
-        "thumbnail_url": "https://i.ytimg.com/vi/FJR3gZ_ksTw/maxresdefault.jpg",
-        "started_at": "2026-01-18T09:31:36Z",
-        "published_at": "2026-01-18T15:37:24Z",
-        "occurred_at": "2026-01-18T09:31:36Z",
-        "duration_sec": 20340,
-        "is_shadowverse_related": 1,
-        "decks": []
       }
     ]
   },
@@ -12469,6 +12533,19 @@
     "player_name": "TBT",
     "player_icon_url": "https://yt3.ggpht.com/D2gzC48U3IXj3rNpqib7VlInCEqBQNqDk1q-HVqGqJbXkzH-2miEAnNgYiBjTfMSjAY4jGHb=s800-c-k-c0x00ffffff-no-rj",
     "streams": [
+      {
+        "platform": "youtube",
+        "external_stream_id": "kpPoOh9Z4rs",
+        "title": "【CR2位】進化エルフを極める",
+        "url": "https://www.youtube.com/watch?v=kpPoOh9Z4rs",
+        "thumbnail_url": "https://i.ytimg.com/vi/kpPoOh9Z4rs/maxresdefault_live.jpg",
+        "started_at": "2026-05-18T00:50:24Z",
+        "published_at": "2026-05-18T00:24:38Z",
+        "occurred_at": "2026-05-18T00:50:24Z",
+        "duration_sec": 9123,
+        "is_shadowverse_related": 1,
+        "decks": []
+      },
       {
         "platform": "youtube",
         "external_stream_id": "L3sodD46d1w",
@@ -12502,6 +12579,71 @@
     "player_name": "ヘイム",
     "player_icon_url": "https://yt3.ggpht.com/a-SyfSlEBGzDMj0Q3FmRAA5kr-b2thM95_aVxbmTgCzeaaoMdncVYg_722Lq94WMW7MjGRIHyxQ=s800-c-k-c0x00ffffff-no-rj",
     "streams": [
+      {
+        "platform": "youtube",
+        "external_stream_id": "_1CrDfqc41k",
+        "title": "【シャドバWB】ドラゴンに屈しないランクマッチ配信！【神殺し・アナテマ環境】",
+        "url": "https://www.youtube.com/watch?v=_1CrDfqc41k",
+        "thumbnail_url": "https://i.ytimg.com/vi/_1CrDfqc41k/maxresdefault_live.jpg",
+        "started_at": "2026-05-18T00:30:07Z",
+        "published_at": "2026-05-18T00:05:52Z",
+        "occurred_at": "2026-05-18T00:30:07Z",
+        "duration_sec": 0,
+        "is_shadowverse_related": 1,
+        "decks": []
+      },
+      {
+        "platform": "youtube",
+        "external_stream_id": "AiaHfcPybyw",
+        "title": "【シャドバWB】リベンジ成功したので財宝ロイヤル←秘術ウィッチをリベンジさせてください【神殺し・アナテマ環境】",
+        "url": "https://www.youtube.com/watch?v=AiaHfcPybyw",
+        "thumbnail_url": "https://i.ytimg.com/vi/AiaHfcPybyw/maxresdefault.jpg",
+        "started_at": "2026-05-17T05:24:35Z",
+        "published_at": "2026-05-17T12:32:21Z",
+        "occurred_at": "2026-05-17T05:24:35Z",
+        "duration_sec": 24179,
+        "is_shadowverse_related": 1,
+        "decks": []
+      },
+      {
+        "platform": "youtube",
+        "external_stream_id": "iVTay3cQ3E4",
+        "title": "【シャドバWB】秘術ウィッチでビヨンドに行く【神殺し・アナテマ環境】",
+        "url": "https://www.youtube.com/watch?v=iVTay3cQ3E4",
+        "thumbnail_url": "https://i.ytimg.com/vi/iVTay3cQ3E4/maxresdefault.jpg",
+        "started_at": "2026-05-16T06:30:49Z",
+        "published_at": "2026-05-16T14:14:40Z",
+        "occurred_at": "2026-05-16T06:30:49Z",
+        "duration_sec": 26017,
+        "is_shadowverse_related": 1,
+        "decks": []
+      },
+      {
+        "platform": "youtube",
+        "external_stream_id": "DdUl8mMc84U",
+        "title": "【シャドバWB】秘術ウィッチを調査します←ロイヤル実は強い説【神殺し・アナテマ環境】",
+        "url": "https://www.youtube.com/watch?v=DdUl8mMc84U",
+        "thumbnail_url": "https://i.ytimg.com/vi/DdUl8mMc84U/maxresdefault.jpg",
+        "started_at": "2026-05-15T05:00:50Z",
+        "published_at": "2026-05-15T13:29:01Z",
+        "occurred_at": "2026-05-15T05:00:50Z",
+        "duration_sec": 28507,
+        "is_shadowverse_related": 1,
+        "decks": []
+      },
+      {
+        "platform": "youtube",
+        "external_stream_id": "IyuAh9ZOAwo",
+        "title": "【シャドバWB】クレストビショップが気になるので触れる【神殺し・アナテマ環境】",
+        "url": "https://www.youtube.com/watch?v=IyuAh9ZOAwo",
+        "thumbnail_url": "https://i.ytimg.com/vi/IyuAh9ZOAwo/maxresdefault.jpg",
+        "started_at": "2026-05-14T07:35:03Z",
+        "published_at": "2026-05-14T16:43:34Z",
+        "occurred_at": "2026-05-14T07:35:03Z",
+        "duration_sec": 30634,
+        "is_shadowverse_related": 1,
+        "decks": []
+      },
       {
         "platform": "youtube",
         "external_stream_id": "4-ObcrIB7kY",
@@ -13060,71 +13202,6 @@
         "duration_sec": 12299,
         "is_shadowverse_related": 1,
         "decks": []
-      },
-      {
-        "platform": "youtube",
-        "external_stream_id": "kAeY5voQfoc",
-        "title": "【シャドバWB】1試合を大切にするランクマッチ配信",
-        "url": "https://www.youtube.com/watch?v=kAeY5voQfoc",
-        "thumbnail_url": "https://i.ytimg.com/vi/kAeY5voQfoc/maxresdefault.jpg",
-        "started_at": "2026-03-24T00:31:49Z",
-        "published_at": "2026-03-24T04:23:24Z",
-        "occurred_at": "2026-03-24T00:31:49Z",
-        "duration_sec": 13127,
-        "is_shadowverse_related": 1,
-        "decks": []
-      },
-      {
-        "platform": "youtube",
-        "external_stream_id": "KzeTxALThI8",
-        "title": "【シャドバWB】全クラス2000超えによるランクマッチ！",
-        "url": "https://www.youtube.com/watch?v=KzeTxALThI8",
-        "thumbnail_url": "https://i.ytimg.com/vi/KzeTxALThI8/maxresdefault.jpg",
-        "started_at": "2026-03-23T04:56:01Z",
-        "published_at": "2026-03-23T10:21:15Z",
-        "occurred_at": "2026-03-23T04:56:01Z",
-        "duration_sec": 18395,
-        "is_shadowverse_related": 1,
-        "decks": []
-      },
-      {
-        "platform": "youtube",
-        "external_stream_id": "7BAq5pT_2fU",
-        "title": "【シャドバWB】更なる高みを目指してガチランクマッチ！ロイヤルナイトメアメイン",
-        "url": "https://www.youtube.com/watch?v=7BAq5pT_2fU",
-        "thumbnail_url": "https://i.ytimg.com/vi/7BAq5pT_2fU/maxresdefault.jpg",
-        "started_at": "2026-03-22T05:04:04Z",
-        "published_at": "2026-03-22T13:36:35Z",
-        "occurred_at": "2026-03-22T05:04:04Z",
-        "duration_sec": 28908,
-        "is_shadowverse_related": 1,
-        "decks": []
-      },
-      {
-        "platform": "youtube",
-        "external_stream_id": "9R_9H6mn7ow",
-        "title": "【シャドバWB】更なる高みを目指してガチランクマッチ！",
-        "url": "https://www.youtube.com/watch?v=9R_9H6mn7ow",
-        "thumbnail_url": "https://i.ytimg.com/vi/9R_9H6mn7ow/maxresdefault.jpg",
-        "started_at": "2026-03-21T13:00:12Z",
-        "published_at": "2026-03-21T15:20:15Z",
-        "occurred_at": "2026-03-21T13:00:12Z",
-        "duration_sec": 7814,
-        "is_shadowverse_related": 1,
-        "decks": []
-      },
-      {
-        "platform": "youtube",
-        "external_stream_id": "nmV3eqK2eJ4",
-        "title": "【シャドバWB】健康朝活部！全クラス2000いくぞ！",
-        "url": "https://www.youtube.com/watch?v=nmV3eqK2eJ4",
-        "thumbnail_url": "https://i.ytimg.com/vi/nmV3eqK2eJ4/maxresdefault.jpg",
-        "started_at": "2026-03-20T22:49:54Z",
-        "published_at": "2026-03-21T03:29:16Z",
-        "occurred_at": "2026-03-20T22:49:54Z",
-        "duration_sec": 15869,
-        "is_shadowverse_related": 1,
-        "decks": []
       }
     ]
   },
@@ -13135,14 +13212,40 @@
     "streams": [
       {
         "platform": "youtube",
+        "external_stream_id": "7zqTH5Mp6OQ",
+        "title": "【シャドバWB】格ゲーマー最強決定戦当日　takEraチームが優勝【神殺し・アナテマ / Anathema's Gambit】",
+        "url": "https://www.youtube.com/watch?v=7zqTH5Mp6OQ",
+        "thumbnail_url": "https://i.ytimg.com/vi/7zqTH5Mp6OQ/maxresdefault.jpg",
+        "started_at": "2026-05-17T08:01:03Z",
+        "published_at": "2026-05-17T13:24:49Z",
+        "occurred_at": "2026-05-17T08:01:03Z",
+        "duration_sec": 18275,
+        "is_shadowverse_related": 1,
+        "decks": []
+      },
+      {
+        "platform": "youtube",
+        "external_stream_id": "L6AKMco8ex4",
+        "title": "【シャドバWB】格ゲーマー最強決定戦当日　直前徹底コーチング行くぞ！！！【神殺し・アナテマ / Anathema's Gambit】",
+        "url": "https://www.youtube.com/watch?v=L6AKMco8ex4",
+        "thumbnail_url": "https://i.ytimg.com/vi/L6AKMco8ex4/maxresdefault.jpg",
+        "started_at": "2026-05-17T00:34:31Z",
+        "published_at": "2026-05-17T03:32:44Z",
+        "occurred_at": "2026-05-17T00:34:31Z",
+        "duration_sec": 10148,
+        "is_shadowverse_related": 1,
+        "decks": []
+      },
+      {
+        "platform": "youtube",
         "external_stream_id": "-TCqwNxAFVo",
         "title": "【シャドバWB】OCS前鬼練習 アミュレット編→ミルティオも【神殺し・アナテマ / Anathema's Gambit】",
         "url": "https://www.youtube.com/watch?v=-TCqwNxAFVo",
-        "thumbnail_url": "https://i.ytimg.com/vi/-TCqwNxAFVo/maxresdefault_live.jpg",
+        "thumbnail_url": "https://i.ytimg.com/vi/-TCqwNxAFVo/maxresdefault.jpg",
         "started_at": "2026-05-13T23:51:25Z",
-        "published_at": "2026-05-13T23:17:23Z",
+        "published_at": "2026-05-14T08:18:17Z",
         "occurred_at": "2026-05-13T23:51:25Z",
-        "duration_sec": 0,
+        "duration_sec": 28641,
         "is_shadowverse_related": 1,
         "decks": []
       },
@@ -13756,32 +13859,6 @@
         "duration_sec": 32359,
         "is_shadowverse_related": 1,
         "decks": []
-      },
-      {
-        "platform": "youtube",
-        "external_stream_id": "TMlOzFB81gM",
-        "title": "【シャドバWB】シャクドウと言えばEra、Eraと言えばシャクドウ【花酔遊戯】",
-        "url": "https://www.youtube.com/watch?v=TMlOzFB81gM",
-        "thumbnail_url": "https://i.ytimg.com/vi/TMlOzFB81gM/maxresdefault.jpg",
-        "started_at": "2026-02-12T01:30:08Z",
-        "published_at": "2026-02-12T04:58:34Z",
-        "occurred_at": "2026-02-12T01:30:08Z",
-        "duration_sec": 11804,
-        "is_shadowverse_related": 1,
-        "decks": []
-      },
-      {
-        "platform": "youtube",
-        "external_stream_id": "g65CzqT9h6M",
-        "title": "【シャドバWB】プロオルオーナーの朝は早い【花酔遊戯】",
-        "url": "https://www.youtube.com/watch?v=g65CzqT9h6M",
-        "thumbnail_url": "https://i.ytimg.com/vi/g65CzqT9h6M/maxresdefault.jpg",
-        "started_at": "2026-02-11T02:41:10Z",
-        "published_at": "2026-02-11T08:12:49Z",
-        "occurred_at": "2026-02-11T02:41:10Z",
-        "duration_sec": 18676,
-        "is_shadowverse_related": 1,
-        "decks": []
       }
     ]
   },
@@ -13790,6 +13867,19 @@
     "player_name": "rikka",
     "player_icon_url": "https://yt3.ggpht.com/iV4TBLb750cPSJmU52wK9O-xnAcNpirmVXBpi4VXSoCg4d22UQUWZvaJ-MKVz3OCtBavCgNdoWM=s800-c-k-c0x00ffffff-no-rj",
     "streams": [
+      {
+        "platform": "youtube",
+        "external_stream_id": "fPrkKeK2mDw",
+        "title": "OCS直前ランクマッチ",
+        "url": "https://www.youtube.com/watch?v=fPrkKeK2mDw",
+        "thumbnail_url": "https://i.ytimg.com/vi/fPrkKeK2mDw/maxresdefault.jpg",
+        "started_at": "2026-05-14T16:02:40Z",
+        "published_at": "2026-05-14T23:58:20Z",
+        "occurred_at": "2026-05-14T16:02:40Z",
+        "duration_sec": 26887,
+        "is_shadowverse_related": 1,
+        "decks": []
+      },
       {
         "platform": "youtube",
         "external_stream_id": "yXXLDELjnOg",
@@ -13801,7 +13891,20 @@
         "occurred_at": "2026-05-13T10:58:54Z",
         "duration_sec": 16190,
         "is_shadowverse_related": 1,
-        "decks": []
+        "decks": [
+          {
+            "deck_key": "deck-1778742968583",
+            "deck_name": "ミルティオNi",
+            "class_name": "",
+            "archetype": "",
+            "deck_url": "",
+            "deck_code": "",
+            "notes": "",
+            "confidence": "",
+            "source_note": "",
+            "display_order": 1
+          }
+        ]
       },
       {
         "platform": "youtube",
@@ -13814,7 +13917,32 @@
         "occurred_at": "2026-05-11T06:00:51Z",
         "duration_sec": 11595,
         "is_shadowverse_related": 1,
-        "decks": []
+        "decks": [
+          {
+            "deck_key": "deck-1778742968583",
+            "deck_name": "ミルティオNi",
+            "class_name": "",
+            "archetype": "",
+            "deck_url": "",
+            "deck_code": "",
+            "notes": "",
+            "confidence": "",
+            "source_note": "",
+            "display_order": 1
+          },
+          {
+            "deck_key": "deck-b-1778743160748",
+            "deck_name": "アミュB",
+            "class_name": "B",
+            "archetype": "",
+            "deck_url": "",
+            "deck_code": "",
+            "notes": "",
+            "confidence": "",
+            "source_note": "",
+            "display_order": 2
+          }
+        ]
       },
       {
         "platform": "youtube",
@@ -14426,19 +14554,6 @@
         "duration_sec": 12161,
         "is_shadowverse_related": 1,
         "decks": []
-      },
-      {
-        "platform": "youtube",
-        "external_stream_id": "hVrwf_oZlRA",
-        "title": "リノセウスエルフ修行編【シャドバWB/Shadowverse: Worlds Beyond】",
-        "url": "https://www.youtube.com/watch?v=hVrwf_oZlRA",
-        "thumbnail_url": "https://i.ytimg.com/vi/hVrwf_oZlRA/maxresdefault.jpg",
-        "started_at": "2026-01-20T14:32:01Z",
-        "published_at": "2026-01-20T18:24:03Z",
-        "occurred_at": "2026-01-20T14:32:01Z",
-        "duration_sec": 13232,
-        "is_shadowverse_related": 1,
-        "decks": []
       }
     ]
   },
@@ -14449,14 +14564,27 @@
     "streams": [
       {
         "platform": "youtube",
-        "external_stream_id": "B1pwbBPHsnw",
-        "title": "ミルティオで無双する【シャドバWB/Shadowverse】",
-        "url": "https://www.youtube.com/watch?v=B1pwbBPHsnw",
-        "thumbnail_url": "https://i.ytimg.com/vi/B1pwbBPHsnw/hqdefault_live.jpg",
-        "started_at": "2026-05-14T06:35:26Z",
-        "published_at": "2026-05-14T06:35:26Z",
-        "occurred_at": "2026-05-14T06:35:26Z",
+        "external_stream_id": "juyb5KCLUGc",
+        "title": "秘術W練習【シャドバWB/Shadowverse】",
+        "url": "https://www.youtube.com/watch?v=juyb5KCLUGc",
+        "thumbnail_url": "https://i.ytimg.com/vi/juyb5KCLUGc/hqdefault_live.jpg",
+        "started_at": "2026-05-18T05:29:30Z",
+        "published_at": "2026-05-18T03:40:49Z",
+        "occurred_at": "2026-05-18T05:29:30Z",
         "duration_sec": 0,
+        "is_shadowverse_related": 1,
+        "decks": []
+      },
+      {
+        "platform": "youtube",
+        "external_stream_id": "B1pwbBPHsnw",
+        "title": "day2のデッキを考える朝活【シャドバWB/Shadowverse】",
+        "url": "https://www.youtube.com/watch?v=B1pwbBPHsnw",
+        "thumbnail_url": "https://i.ytimg.com/vi/B1pwbBPHsnw/hqdefault.jpg",
+        "started_at": "2026-05-18T00:43:39Z",
+        "published_at": "2026-05-18T03:49:02Z",
+        "occurred_at": "2026-05-18T00:43:39Z",
+        "duration_sec": 10626,
         "is_shadowverse_related": 1,
         "decks": []
       },
@@ -15081,19 +15209,6 @@
         "published_at": "2025-04-08T14:08:28Z",
         "occurred_at": "2025-04-08T10:57:56Z",
         "duration_sec": 10415,
-        "is_shadowverse_related": 1,
-        "decks": []
-      },
-      {
-        "platform": "youtube",
-        "external_stream_id": "EGjgMgY8trs",
-        "title": "【シャドバ】ランクマ",
-        "url": "https://www.youtube.com/watch?v=EGjgMgY8trs",
-        "thumbnail_url": "https://i.ytimg.com/vi/EGjgMgY8trs/maxresdefault.jpg",
-        "started_at": "2025-04-04T06:29:34Z",
-        "published_at": "2025-04-04T09:19:28Z",
-        "occurred_at": "2025-04-04T06:29:34Z",
-        "duration_sec": 9133,
         "is_shadowverse_related": 1,
         "decks": []
       }
