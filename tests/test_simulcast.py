@@ -8,7 +8,7 @@ from pathlib import Path
 ROOT_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT_DIR / "scripts"))
 
-from build_streaming_dashboard import merge_simulcast_streams  # noqa: E402
+from build_streaming_dashboard import merge_simulcast_streams, stream_missing_deck_info  # noqa: E402
 from build_streaming_report import build_player_stream_metrics  # noqa: E402
 from common import dedupe_simulcast_groups, streams_are_simulcast  # noqa: E402
 
@@ -103,6 +103,30 @@ class SimulcastTest(unittest.TestCase):
         self.assertEqual(merged[0]["platform"], "youtube")
         self.assertEqual(len(merged[0]["simulcast_streams"]), 2)
         self.assertEqual([deck["deck_key"] for deck in merged[0]["decks"]], ["deck-a"])
+
+    def test_missing_deck_info_requires_shadowverse_related_stream_without_decks(self) -> None:
+        target = stream("youtube", "yt-1")
+        unrelated = stream("youtube", "yt-2")
+        unrelated["is_shadowverse_related"] = 0
+        with_deck = stream("youtube", "yt-3", deck_key="deck-a")
+
+        self.assertTrue(stream_missing_deck_info(target))
+        self.assertFalse(stream_missing_deck_info(unrelated))
+        self.assertFalse(stream_missing_deck_info(with_deck))
+
+    def test_simulcast_group_missing_deck_warning_is_group_level(self) -> None:
+        youtube = stream("youtube", "yt-1")
+        twitch_with_deck = stream("twitch", "tw-1", occurred_at="2026-05-13T10:02:00Z", deck_key="deck-a")
+        missing_group = merge_simulcast_streams([youtube, twitch_with_deck])
+
+        self.assertEqual(len(missing_group), 1)
+        self.assertEqual(missing_group[0]["missing_deck_info"], 0)
+
+        twitch_without_deck = stream("twitch", "tw-2", occurred_at="2026-05-13T10:02:00Z")
+        missing_group = merge_simulcast_streams([youtube, twitch_without_deck])
+
+        self.assertEqual(len(missing_group), 1)
+        self.assertEqual(missing_group[0]["missing_deck_info"], 1)
 
 
 if __name__ == "__main__":
