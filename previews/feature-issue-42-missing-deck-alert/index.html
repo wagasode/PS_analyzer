@@ -1748,6 +1748,21 @@
       return Number.isFinite(parsed) ? parsed : null;
     }
 
+    function compareStreamsByLatestTimestampDesc(left, right) {
+      const leftTime = streamTimestampMs(left) ?? Number.NEGATIVE_INFINITY;
+      const rightTime = streamTimestampMs(right) ?? Number.NEGATIVE_INFINITY;
+      if (leftTime !== rightTime) {
+        return rightTime - leftTime;
+      }
+      return [
+        "team",
+        "player_name",
+        "title",
+        "platform",
+        "external_stream_id"
+      ].reduce((result, key) => result || String(left[key] || "").localeCompare(String(right[key] || ""), "ja"), 0);
+    }
+
     function streamsAreSimulcast(left, right) {
       if (new Set([left.platform, right.platform]).size !== 2 || !["youtube", "twitch"].includes(left.platform) || !["youtube", "twitch"].includes(right.platform)) {
         return false;
@@ -2103,7 +2118,7 @@
         missingStreams.push(...timelineMissingStreams);
       });
 
-      state.missingDeckStreams = missingStreams;
+      state.missingDeckStreams = missingStreams.sort(compareStreamsByLatestTimestampDesc);
       state.team.forEach(row => {
         const count = teamCounts.get(row.team) || 0;
         row.missing_deck_stream_count = count;
@@ -2185,7 +2200,7 @@
             };
           })
           .filter(Boolean))
-          .sort((a, b) => String(b.occurred_at || "").localeCompare(String(a.occurred_at || "")));
+          .sort(compareStreamsByLatestTimestampDesc);
         const players = Array.from(new Set(streams.map(stream => stream.player_name).filter(Boolean))).sort();
         return {
           ...deck,
