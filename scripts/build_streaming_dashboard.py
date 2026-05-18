@@ -223,6 +223,21 @@ def dedupe_decks(decks: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return merged
 
 
+def stream_has_deck_info(stream: dict[str, Any]) -> bool:
+    decks = stream.get("decks") or []
+    if not isinstance(decks, list):
+        return False
+    return any(
+        str(deck.get("deck_key") or deck.get("deck_name") or "").strip()
+        for deck in decks
+        if isinstance(deck, dict)
+    )
+
+
+def stream_missing_deck_info(stream: dict[str, Any]) -> bool:
+    return int(stream.get("is_shadowverse_related") or 0) == 1 and not stream_has_deck_info(stream)
+
+
 def stream_component(stream: dict[str, Any]) -> dict[str, Any]:
     return {
         "platform": stream["platform"],
@@ -252,6 +267,7 @@ def merge_stream_group(group: list[dict[str, Any]]) -> dict[str, Any]:
     merged["duration_sec"] = max(int(stream.get("duration_sec") or 0) for stream in group)
     merged["is_shadowverse_related"] = 1 if any(int(stream.get("is_shadowverse_related") or 0) == 1 for stream in group) else 0
     merged["decks"] = dedupe_decks([deck for stream in group for deck in stream.get("decks", [])])
+    merged["missing_deck_info"] = 1 if stream_missing_deck_info(merged) else 0
     if len(group) > 1:
         merged["simulcast_streams"] = [stream_component(stream) for stream in group]
     return merged
@@ -799,6 +815,14 @@ HTML = """<!doctype html>
       background: linear-gradient(90deg, var(--deck-class-border, var(--border)) 0 6px, var(--deck-class-soft, #f8fafc) 6px 38px, #f8fafc 38px);
     }
 
+    tbody tr.missing-deck-row {
+      background: linear-gradient(90deg, #fdba74 0 6px, #fff7ed 6px);
+    }
+
+    tbody tr.missing-deck-row:hover {
+      background: linear-gradient(90deg, #fb923c 0 6px, #ffedd5 6px);
+    }
+
     td.num {
       text-align: right;
       font-variant-numeric: tabular-nums;
@@ -931,6 +955,10 @@ HTML = """<!doctype html>
       border-bottom: 1px solid var(--border);
     }
 
+    .timeline-item.missing-deck-info {
+      background: linear-gradient(90deg, #fdba74 0 5px, #fff7ed 5px);
+    }
+
     .timeline-item:last-child {
       border-bottom: 0;
     }
@@ -1029,6 +1057,12 @@ HTML = """<!doctype html>
       color: var(--accent);
     }
 
+    .pill.missing-deck {
+      border: 1px solid #fdba74;
+      background: var(--warn-soft);
+      color: var(--warn);
+    }
+
     .pill.deck {
       border: 1px solid var(--deck-class-border, #bae6fd);
       background: var(--deck-class-soft, #e0f2fe);
@@ -1111,6 +1145,23 @@ HTML = """<!doctype html>
       font-size: 12px;
       overflow-wrap: anywhere;
       white-space: normal;
+    }
+
+    .missing-deck-count {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      border: 1px solid #fdba74;
+      border-radius: 999px;
+      padding: 0 8px;
+      background: var(--warn-soft);
+      color: var(--warn);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .missing-deck-zero {
+      color: var(--muted);
     }
 
     .deck-class-badge,
@@ -1764,8 +1815,9 @@ HTML = """<!doctype html>
   </div>
 
   <script>
-    const numberFields = new Set(["stream_count", "player_count", "total_hours", "shadowverse_hours", "youtube_hours", "twitch_hours"]);
+    const numberFields = new Set(["stream_count", "player_count", "missing_deck_stream_count", "total_hours", "shadowverse_hours", "youtube_hours", "twitch_hours"]);
     const statusFields = new Set(["youtube_channel_status", "twitch_channel_status"]);
+    const missingDeckKey = "__missing_deck_info__";
     const state = {
       view: "team",
       query: "",
@@ -1775,6 +1827,7 @@ HTML = """<!doctype html>
       player: [],
       deck: [],
       timelines: [],
+      missingDeckStreams: [],
       timelineByPlayer: new Map(),
       decksByKey: new Map(),
       originalDecksByKey: new Map(),
@@ -1814,6 +1867,7 @@ HTML = """<!doctype html>
         ["stream_count", "配信数"],
         ["total_hours", "総配信時間"],
         ["shadowverse_hours", "SV時間"],
+        ["missing_deck_stream_count", "デッキ未付与"],
         ["youtube_hours", "YouTube時間"],
         ["twitch_hours", "Twitch時間"]
       ],
@@ -1821,6 +1875,7 @@ HTML = """<!doctype html>
         ["team", "チーム"],
         ["player_name", "選手"],
         ["timeline", "タイムライン"],
+        ["missing_deck_stream_count", "デッキ未付与"],
         ["stream_count", "配信数"],
         ["total_hours", "総配信時間"],
         ["shadowverse_hours", "SV時間"]
@@ -1829,6 +1884,7 @@ HTML = """<!doctype html>
         ["team", "チーム"],
         ["player_name", "選手"],
         ["timeline", "タイムライン"],
+        ["missing_deck_stream_count", "デッキ未付与"],
         ["stream_count", "配信数"],
         ["total_hours", "総配信時間"],
         ["shadowverse_hours", "SV時間"],
@@ -2084,6 +2140,21 @@ HTML = """<!doctype html>
       return Number.isFinite(parsed) ? parsed : null;
     }
 
+    function compareStreamsByLatestTimestampDesc(left, right) {
+      const leftTime = streamTimestampMs(left) ?? Number.NEGATIVE_INFINITY;
+      const rightTime = streamTimestampMs(right) ?? Number.NEGATIVE_INFINITY;
+      if (leftTime !== rightTime) {
+        return rightTime - leftTime;
+      }
+      return [
+        "team",
+        "player_name",
+        "title",
+        "platform",
+        "external_stream_id"
+      ].reduce((result, key) => result || String(left[key] || "").localeCompare(String(right[key] || ""), "ja"), 0);
+    }
+
     function streamsAreSimulcast(left, right) {
       if (new Set([left.platform, right.platform]).size !== 2 || !["youtube", "twitch"].includes(left.platform) || !["youtube", "twitch"].includes(right.platform)) {
         return false;
@@ -2146,6 +2217,27 @@ HTML = """<!doctype html>
         }
         return merged;
       });
+    }
+
+    function hasDeckInfo(stream) {
+      const decks = Array.isArray(stream.decks) ? stream.decks : [];
+      return decks.some(deck => normalizeText(deck && (deck.deck_key || deck.deck_name)));
+    }
+
+    function isMissingDeckInfo(stream) {
+      return Number(stream.is_shadowverse_related || 0) === 1 && !hasDeckInfo(stream);
+    }
+
+    function missingDeckBadgeHtml() {
+      return `<span class="pill missing-deck">! デッキ情報未付与</span>`;
+    }
+
+    function missingDeckCountCellHtml(value) {
+      const count = Number(value || 0);
+      if (count <= 0) {
+        return `<td class="num"><span class="missing-deck-zero">0件</span></td>`;
+      }
+      return `<td class="num"><span class="missing-deck-count">${escapeHtml(formatNumber(count))}件</span></td>`;
     }
 
     function streamCountLabel(countValue) {
@@ -2247,6 +2339,19 @@ HTML = """<!doctype html>
     }
 
     function deckNameCellHtml(deck) {
+      if (deck.is_missing_deck_info_group) {
+        return `
+          <td>
+            <div class="deck-cell">
+              <div class="deck-cell-main">
+                ${missingDeckBadgeHtml()}
+                <span class="timeline-title">デッキ情報未付与</span>
+              </div>
+              <div class="deck-cell-meta">Shadowverse関連配信の入力作業候補</div>
+            </div>
+          </td>
+        `;
+      }
       const name = escapeHtml(deck.deck_name || deck.deck_key || "不明なデッキ");
       const title = deck.deck_url
         ? `<a class="timeline-title" href="${escapeHtml(deck.deck_url)}" target="_blank" rel="noreferrer">${name}</a>`
@@ -2281,6 +2386,9 @@ HTML = """<!doctype html>
     }
 
     function rowAttributes(row) {
+      if (row.is_missing_deck_info_group) {
+        return ` class="missing-deck-row"`;
+      }
       if (state.view !== "deck") return "";
       return ` class="deck-class-row ${escapeHtml(deckClassCssClass(row))}"`;
     }
@@ -2379,6 +2487,64 @@ HTML = """<!doctype html>
         .sort((a, b) => a.display_order - b.display_order || deckLabel(state.decksByKey.get(a.deck_key) || a).localeCompare(deckLabel(state.decksByKey.get(b.deck_key) || b), "ja"));
     }
 
+    function materializeMissingDeckCounts() {
+      const teamCounts = new Map();
+      const playerCounts = new Map();
+      const missingStreams = [];
+
+      state.timelines.forEach(timeline => {
+        // 同時配信はここで代表1件にmerge済み。YouTube/Twitchの両方にデッキリンクがない場合だけ1件として警告する。
+        const timelineMissingStreams = (timeline.streams || [])
+          .filter(isMissingDeckInfo)
+          .map(stream => ({
+            ...stream,
+            team: timeline.team,
+            player_name: timeline.player_name,
+            player_icon_url: timeline.player_icon_url
+          }));
+        if (timelineMissingStreams.length === 0) {
+          return;
+        }
+        teamCounts.set(timeline.team, (teamCounts.get(timeline.team) || 0) + timelineMissingStreams.length);
+        playerCounts.set(playerKey(timeline), timelineMissingStreams.length);
+        missingStreams.push(...timelineMissingStreams);
+      });
+
+      state.missingDeckStreams = missingStreams.sort(compareStreamsByLatestTimestampDesc);
+      state.team.forEach(row => {
+        const count = teamCounts.get(row.team) || 0;
+        row.missing_deck_stream_count = count;
+        row.missing_deck_status = count > 0 ? "デッキ情報未付与 デッキ未付与" : "";
+      });
+      state.player.forEach(row => {
+        const count = playerCounts.get(playerKey(row)) || 0;
+        row.missing_deck_stream_count = count;
+        row.missing_deck_status = count > 0 ? "デッキ情報未付与 デッキ未付与" : "";
+      });
+    }
+
+    function missingDeckRow() {
+      const streams = state.missingDeckStreams || [];
+      if (streams.length === 0) {
+        return null;
+      }
+      const players = Array.from(new Set(streams.map(stream => stream.player_name).filter(Boolean))).sort();
+      return {
+        deck_key: missingDeckKey,
+        deck_name: "デッキ情報未付与",
+        class_name: "",
+        archetype: "入力作業候補",
+        deck_url: "",
+        deck_code: "",
+        notes: "",
+        stream_count: streams.length,
+        player_count: players.length,
+        players,
+        streams,
+        is_missing_deck_info_group: true
+      };
+    }
+
     function materializeDerivedData() {
       state.timelines.forEach(timeline => {
         (timeline.streams || []).forEach(stream => {
@@ -2397,6 +2563,8 @@ HTML = """<!doctype html>
           }
         });
       });
+
+      materializeMissingDeckCounts();
 
       const rows = Array.from(state.decksByKey.values()).map(deck => {
         const streams = mergeSimulcastStreams(Array.from(state.linksByKey.values())
@@ -2424,7 +2592,7 @@ HTML = """<!doctype html>
             };
           })
           .filter(Boolean))
-          .sort((a, b) => String(b.occurred_at || "").localeCompare(String(a.occurred_at || "")));
+          .sort(compareStreamsByLatestTimestampDesc);
         const players = Array.from(new Set(streams.map(stream => stream.player_name).filter(Boolean))).sort();
         return {
           ...deck,
@@ -2434,6 +2602,11 @@ HTML = """<!doctype html>
           streams
         };
       }).sort((a, b) => b.stream_count - a.stream_count || deckLabel(a).localeCompare(deckLabel(b), "ja"));
+
+      const missingRow = missingDeckRow();
+      if (missingRow) {
+        rows.unshift(missingRow);
+      }
 
       state.deck = rows;
       state.deckByKey = new Map(rows.map(deck => [deck.deck_key, deck]));
@@ -2768,6 +2941,9 @@ HTML = """<!doctype html>
       if (key === "class_name") {
         return `<td>${escapeHtml(deckClassLabelForDeck(row))}</td>`;
       }
+      if (key === "missing_deck_stream_count") {
+        return missingDeckCountCellHtml(value);
+      }
       if (numberFields.has(key)) {
         return `<td class="num">${formatNumber(value)}</td>`;
       }
@@ -2910,9 +3086,10 @@ HTML = """<!doctype html>
         const related = Number(stream.is_shadowverse_related || 0) === 1
           ? `<span class="pill related">Shadowverse</span>`
           : "";
+        const missingDeck = isMissingDeckInfo(stream);
         const deckTags = (stream.decks || []).map(deckPillHtml).join("");
         return `
-          <article class="timeline-item">
+          <article class="timeline-item${missingDeck ? " missing-deck-info" : ""}">
             <div class="timeline-date">
               <strong>${escapeHtml(formatDate(timestamp))}</strong>
               <span>${escapeHtml(timestampKind)}</span>
@@ -2924,6 +3101,7 @@ HTML = """<!doctype html>
                 ${platformLinksHtml(stream)}
                 <span class="pill">${escapeHtml(formatDuration(stream.duration_sec))}</span>
                 ${related}
+                ${missingDeck ? missingDeckBadgeHtml() : ""}
                 ${deckTags}
               </div>
             </div>
@@ -2955,10 +3133,13 @@ HTML = """<!doctype html>
       }
 
       const streams = deck.streams || [];
-      title.textContent = `${deck.deck_name}のアーカイブ`;
-      summary.textContent = [deckClassLabelForDeck(deck), deck.archetype, deck.notes].filter(Boolean).join(" · ");
+      const missingDeckGroup = deck.is_missing_deck_info_group;
+      title.textContent = missingDeckGroup ? "デッキ情報未付与のアーカイブ" : `${deck.deck_name}のアーカイブ`;
+      summary.textContent = missingDeckGroup
+        ? "Shadowverse関連配信 / 同時配信は代表1件で表示"
+        : [deckClassLabelForDeck(deck), deck.archetype, deck.notes].filter(Boolean).join(" · ");
       count.textContent = streamCountLabel(streams.length);
-      empty.textContent = "紐づいた配信アーカイブはありません。";
+      empty.textContent = missingDeckGroup ? "デッキ情報未付与の配信はありません。" : "紐づいた配信アーカイブはありません。";
       empty.hidden = streams.length > 0;
       list.innerHTML = streams.map(stream => {
         const timestamp = stream.occurred_at || stream.started_at || stream.published_at || "";
@@ -2966,14 +3147,14 @@ HTML = """<!doctype html>
         const related = Number(stream.is_shadowverse_related || 0) === 1
           ? `<span class="pill related">Shadowverse</span>`
           : "";
-        const note = stream.source_note
+        const note = !missingDeckGroup && stream.source_note
           ? `<div class="timeline-note">${escapeHtml(stream.source_note)}</div>`
           : "";
-        const confidence = stream.confidence
+        const confidence = !missingDeckGroup && stream.confidence
           ? `<span class="pill">${escapeHtml(stream.confidence)}</span>`
           : "";
         return `
-          <article class="timeline-item">
+          <article class="timeline-item${missingDeckGroup ? " missing-deck-info" : ""}">
             <div class="timeline-date">
               <strong>${escapeHtml(formatDate(timestamp))}</strong>
               <span>${escapeHtml(timestampKind)}</span>
@@ -2987,6 +3168,7 @@ HTML = """<!doctype html>
                 <span class="pill">${escapeHtml(formatDuration(stream.duration_sec))}</span>
                 ${related}
                 ${confidence}
+                ${missingDeckGroup ? missingDeckBadgeHtml() : ""}
               </div>
               ${note}
             </div>
@@ -3109,7 +3291,11 @@ HTML = """<!doctype html>
       const container = document.getElementById("linked-decks");
       const links = linksForStream(state.editingStreamKey);
       if (links.length === 0) {
-        container.innerHTML = `<div class="empty">使用デッキはまだありません。</div>`;
+        const stream = state.streamsByKey.get(state.editingStreamKey);
+        const message = stream && isMissingDeckInfo(stream)
+          ? "デッキ情報未付与です。使用デッキはまだありません。"
+          : "使用デッキはまだありません。";
+        container.innerHTML = `<div class="empty">${escapeHtml(message)}</div>`;
         return;
       }
 
