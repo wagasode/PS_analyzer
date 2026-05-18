@@ -1062,6 +1062,18 @@ HTML = """<!doctype html>
       overflow-wrap: anywhere;
     }
 
+    .save-status[hidden] {
+      display: none;
+    }
+
+    .save-feedback {
+      margin: -4px 0 12px;
+    }
+
+    .modal-save-feedback {
+      margin-top: 6px;
+    }
+
     .save-status.ok {
       color: var(--accent);
       font-weight: 700;
@@ -1112,10 +1124,6 @@ HTML = """<!doctype html>
       place-items: center;
       padding: 20px;
       background: rgba(15, 23, 42, 0.42);
-    }
-
-    #save-modal {
-      z-index: 30;
     }
 
     .modal {
@@ -1449,10 +1457,12 @@ HTML = """<!doctype html>
         <input class="search" id="search" type="search" placeholder="チーム、選手、デッキ、ステータスで絞り込み" autocomplete="off">
       </div>
 
+      <div class="save-status save-feedback" id="save-status" data-save-status role="status" aria-live="polite" hidden></div>
+
       <section class="change-bar" id="change-bar" hidden>
         <div id="change-summary">未保存の変更はありません。</div>
         <div class="change-actions">
-          <button class="primary-button open-save-modal-button" id="open-save-modal" type="button">変更を保存</button>
+          <button class="primary-button save-button" id="save-changes" type="button">変更を保存</button>
           <button class="secondary-button" id="toggle-draft-panel" type="button">変更内容を確認</button>
           <button class="danger-button" id="clear-draft" type="button">下書きを破棄</button>
         </div>
@@ -1499,39 +1509,16 @@ HTML = """<!doctype html>
     </div>
   </main>
 
-  <div class="modal-backdrop" id="save-modal" hidden>
-    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="save-modal-title">
-      <div class="modal-head">
-        <div>
-          <h2 id="save-modal-title">デッキ情報追加を保存</h2>
-          <div class="timeline-summary" id="save-modal-summary"></div>
-        </div>
-        <div class="modal-actions">
-          <button class="secondary-button" id="close-save-modal" type="button">閉じる</button>
-        </div>
-      </div>
-      <div class="modal-body">
-        <section class="editor-section">
-          <h3>保存先</h3>
-          <div class="timeline-summary" id="save-target-summary"></div>
-          <div class="save-status" id="save-status"></div>
-          <div class="modal-actions">
-            <button class="primary-button" id="save-to-api" type="button">変更を保存</button>
-          </div>
-        </section>
-      </div>
-    </section>
-  </div>
-
   <div class="modal-backdrop" id="deck-editor-modal" hidden>
     <section class="modal" role="dialog" aria-modal="true" aria-labelledby="deck-editor-title">
       <div class="modal-head">
         <div>
           <h2 id="deck-editor-title">アーカイブのデッキ情報追加</h2>
           <div class="timeline-summary" id="deck-editor-summary"></div>
+          <div class="save-status modal-save-feedback" id="deck-editor-save-status" data-save-status role="status" aria-live="polite" hidden></div>
         </div>
         <div class="modal-actions">
-          <button class="primary-button open-save-modal-button" type="button">変更を保存</button>
+          <button class="primary-button save-button" type="button">変更を保存</button>
           <button class="secondary-button" id="close-deck-editor" type="button">閉じる</button>
         </div>
       </div>
@@ -2234,6 +2221,9 @@ HTML = """<!doctype html>
         : `${count}件の未保存の変更があります。まだ保存されていません。`;
       bar.hidden = count === 0;
       panel.hidden = count === 0 || !state.showDraftPanel;
+      if (count > 0 && state.saveStatusKind === "ok") {
+        setSaveStatus("");
+      }
       if (count === 0) {
         list.innerHTML = "";
         return;
@@ -2317,33 +2307,21 @@ HTML = """<!doctype html>
       return Array.from(new Set(errors));
     }
 
+    function updateSaveControls() {
+      document.querySelectorAll(".save-button").forEach(button => {
+        button.disabled = state.saving;
+      });
+    }
+
     function setSaveStatus(message, kind = "") {
       state.saveStatus = message;
       state.saveStatusKind = kind;
-      const status = document.getElementById("save-status");
-      status.textContent = message;
-      status.className = kind ? `save-status ${kind}` : "save-status";
-    }
-
-    function openSaveModal() {
-      const changes = pendingChanges();
-      const endpoint = normalizeText(state.metadata.save_api_endpoint || "");
-      const repository = normalizeText(state.metadata.repository || "");
-      const branch = normalizeText(state.metadata.branch_name || "");
-      document.getElementById("save-modal-summary").textContent = `${changeCount(changes)}件の変更で data/decks.csv と data/stream_session_decks.csv を更新します。`;
-      document.getElementById("save-target-summary").textContent = repository && branch
-        ? `${repository} / ${branch}`
-        : "リポジトリまたはブランチ情報が見つかりません。";
-      document.getElementById("save-to-api").disabled = !endpoint;
-      setSaveStatus(endpoint
-        ? "設定済みの保存APIへ変更を送信します。このブラウザでGitHubトークンを入力する必要はありません。"
-        : "このダッシュボードには保存APIエンドポイントが設定されていません。", endpoint ? "" : "error");
-      document.getElementById("save-modal").hidden = false;
-    }
-
-    function closeSaveModal() {
-      if (state.saving) return;
-      document.getElementById("save-modal").hidden = true;
+      document.querySelectorAll("[data-save-status]").forEach(status => {
+        status.textContent = message;
+        status.hidden = !message;
+        status.classList.toggle("ok", kind === "ok");
+        status.classList.toggle("error", kind === "error");
+      });
     }
 
     async function saveApiJson(url, options = {}) {
@@ -2361,6 +2339,21 @@ HTML = """<!doctype html>
         throw new Error(message);
       }
       return payload;
+    }
+
+    function conciseSaveErrorMessage(error) {
+      const message = normalizeText(error && error.message ? error.message : error);
+      if (!message) return "原因を確認できませんでした。";
+      const firstLine = message.split(/\\r?\\n/)[0];
+      return firstLine.length > 140 ? `${firstLine.slice(0, 137)}...` : firstLine;
+    }
+
+    function saveValidationMessage(errors) {
+      const messages = errors.slice(0, 2);
+      if (errors.length > 2) {
+        messages.push(`ほか${errors.length - 2}件の確認が必要です。`);
+      }
+      return messages.join(" ");
     }
 
     function buildSavePayload() {
@@ -2398,27 +2391,26 @@ HTML = """<!doctype html>
       if (!endpoint) errors.push("このダッシュボードには保存APIエンドポイントが設定されていません。");
       if (changeCount() === 0) errors.push("保存する下書き変更がありません。");
       if (errors.length > 0) {
-        setSaveStatus(errors.join(" "), "error");
+        setSaveStatus(`保存できません: ${saveValidationMessage(errors)}`, "error");
         return;
       }
 
       state.saving = true;
-      document.getElementById("save-to-api").disabled = true;
+      updateSaveControls();
       setSaveStatus("保存中...", "");
       try {
-        const result = await saveApiJson(endpoint, {
+        await saveApiJson(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(buildSavePayload())
         });
         markDraftSaved();
-        const detail = result.commit_url ? ` コミット: ${result.commit_url}` : "";
-        setSaveStatus(`保存しました。このブランチで Collect streaming data を実行してダッシュボードを再生成してください。${detail}`, "ok");
+        setSaveStatus("保存しました。", "ok");
       } catch (error) {
-        setSaveStatus(`保存に失敗しました: ${error.message}`, "error");
+        setSaveStatus(`保存に失敗しました: ${conciseSaveErrorMessage(error)}`, "error");
       } finally {
         state.saving = false;
-        document.getElementById("save-to-api").disabled = !normalizeText(state.metadata.save_api_endpoint || "");
+        updateSaveControls();
       }
     }
 
@@ -3044,18 +3036,10 @@ HTML = """<!doctype html>
     });
 
     document.getElementById("clear-draft").addEventListener("click", clearDraft);
-    document.querySelectorAll(".open-save-modal-button").forEach(button => {
-      button.addEventListener("click", openSaveModal);
+    document.querySelectorAll(".save-button").forEach(button => {
+      button.addEventListener("click", saveChangesToApi);
     });
-    document.getElementById("close-save-modal").addEventListener("click", closeSaveModal);
-    document.getElementById("save-to-api").addEventListener("click", saveChangesToApi);
     document.getElementById("close-deck-editor").addEventListener("click", closeDeckEditor);
-
-    document.getElementById("save-modal").addEventListener("click", event => {
-      if (event.target.id === "save-modal") {
-        closeSaveModal();
-      }
-    });
 
     document.getElementById("deck-editor-modal").addEventListener("click", event => {
       if (event.target.id === "deck-editor-modal") {
