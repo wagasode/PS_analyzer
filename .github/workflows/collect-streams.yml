@@ -11,6 +11,9 @@ on:
         description: "Twitch VOD pages per channel. 1 page = up to 100 VODs."
         required: true
         default: "1"
+  schedule:
+    # Daily at 18:20 UTC = 03:20 JST. Keep this conservative for API quota and Actions usage.
+    - cron: "20 18 * * *"
 
 permissions:
   contents: read
@@ -26,6 +29,8 @@ jobs:
       YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
       TWITCH_CLIENT_ID: ${{ secrets.TWITCH_CLIENT_ID }}
       TWITCH_CLIENT_SECRET: ${{ secrets.TWITCH_CLIENT_SECRET }}
+      YOUTUBE_MAX_PAGES: ${{ inputs.youtube_max_pages || '1' }}
+      TWITCH_MAX_PAGES: ${{ inputs.twitch_max_pages || '1' }}
 
     steps:
       - name: Checkout
@@ -64,10 +69,10 @@ jobs:
         run: python3 scripts/init_db.py
 
       - name: Fetch YouTube archives
-        run: python3 scripts/fetch_youtube_archives.py --max-pages "${{ inputs.youtube_max_pages }}"
+        run: python3 scripts/fetch_youtube_archives.py --max-pages "$YOUTUBE_MAX_PAGES"
 
       - name: Fetch Twitch VODs
-        run: python3 scripts/fetch_twitch_vods.py --max-pages "${{ inputs.twitch_max_pages }}"
+        run: python3 scripts/fetch_twitch_vods.py --max-pages "$TWITCH_MAX_PAGES"
 
       - name: Import deck links
         run: python3 scripts/import_deck_links.py
