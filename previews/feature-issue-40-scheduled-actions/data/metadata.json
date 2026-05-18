@@ -1,0 +1,16 @@
+{
+  "generated_at": "2026-05-18T08:56:38Z",
+  "workflow": "Collect streaming data",
+  "run_number": "40",
+  "run_id": "26023535058",
+  "run_url": "https://github.com/wagasode/PS_analyzer/actions/runs/26023535058",
+  "commit_sha": "26c2567f2dd8df0c5b909bfda30012690cee0ad2",
+  "repository": "wagasode/PS_analyzer",
+  "branch_name": "feature/issue-40-scheduled-actions",
+  "save_api_endpoint": "https://ps-analyzer-save-deck-links.seeking-origin.workers.dev/",
+  "player_count": 25,
+  "team_count": 8,
+  "total_streams": 940,
+  "total_hours": 3943.63,
+  "shadowverse_hours": 3864.67
+}
