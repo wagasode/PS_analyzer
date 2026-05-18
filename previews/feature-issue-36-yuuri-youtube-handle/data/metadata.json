@@ -1,0 +1,16 @@
+{
+  "generated_at": "2026-05-18T07:42:23Z",
+  "workflow": "Collect streaming data",
+  "run_number": "38",
+  "run_id": "26020206450",
+  "run_url": "https://github.com/wagasode/PS_analyzer/actions/runs/26020206450",
+  "commit_sha": "ace3f83eee5d481a3fca79ad1d8aae98e2aff762",
+  "repository": "wagasode/PS_analyzer",
+  "branch_name": "feature/issue-36-yuuri-youtube-handle",
+  "save_api_endpoint": "https://ps-analyzer-save-deck-links.seeking-origin.workers.dev/",
+  "player_count": 25,
+  "team_count": 8,
+  "total_streams": 940,
+  "total_hours": 3929.47,
+  "shadowverse_hours": 3850.51
+}
