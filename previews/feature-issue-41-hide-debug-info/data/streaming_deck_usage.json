@@ -1,0 +1,159 @@
+[
+  {
+    "deck_key": "deck-1778742968583",
+    "deck_name": "ミルティオNi",
+    "class_name": "",
+    "archetype": "",
+    "deck_url": "",
+    "deck_code": "",
+    "notes": "",
+    "stream_count": 2,
+    "player_count": 1,
+    "players": [
+      "rikka"
+    ],
+    "streams": [
+      {
+        "team": "レバンガ北海道",
+        "player_name": "rikka",
+        "platform": "youtube",
+        "external_stream_id": "yXXLDELjnOg",
+        "title": "OCSに向けてガチランクマ【シャドバWB/Shadowverse: Worlds Beyond】",
+        "url": "https://www.youtube.com/watch?v=yXXLDELjnOg",
+        "thumbnail_url": "https://i.ytimg.com/vi/yXXLDELjnOg/maxresdefault.jpg",
+        "started_at": "2026-05-13T10:58:54Z",
+        "published_at": "2026-05-13T15:53:35Z",
+        "occurred_at": "2026-05-13T10:58:54Z",
+        "duration_sec": 16190,
+        "is_shadowverse_related": 1,
+        "confidence": "",
+        "source_note": "",
+        "display_order": 1,
+        "decks": []
+      },
+      {
+        "team": "レバンガ北海道",
+        "player_name": "rikka",
+        "platform": "youtube",
+        "external_stream_id": "FO1YvkDsopk",
+        "title": "ECS大阪ベスト16！大会振り返り配信【シャドバWB/Shadowverse: Worlds Beyond】",
+        "url": "https://www.youtube.com/watch?v=FO1YvkDsopk",
+        "thumbnail_url": "https://i.ytimg.com/vi/FO1YvkDsopk/maxresdefault.jpg",
+        "started_at": "2026-05-11T06:00:51Z",
+        "published_at": "2026-05-11T09:28:46Z",
+        "occurred_at": "2026-05-11T06:00:51Z",
+        "duration_sec": 11595,
+        "is_shadowverse_related": 1,
+        "confidence": "",
+        "source_note": "",
+        "display_order": 1,
+        "decks": []
+      }
+    ]
+  },
+  {
+    "deck_key": "deck-b-1778743160748",
+    "deck_name": "アミュB",
+    "class_name": "B",
+    "archetype": "",
+    "deck_url": "",
+    "deck_code": "",
+    "notes": "",
+    "stream_count": 1,
+    "player_count": 1,
+    "players": [
+      "rikka"
+    ],
+    "streams": [
+      {
+        "team": "レバンガ北海道",
+        "player_name": "rikka",
+        "platform": "youtube",
+        "external_stream_id": "FO1YvkDsopk",
+        "title": "ECS大阪ベスト16！大会振り返り配信【シャドバWB/Shadowverse: Worlds Beyond】",
+        "url": "https://www.youtube.com/watch?v=FO1YvkDsopk",
+        "thumbnail_url": "https://i.ytimg.com/vi/FO1YvkDsopk/maxresdefault.jpg",
+        "started_at": "2026-05-11T06:00:51Z",
+        "published_at": "2026-05-11T09:28:46Z",
+        "occurred_at": "2026-05-11T06:00:51Z",
+        "duration_sec": 11595,
+        "is_shadowverse_related": 1,
+        "confidence": "",
+        "source_note": "",
+        "display_order": 2,
+        "decks": []
+      }
+    ]
+  },
+  {
+    "deck_key": "deck-r-1778681117704",
+    "deck_name": "連携R",
+    "class_name": "R",
+    "archetype": "",
+    "deck_url": "",
+    "deck_code": "",
+    "notes": "",
+    "stream_count": 3,
+    "player_count": 2,
+    "players": [
+      "glory",
+      "マイト"
+    ],
+    "streams": [
+      {
+        "team": "MURASH GAMING",
+        "player_name": "glory",
+        "platform": "youtube",
+        "external_stream_id": "T9bNr2N0eSg",
+        "title": "健康的なランクマッチ【シャドバWB/Shadowverse: Worlds Beyond】",
+        "url": "https://www.youtube.com/watch?v=T9bNr2N0eSg",
+        "thumbnail_url": "https://i.ytimg.com/vi/T9bNr2N0eSg/maxresdefault_live.jpg",
+        "started_at": "2026-05-18T01:57:27Z",
+        "published_at": "2026-05-17T09:02:24Z",
+        "occurred_at": "2026-05-18T01:57:27Z",
+        "duration_sec": 0,
+        "is_shadowverse_related": 1,
+        "confidence": "",
+        "source_note": "イドメタ採用",
+        "display_order": 1,
+        "decks": []
+      },
+      {
+        "team": "MURASH GAMING",
+        "player_name": "glory",
+        "platform": "youtube",
+        "external_stream_id": "eqOEUv01ceU",
+        "title": "いつもの昼活【シャドバWB/Shadowverse: Worlds Beyond】",
+        "url": "https://www.youtube.com/watch?v=eqOEUv01ceU",
+        "thumbnail_url": "https://i.ytimg.com/vi/eqOEUv01ceU/maxresdefault.jpg",
+        "started_at": "2026-05-17T02:30:40Z",
+        "published_at": "2026-05-17T09:30:37Z",
+        "occurred_at": "2026-05-17T02:30:40Z",
+        "duration_sec": 23500,
+        "is_shadowverse_related": 1,
+        "confidence": "",
+        "source_note": "",
+        "display_order": 1,
+        "decks": []
+      },
+      {
+        "team": "MURASH GAMING",
+        "player_name": "マイト",
+        "platform": "youtube",
+        "external_stream_id": "AGoU3_8Y5PM",
+        "title": "【シャドバWB】ロイヤルお前はやれるのか？能力変更後「神殺し・アナテマ / Anathema's Gambit」ランクマ配信【Shadowverse: Worlds Beyond】",
+        "url": "https://www.youtube.com/watch?v=AGoU3_8Y5PM",
+        "thumbnail_url": "https://i.ytimg.com/vi/AGoU3_8Y5PM/maxresdefault.jpg",
+        "started_at": "2026-05-12T08:55:14Z",
+        "published_at": "2026-05-12T15:15:06Z",
+        "occurred_at": "2026-05-12T08:55:14Z",
+        "duration_sec": 21194,
+        "is_shadowverse_related": 1,
+        "confidence": "",
+        "source_note": "",
+        "display_order": 1,
+        "decks": []
+      }
+    ]
+  }
+]

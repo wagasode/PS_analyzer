@@ -1,0 +1,16 @@
+{
+  "generated_at": "2026-05-18T09:16:56Z",
+  "workflow": "Collect streaming data",
+  "run_number": "41",
+  "run_id": "26024504389",
+  "run_url": "https://github.com/wagasode/PS_analyzer/actions/runs/26024504389",
+  "commit_sha": "b77e4f0532cb6ef3b82ef8c7fbf8b9933a66d138",
+  "repository": "wagasode/PS_analyzer",
+  "branch_name": "feature/issue-41-hide-debug-info",
+  "save_api_endpoint": "https://ps-analyzer-save-deck-links.seeking-origin.workers.dev/",
+  "player_count": 25,
+  "team_count": 8,
+  "total_streams": 940,
+  "total_hours": 3944.65,
+  "shadowverse_hours": 3865.69
+}
