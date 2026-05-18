@@ -91,37 +91,47 @@
       box-shadow: var(--shadow);
     }
 
+    .debug-info {
+      margin-top: 10px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .debug-info summary {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      cursor: pointer;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .debug-list {
+      display: grid;
+      grid-template-columns: max-content minmax(0, 1fr);
+      gap: 4px 10px;
+      margin: 8px 0 10px;
+      max-width: 720px;
+    }
+
+    .debug-list dt {
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .debug-list dd {
+      margin: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .debug-links {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
     main {
       padding: 24px 0 40px;
-    }
-
-    .summary {
-      display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
-      gap: 12px;
-      margin-bottom: 18px;
-    }
-
-    .stat {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 14px;
-      box-shadow: var(--shadow);
-    }
-
-    .stat span {
-      display: block;
-      color: var(--muted);
-      font-size: 12px;
-      text-transform: uppercase;
-    }
-
-    .stat strong {
-      display: block;
-      margin-top: 4px;
-      font-size: 22px;
-      line-height: 1.2;
     }
 
     .toolbar {
@@ -323,6 +333,14 @@
       background: linear-gradient(90deg, var(--deck-class-border, var(--border)) 0 6px, var(--deck-class-soft, #f8fafc) 6px 38px, #f8fafc 38px);
     }
 
+    tbody tr.missing-deck-row {
+      background: linear-gradient(90deg, #fdba74 0 6px, #fff7ed 6px);
+    }
+
+    tbody tr.missing-deck-row:hover {
+      background: linear-gradient(90deg, #fb923c 0 6px, #ffedd5 6px);
+    }
+
     td.num {
       text-align: right;
       font-variant-numeric: tabular-nums;
@@ -455,6 +473,10 @@
       border-bottom: 1px solid var(--border);
     }
 
+    .timeline-item.missing-deck-info {
+      background: linear-gradient(90deg, #fdba74 0 5px, #fff7ed 5px);
+    }
+
     .timeline-item:last-child {
       border-bottom: 0;
     }
@@ -553,6 +575,12 @@
       color: var(--accent);
     }
 
+    .pill.missing-deck {
+      border: 1px solid #fdba74;
+      background: var(--warn-soft);
+      color: var(--warn);
+    }
+
     .pill.deck {
       border: 1px solid var(--deck-class-border, #bae6fd);
       background: var(--deck-class-soft, #e0f2fe);
@@ -635,6 +663,23 @@
       font-size: 12px;
       overflow-wrap: anywhere;
       white-space: normal;
+    }
+
+    .missing-deck-count {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      border: 1px solid #fdba74;
+      border-radius: 999px;
+      padding: 0 8px;
+      background: var(--warn-soft);
+      color: var(--warn);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .missing-deck-zero {
+      color: var(--muted);
     }
 
     .deck-class-badge,
@@ -756,6 +801,30 @@
     .save-status.error {
       color: var(--bad);
       font-weight: 700;
+    }
+
+    .status-details {
+      margin-top: 6px;
+      color: var(--text);
+      font-weight: 400;
+    }
+
+    .status-details summary {
+      cursor: pointer;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .status-details pre {
+      margin: 6px 0 0;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: #f8fafc;
+      color: var(--text);
+      font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
     }
 
     .draft-panel {
@@ -1093,10 +1162,6 @@
         justify-content: flex-start;
       }
 
-      .summary {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-
       h1 {
         font-size: 24px;
       }
@@ -1114,27 +1179,23 @@
       <div>
         <h1>配信レポート</h1>
         <div class="meta" id="metadata">読み込み中...</div>
-      </div>
-      <div class="actions">
-        <a class="button" href="data/streaming_by_team.json">チームJSON</a>
-        <a class="button" href="data/streaming_by_player.json">選手JSON</a>
-        <a class="button" href="data/streaming_timeline_by_player.json">タイムラインJSON</a>
-        <a class="button" href="data/streaming_deck_usage.json">デッキJSON</a>
-        <a class="button" id="run-link" href="#" hidden>ワークフロー実行</a>
+        <details class="debug-info" id="debug-info" hidden>
+          <summary>運用情報</summary>
+          <dl class="debug-list" id="debug-list"></dl>
+          <div class="debug-links" id="debug-links">
+            <a class="button" href="data/streaming_by_team.json">チームJSON</a>
+            <a class="button" href="data/streaming_by_player.json">選手JSON</a>
+            <a class="button" href="data/streaming_timeline_by_player.json">タイムラインJSON</a>
+            <a class="button" href="data/streaming_deck_usage.json">デッキJSON</a>
+            <a class="button" id="run-link" href="#" hidden>ワークフロー実行</a>
+          </div>
+        </details>
       </div>
     </div>
   </header>
 
   <main>
     <div class="shell">
-      <section class="summary" aria-label="概要">
-        <div class="stat"><span>チーム数</span><strong id="team-count">-</strong></div>
-        <div class="stat"><span>選手数</span><strong id="player-count">-</strong></div>
-        <div class="stat"><span>配信数</span><strong id="stream-count">-</strong></div>
-        <div class="stat"><span>総配信時間</span><strong id="total-hours">-</strong></div>
-        <div class="stat"><span>SV時間</span><strong id="sv-hours">-</strong></div>
-      </section>
-
       <div class="toolbar">
         <div class="tabs" role="tablist" aria-label="表示切り替え">
           <button class="tab active" type="button" data-view="team">チーム別</button>
@@ -1272,8 +1333,9 @@
   </div>
 
   <script>
-    const numberFields = new Set(["stream_count", "player_count", "total_hours", "shadowverse_hours", "youtube_hours", "twitch_hours"]);
+    const numberFields = new Set(["stream_count", "player_count", "missing_deck_stream_count", "total_hours", "shadowverse_hours", "youtube_hours", "twitch_hours"]);
     const statusFields = new Set(["youtube_channel_status", "twitch_channel_status"]);
+    const missingDeckKey = "__missing_deck_info__";
     const state = {
       view: "team",
       query: "",
@@ -1283,6 +1345,7 @@
       player: [],
       deck: [],
       timelines: [],
+      missingDeckStreams: [],
       timelineByPlayer: new Map(),
       decksByKey: new Map(),
       originalDecksByKey: new Map(),
@@ -1302,6 +1365,7 @@
       saving: false,
       saveStatus: "",
       saveStatusKind: "",
+      saveStatusDetail: "",
       newDeckDraft: {
         deck_key: "",
         deck_name: "",
@@ -1321,6 +1385,7 @@
         ["stream_count", "配信数"],
         ["total_hours", "総配信時間"],
         ["shadowverse_hours", "SV時間"],
+        ["missing_deck_stream_count", "デッキ未付与"],
         ["youtube_hours", "YouTube時間"],
         ["twitch_hours", "Twitch時間"]
       ],
@@ -1328,6 +1393,7 @@
         ["team", "チーム"],
         ["player_name", "選手"],
         ["timeline", "タイムライン"],
+        ["missing_deck_stream_count", "デッキ未付与"],
         ["stream_count", "配信数"],
         ["total_hours", "総配信時間"],
         ["shadowverse_hours", "SV時間"]
@@ -1336,6 +1402,7 @@
         ["team", "チーム"],
         ["player_name", "選手"],
         ["timeline", "タイムライン"],
+        ["missing_deck_stream_count", "デッキ未付与"],
         ["stream_count", "配信数"],
         ["total_hours", "総配信時間"],
         ["shadowverse_hours", "SV時間"],
@@ -1681,6 +1748,21 @@
       return Number.isFinite(parsed) ? parsed : null;
     }
 
+    function compareStreamsByLatestTimestampDesc(left, right) {
+      const leftTime = streamTimestampMs(left) ?? Number.NEGATIVE_INFINITY;
+      const rightTime = streamTimestampMs(right) ?? Number.NEGATIVE_INFINITY;
+      if (leftTime !== rightTime) {
+        return rightTime - leftTime;
+      }
+      return [
+        "team",
+        "player_name",
+        "title",
+        "platform",
+        "external_stream_id"
+      ].reduce((result, key) => result || String(left[key] || "").localeCompare(String(right[key] || ""), "ja"), 0);
+    }
+
     function streamsAreSimulcast(left, right) {
       if (new Set([left.platform, right.platform]).size !== 2 || !["youtube", "twitch"].includes(left.platform) || !["youtube", "twitch"].includes(right.platform)) {
         return false;
@@ -1743,6 +1825,27 @@
         }
         return merged;
       });
+    }
+
+    function hasDeckInfo(stream) {
+      const decks = Array.isArray(stream.decks) ? stream.decks : [];
+      return decks.some(deck => normalizeText(deck && (deck.deck_key || deck.deck_name)));
+    }
+
+    function isMissingDeckInfo(stream) {
+      return Number(stream.is_shadowverse_related || 0) === 1 && !hasDeckInfo(stream);
+    }
+
+    function missingDeckBadgeHtml() {
+      return `<span class="pill missing-deck">! デッキ情報未付与</span>`;
+    }
+
+    function missingDeckCountCellHtml(value) {
+      const count = Number(value || 0);
+      if (count <= 0) {
+        return `<td class="num"><span class="missing-deck-zero">0件</span></td>`;
+      }
+      return `<td class="num"><span class="missing-deck-count">${escapeHtml(formatNumber(count))}件</span></td>`;
     }
 
     function streamCountLabel(countValue) {
@@ -1844,6 +1947,19 @@
     }
 
     function deckNameCellHtml(deck) {
+      if (deck.is_missing_deck_info_group) {
+        return `
+          <td>
+            <div class="deck-cell">
+              <div class="deck-cell-main">
+                ${missingDeckBadgeHtml()}
+                <span class="timeline-title">デッキ情報未付与</span>
+              </div>
+              <div class="deck-cell-meta">Shadowverse関連配信の入力作業候補</div>
+            </div>
+          </td>
+        `;
+      }
       const name = escapeHtml(deck.deck_name || deck.deck_key || "不明なデッキ");
       const title = deck.deck_url
         ? `<a class="timeline-title" href="${escapeHtml(deck.deck_url)}" target="_blank" rel="noreferrer">${name}</a>`
@@ -1878,6 +1994,9 @@
     }
 
     function rowAttributes(row) {
+      if (row.is_missing_deck_info_group) {
+        return ` class="missing-deck-row"`;
+      }
       if (state.view !== "deck") return "";
       return ` class="deck-class-row ${escapeHtml(deckClassCssClass(row))}"`;
     }
@@ -1976,6 +2095,64 @@
         .sort((a, b) => a.display_order - b.display_order || deckLabel(state.decksByKey.get(a.deck_key) || a).localeCompare(deckLabel(state.decksByKey.get(b.deck_key) || b), "ja"));
     }
 
+    function materializeMissingDeckCounts() {
+      const teamCounts = new Map();
+      const playerCounts = new Map();
+      const missingStreams = [];
+
+      state.timelines.forEach(timeline => {
+        // 同時配信はここで代表1件にmerge済み。YouTube/Twitchの両方にデッキリンクがない場合だけ1件として警告する。
+        const timelineMissingStreams = (timeline.streams || [])
+          .filter(isMissingDeckInfo)
+          .map(stream => ({
+            ...stream,
+            team: timeline.team,
+            player_name: timeline.player_name,
+            player_icon_url: timeline.player_icon_url
+          }));
+        if (timelineMissingStreams.length === 0) {
+          return;
+        }
+        teamCounts.set(timeline.team, (teamCounts.get(timeline.team) || 0) + timelineMissingStreams.length);
+        playerCounts.set(playerKey(timeline), timelineMissingStreams.length);
+        missingStreams.push(...timelineMissingStreams);
+      });
+
+      state.missingDeckStreams = missingStreams.sort(compareStreamsByLatestTimestampDesc);
+      state.team.forEach(row => {
+        const count = teamCounts.get(row.team) || 0;
+        row.missing_deck_stream_count = count;
+        row.missing_deck_status = count > 0 ? "デッキ情報未付与 デッキ未付与" : "";
+      });
+      state.player.forEach(row => {
+        const count = playerCounts.get(playerKey(row)) || 0;
+        row.missing_deck_stream_count = count;
+        row.missing_deck_status = count > 0 ? "デッキ情報未付与 デッキ未付与" : "";
+      });
+    }
+
+    function missingDeckRow() {
+      const streams = state.missingDeckStreams || [];
+      if (streams.length === 0) {
+        return null;
+      }
+      const players = Array.from(new Set(streams.map(stream => stream.player_name).filter(Boolean))).sort();
+      return {
+        deck_key: missingDeckKey,
+        deck_name: "デッキ情報未付与",
+        class_name: "",
+        archetype: "入力作業候補",
+        deck_url: "",
+        deck_code: "",
+        notes: "",
+        stream_count: streams.length,
+        player_count: players.length,
+        players,
+        streams,
+        is_missing_deck_info_group: true
+      };
+    }
+
     function materializeDerivedData() {
       state.timelines.forEach(timeline => {
         (timeline.streams || []).forEach(stream => {
@@ -1994,6 +2171,8 @@
           }
         });
       });
+
+      materializeMissingDeckCounts();
 
       const rows = Array.from(state.decksByKey.values()).map(deck => {
         const streams = mergeSimulcastStreams(Array.from(state.linksByKey.values())
@@ -2021,7 +2200,7 @@
             };
           })
           .filter(Boolean))
-          .sort((a, b) => String(b.occurred_at || "").localeCompare(String(a.occurred_at || "")));
+          .sort(compareStreamsByLatestTimestampDesc);
         const players = Array.from(new Set(streams.map(stream => stream.player_name).filter(Boolean))).sort();
         return {
           ...deck,
@@ -2031,6 +2210,11 @@
           streams
         };
       }).sort((a, b) => b.stream_count - a.stream_count || deckLabel(a).localeCompare(deckLabel(b), "ja"));
+
+      const missingRow = missingDeckRow();
+      if (missingRow) {
+        rows.unshift(missingRow);
+      }
 
       state.deck = rows;
       state.deckByKey = new Map(rows.map(deck => [deck.deck_key, deck]));
@@ -2167,15 +2351,60 @@
       });
     }
 
-    function setSaveStatus(message, kind = "") {
+    function setSaveStatus(message, kind = "", detail = "") {
       state.saveStatus = message;
       state.saveStatusKind = kind;
+      state.saveStatusDetail = detail;
       document.querySelectorAll("[data-save-status]").forEach(status => {
-        status.textContent = message;
-        status.hidden = !message;
+        status.replaceChildren();
+        if (message) {
+          const messageText = document.createElement("span");
+          messageText.textContent = message;
+          status.appendChild(messageText);
+        }
+        if (detail) {
+          const details = document.createElement("details");
+          details.className = "status-details";
+          const summary = document.createElement("summary");
+          summary.textContent = "調査用の詳細";
+          const pre = document.createElement("pre");
+          pre.textContent = detail;
+          details.append(summary, pre);
+          status.appendChild(details);
+        }
+        status.hidden = !message && !detail;
         status.classList.toggle("ok", kind === "ok");
         status.classList.toggle("error", kind === "error");
       });
+    }
+
+    function publicSaveApiMessage(status, payloadMessage) {
+      if (/branch is not allowed/i.test(payloadMessage)) {
+        return "保存先ブランチが保存APIで許可されていません。";
+      }
+      if (/repository is not allowed/i.test(payloadMessage)) {
+        return "保存先リポジトリが保存APIで許可されていません。";
+      }
+      if (status === 401 || status === 403) {
+        return "保存APIへの権限がありません。";
+      }
+      if (status === 404) {
+        return "保存APIの保存先が見つかりません。";
+      }
+      if (status >= 500) {
+        return "保存API側でエラーが発生しました。";
+      }
+      return `保存APIリクエストに失敗しました。ステータス: ${status}`;
+    }
+
+    function saveApiErrorDetail(status, statusText, payloadMessage) {
+      const lines = [
+        `HTTP status: ${status}${statusText ? ` ${statusText}` : ""}`
+      ];
+      if (payloadMessage) {
+        lines.push(`API message: ${payloadMessage}`);
+      }
+      return lines.join("\n");
     }
 
     async function saveApiJson(url, options = {}) {
@@ -2187,19 +2416,32 @@
           ...(options.headers || {})
         }
       });
-      const payload = await response.json().catch(() => ({}));
+      const payload = await response.json().catch(() => null);
       if (!response.ok) {
-        const message = payload.message || payload.error || `保存APIリクエストに失敗しました。ステータス: ${response.status}`;
-        throw new Error(message);
+        const payloadMessage = payload && typeof payload === "object"
+          ? normalizeText(payload.message || payload.error || "")
+          : "";
+        const error = new Error(publicSaveApiMessage(response.status, payloadMessage));
+        error.debugDetail = saveApiErrorDetail(response.status, response.statusText, payloadMessage);
+        throw error;
       }
       return payload;
     }
 
-    function conciseSaveErrorMessage(error) {
+    function publicSaveErrorMessage(error) {
+      if (error && !error.debugDetail && error.name === "TypeError") {
+        return "保存APIへの接続に失敗しました。";
+      }
       const message = normalizeText(error && error.message ? error.message : error);
-      if (!message) return "原因を確認できませんでした。";
+      if (!message) return "保存APIへの接続に失敗しました。";
       const firstLine = message.split(/\r?\n/)[0];
       return firstLine.length > 140 ? `${firstLine.slice(0, 137)}...` : firstLine;
+    }
+
+    function saveErrorDetail(error) {
+      const detail = normalizeText(error && error.debugDetail ? error.debugDetail : error && error.message ? error.message : "");
+      if (!detail) return "";
+      return detail.length > 600 ? `${detail.slice(0, 597)}...` : detail;
     }
 
     function saveValidationMessage(errors) {
@@ -2261,7 +2503,7 @@
         markDraftSaved();
         setSaveStatus("保存しました。", "ok");
       } catch (error) {
-        setSaveStatus(`保存に失敗しました: ${conciseSaveErrorMessage(error)}`, "error");
+        setSaveStatus(`保存に失敗しました: ${publicSaveErrorMessage(error)}`, "error", saveErrorDetail(error));
       } finally {
         state.saving = false;
         updateSaveControls();
@@ -2306,6 +2548,9 @@
       }
       if (key === "class_name") {
         return `<td>${escapeHtml(deckClassLabelForDeck(row))}</td>`;
+      }
+      if (key === "missing_deck_stream_count") {
+        return missingDeckCountCellHtml(value);
       }
       if (numberFields.has(key)) {
         return `<td class="num">${formatNumber(value)}</td>`;
@@ -2449,9 +2694,10 @@
         const related = Number(stream.is_shadowverse_related || 0) === 1
           ? `<span class="pill related">Shadowverse</span>`
           : "";
+        const missingDeck = isMissingDeckInfo(stream);
         const deckTags = (stream.decks || []).map(deckPillHtml).join("");
         return `
-          <article class="timeline-item">
+          <article class="timeline-item${missingDeck ? " missing-deck-info" : ""}">
             <div class="timeline-date">
               <strong>${escapeHtml(formatDate(timestamp))}</strong>
               <span>${escapeHtml(timestampKind)}</span>
@@ -2463,6 +2709,7 @@
                 ${platformLinksHtml(stream)}
                 <span class="pill">${escapeHtml(formatDuration(stream.duration_sec))}</span>
                 ${related}
+                ${missingDeck ? missingDeckBadgeHtml() : ""}
                 ${deckTags}
               </div>
             </div>
@@ -2494,10 +2741,13 @@
       }
 
       const streams = deck.streams || [];
-      title.textContent = `${deck.deck_name}のアーカイブ`;
-      summary.textContent = [deckClassLabelForDeck(deck), deck.archetype, deck.notes].filter(Boolean).join(" · ");
+      const missingDeckGroup = deck.is_missing_deck_info_group;
+      title.textContent = missingDeckGroup ? "デッキ情報未付与のアーカイブ" : `${deck.deck_name}のアーカイブ`;
+      summary.textContent = missingDeckGroup
+        ? "Shadowverse関連配信 / 同時配信は代表1件で表示"
+        : [deckClassLabelForDeck(deck), deck.archetype, deck.notes].filter(Boolean).join(" · ");
       count.textContent = streamCountLabel(streams.length);
-      empty.textContent = "紐づいた配信アーカイブはありません。";
+      empty.textContent = missingDeckGroup ? "デッキ情報未付与の配信はありません。" : "紐づいた配信アーカイブはありません。";
       empty.hidden = streams.length > 0;
       list.innerHTML = streams.map(stream => {
         const timestamp = stream.occurred_at || stream.started_at || stream.published_at || "";
@@ -2505,14 +2755,14 @@
         const related = Number(stream.is_shadowverse_related || 0) === 1
           ? `<span class="pill related">Shadowverse</span>`
           : "";
-        const note = stream.source_note
+        const note = !missingDeckGroup && stream.source_note
           ? `<div class="timeline-note">${escapeHtml(stream.source_note)}</div>`
           : "";
-        const confidence = stream.confidence
+        const confidence = !missingDeckGroup && stream.confidence
           ? `<span class="pill">${escapeHtml(stream.confidence)}</span>`
           : "";
         return `
-          <article class="timeline-item">
+          <article class="timeline-item${missingDeckGroup ? " missing-deck-info" : ""}">
             <div class="timeline-date">
               <strong>${escapeHtml(formatDate(timestamp))}</strong>
               <span>${escapeHtml(timestampKind)}</span>
@@ -2526,6 +2776,7 @@
                 <span class="pill">${escapeHtml(formatDuration(stream.duration_sec))}</span>
                 ${related}
                 ${confidence}
+                ${missingDeckGroup ? missingDeckBadgeHtml() : ""}
               </div>
               ${note}
             </div>
@@ -2648,7 +2899,11 @@
       const container = document.getElementById("linked-decks");
       const links = linksForStream(state.editingStreamKey);
       if (links.length === 0) {
-        container.innerHTML = `<div class="empty">使用デッキはまだありません。</div>`;
+        const stream = state.streamsByKey.get(state.editingStreamKey);
+        const message = stream && isMissingDeckInfo(stream)
+          ? "デッキ情報未付与です。使用デッキはまだありません。"
+          : "使用デッキはまだありません。";
+        container.innerHTML = `<div class="empty">${escapeHtml(message)}</div>`;
         return;
       }
 
@@ -2830,12 +3085,23 @@
 
     function renderMetadata() {
       const meta = state.metadata;
-      document.getElementById("metadata").textContent = `更新: ${formatDate(meta.generated_at)}${meta.run_number ? ` · 実行 #${meta.run_number}` : ""}`;
-      document.getElementById("team-count").textContent = formatNumber(meta.team_count);
-      document.getElementById("player-count").textContent = formatNumber(meta.player_count);
-      document.getElementById("stream-count").textContent = formatNumber(meta.total_streams);
-      document.getElementById("total-hours").textContent = formatNumber(meta.total_hours);
-      document.getElementById("sv-hours").textContent = formatNumber(meta.shadowverse_hours);
+      document.getElementById("metadata").textContent = `更新: ${formatDate(meta.generated_at)}`;
+      const debugRows = [
+        ["生成日時", formatDate(meta.generated_at)],
+        ["チーム数", formatNumber(meta.team_count)],
+        ["選手数", formatNumber(meta.player_count)],
+        ["配信数", formatNumber(meta.total_streams)],
+        ["総配信時間", formatNumber(meta.total_hours)],
+        ["SV時間", formatNumber(meta.shadowverse_hours)],
+        ["リポジトリ", meta.repository || "未設定"],
+        ["ブランチ", meta.branch_name || "未設定"],
+        ["ワークフロー実行", meta.run_number ? `#${meta.run_number}` : "未設定"],
+        ["保存API", meta.save_api_endpoint ? "設定済み" : "未設定"]
+      ];
+      document.getElementById("debug-list").innerHTML = debugRows
+        .map(([label, value]) => `<dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd>`)
+        .join("");
+      document.getElementById("debug-info").hidden = false;
       if (meta.run_url) {
         const link = document.getElementById("run-link");
         link.href = meta.run_url;

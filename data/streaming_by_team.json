@@ -1,18 +1,18 @@
 [
   {
     "team": "MURASH GAMING",
-    "stream_count": 184,
-    "total_hours": 918.2,
-    "shadowverse_hours": 918.2,
-    "youtube_hours": 889.24,
-    "twitch_hours": 368.53
+    "stream_count": 183,
+    "total_hours": 921.32,
+    "shadowverse_hours": 921.32,
+    "youtube_hours": 889.63,
+    "twitch_hours": 371.26
   },
   {
     "team": "レバンガ北海道",
     "stream_count": 150,
-    "total_hours": 705.44,
-    "shadowverse_hours": 705.44,
-    "youtube_hours": 705.44,
+    "total_hours": 706.12,
+    "shadowverse_hours": 706.12,
+    "youtube_hours": 706.12,
     "twitch_hours": 0.0
   },
   {
@@ -32,19 +32,19 @@
     "twitch_hours": 0.0
   },
   {
+    "team": "ZETA DIVISION",
+    "stream_count": 98,
+    "total_hours": 413.88,
+    "shadowverse_hours": 413.88,
+    "youtube_hours": 413.88,
+    "twitch_hours": 0.0
+  },
+  {
     "team": "DetonatioN FocusMe",
     "stream_count": 128,
     "total_hours": 413.77,
     "shadowverse_hours": 412.3,
     "youtube_hours": 413.77,
-    "twitch_hours": 0.0
-  },
-  {
-    "team": "ZETA DIVISION",
-    "stream_count": 98,
-    "total_hours": 406.38,
-    "shadowverse_hours": 406.38,
-    "youtube_hours": 406.38,
     "twitch_hours": 0.0
   },
   {

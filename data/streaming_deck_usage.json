@@ -29,7 +29,8 @@
         "confidence": "",
         "source_note": "",
         "display_order": 1,
-        "decks": []
+        "decks": [],
+        "missing_deck_info": 1
       },
       {
         "team": "レバンガ北海道",
@@ -47,7 +48,8 @@
         "confidence": "",
         "source_note": "",
         "display_order": 1,
-        "decks": []
+        "decks": [],
+        "missing_deck_info": 1
       }
     ]
   },
@@ -81,7 +83,8 @@
         "confidence": "",
         "source_note": "",
         "display_order": 2,
-        "decks": []
+        "decks": [],
+        "missing_deck_info": 1
       }
     ]
   },
@@ -93,13 +96,32 @@
     "deck_url": "",
     "deck_code": "",
     "notes": "",
-    "stream_count": 2,
+    "stream_count": 3,
     "player_count": 2,
     "players": [
       "glory",
       "マイト"
     ],
     "streams": [
+      {
+        "team": "MURASH GAMING",
+        "player_name": "glory",
+        "platform": "youtube",
+        "external_stream_id": "T9bNr2N0eSg",
+        "title": "健康的なランクマッチ【シャドバWB/Shadowverse: Worlds Beyond】",
+        "url": "https://www.youtube.com/watch?v=T9bNr2N0eSg",
+        "thumbnail_url": "https://i.ytimg.com/vi/T9bNr2N0eSg/maxresdefault_live.jpg",
+        "started_at": "2026-05-18T01:57:27Z",
+        "published_at": "2026-05-17T09:02:24Z",
+        "occurred_at": "2026-05-18T01:57:27Z",
+        "duration_sec": 0,
+        "is_shadowverse_related": 1,
+        "confidence": "",
+        "source_note": "イドメタ採用",
+        "display_order": 1,
+        "decks": [],
+        "missing_deck_info": 1
+      },
       {
         "team": "MURASH GAMING",
         "player_name": "glory",
@@ -116,7 +138,8 @@
         "confidence": "",
         "source_note": "",
         "display_order": 1,
-        "decks": []
+        "decks": [],
+        "missing_deck_info": 1
       },
       {
         "team": "MURASH GAMING",
@@ -134,7 +157,8 @@
         "confidence": "",
         "source_note": "",
         "display_order": 1,
-        "decks": []
+        "decks": [],
+        "missing_deck_info": 1
       }
     ]
   }
