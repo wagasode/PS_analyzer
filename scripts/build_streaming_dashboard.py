@@ -1448,7 +1448,7 @@ HTML = """<!doctype html>
     <section class="modal" role="dialog" aria-modal="true" aria-labelledby="save-modal-title">
       <div class="modal-head">
         <div>
-          <h2 id="save-modal-title">デッキ編集を保存</h2>
+          <h2 id="save-modal-title">デッキ情報追加を保存</h2>
           <div class="timeline-summary" id="save-modal-summary"></div>
         </div>
         <div class="modal-actions">
@@ -1472,7 +1472,7 @@ HTML = """<!doctype html>
     <section class="modal" role="dialog" aria-modal="true" aria-labelledby="deck-editor-title">
       <div class="modal-head">
         <div>
-          <h2 id="deck-editor-title">アーカイブのデッキを編集</h2>
+          <h2 id="deck-editor-title">アーカイブのデッキ情報追加</h2>
           <div class="timeline-summary" id="deck-editor-summary"></div>
         </div>
         <div class="modal-actions">
@@ -1492,12 +1492,12 @@ HTML = """<!doctype html>
 
           <div class="editor-form-stack">
             <section class="editor-section">
-              <h3>リンク済みデッキ</h3>
+              <h3>使用デッキ一覧</h3>
               <div class="linked-decks" id="linked-decks"></div>
             </section>
 
             <section class="editor-section">
-              <h3>既存デッキを追加</h3>
+              <h3>登録済みデッキから追加</h3>
               <input class="editor-input" id="deck-search-input" type="search" placeholder="デッキを検索" autocomplete="off">
               <div class="search-results" id="deck-search-results"></div>
             </section>
@@ -1532,7 +1532,7 @@ HTML = """<!doctype html>
                 </label>
               </div>
               <div class="modal-actions">
-                <button class="primary-button" id="create-deck" type="button">作成してリンク</button>
+                <button class="primary-button" id="create-deck" type="button">作成して動画内使用デッキとして追加</button>
               </div>
             </section>
           </div>
@@ -1791,7 +1791,7 @@ HTML = """<!doctype html>
     function editActionsHtml(stream) {
       const components = streamComponents(stream);
       return components.map(component => {
-        const label = components.length > 1 ? `${platformLabel(component.platform)}デッキ編集` : "デッキ編集";
+        const label = components.length > 1 ? `${platformLabel(component.platform)}デッキ情報追加` : "デッキ情報追加";
         return `<button class="secondary-button edit-stream-button" type="button" data-stream-key="${escapeHtml(streamKey(component))}">${escapeHtml(label)}</button>`;
       }).join("");
     }
@@ -2154,9 +2154,9 @@ HTML = """<!doctype html>
 
       const items = [
         ...changes.addedDecks.map(deck => `新規デッキ: ${deckLabel(deck)}`),
-        ...changes.addedLinks.map(link => changeDescription("リンク追加", link)),
-        ...changes.removedLinks.map(link => changeDescription("リンク解除", link)),
-        ...changes.updatedLinks.map(link => changeDescription("リンク更新", link))
+        ...changes.addedLinks.map(link => changeDescription("使用デッキ追加", link)),
+        ...changes.removedLinks.map(link => changeDescription("使用デッキから削除", link)),
+        ...changes.updatedLinks.map(link => changeDescription("使用デッキ情報更新", link))
       ];
       list.innerHTML = items.map(item => `<div class="draft-item">${escapeHtml(item)}</div>`).join("");
     }
@@ -2216,15 +2216,15 @@ HTML = """<!doctype html>
       const linkKeys = new Set();
       state.linksByKey.forEach(link => {
         const stream = state.streamsByKey.get(link.stream_key);
-        if (!deckKeys.has(link.deck_key)) errors.push(`リンク先デッキが見つかりません: ${link.deck_key}`);
+        if (!deckKeys.has(link.deck_key)) errors.push(`使用デッキが見つかりません: ${link.deck_key}`);
         if (!stream) {
-          errors.push(`${link.deck_key} のリンク先配信が見つかりません。`);
+          errors.push(`${link.deck_key} の使用先アーカイブが見つかりません。`);
           return;
         }
         if (!["youtube", "twitch"].includes(stream.platform)) errors.push(`不正なプラットフォームです: ${stream.platform || "空"}`);
         if (!stream.external_stream_id) errors.push(`${stream.title || "配信"} の外部配信IDが必要です。`);
         const keyValue = `${stream.platform}/${stream.external_stream_id}/${link.deck_key}`;
-        if (linkKeys.has(keyValue)) errors.push(`配信とデッキのリンクが重複しています: ${keyValue}`);
+        if (linkKeys.has(keyValue)) errors.push(`アーカイブと使用デッキの組み合わせが重複しています: ${keyValue}`);
         linkKeys.add(keyValue);
       });
       return Array.from(new Set(errors));
@@ -2671,7 +2671,7 @@ HTML = """<!doctype html>
         return;
       }
 
-      document.getElementById("deck-editor-title").textContent = "アーカイブのデッキを編集";
+      document.getElementById("deck-editor-title").textContent = "アーカイブのデッキ情報追加";
       document.getElementById("deck-editor-summary").textContent = describeStream(stream);
       renderVideoPreview();
       renderLinkedDecks();
@@ -2709,7 +2709,7 @@ HTML = """<!doctype html>
       const container = document.getElementById("linked-decks");
       const links = linksForStream(state.editingStreamKey);
       if (links.length === 0) {
-        container.innerHTML = `<div class="empty">リンク済みデッキはありません。</div>`;
+        container.innerHTML = `<div class="empty">使用デッキはまだありません。</div>`;
         return;
       }
 
@@ -2741,7 +2741,7 @@ HTML = """<!doctype html>
               </div>
               <div class="linked-deck-actions">
                 <button class="secondary-button toggle-link-details" type="button" data-link-key="${escapeHtml(keyValue)}">${expanded ? "詳細を閉じる" : "詳細"}</button>
-                <button class="danger-button unlink-deck" type="button" data-link-key="${escapeHtml(keyValue)}">リンク解除</button>
+                <button class="danger-button unlink-deck" type="button" data-link-key="${escapeHtml(keyValue)}">使用デッキから削除</button>
               </div>
             </div>
             ${detailForm}
@@ -2803,7 +2803,7 @@ HTML = """<!doctype html>
               <strong>${escapeHtml(deck.deck_name)}</strong>
               <span>${escapeHtml([deck.class_name, deck.archetype].filter(Boolean).join(" / ") || deck.deck_key)}</span>
             </div>
-            <button class="secondary-button add-existing-deck" type="button" data-deck-key="${escapeHtml(deck.deck_key)}"${alreadyLinked ? " disabled" : ""}>${alreadyLinked ? "リンク済み" : "追加"}</button>
+            <button class="secondary-button add-existing-deck" type="button" data-deck-key="${escapeHtml(deck.deck_key)}"${alreadyLinked ? " disabled" : ""}>${alreadyLinked ? "使用デッキに追加済み" : "動画内使用デッキとして追加"}</button>
           </div>
         `;
       }).join("");
