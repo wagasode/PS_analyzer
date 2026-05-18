@@ -49,6 +49,12 @@ class DashboardDebugVisibilityTest(unittest.TestCase):
         self.assertIn('error.name === "TypeError"', html)
         self.assertIn('API message: ${payloadMessage}', html)
 
+    def test_missing_deck_archive_list_uses_latest_timestamp_sort(self) -> None:
+        html = render_html()
+
+        self.assertIn("function compareStreamsByLatestTimestampDesc(left, right)", html)
+        self.assertIn("state.missingDeckStreams = missingStreams.sort(compareStreamsByLatestTimestampDesc);", html)
+
 
 if __name__ == "__main__":
     unittest.main()
