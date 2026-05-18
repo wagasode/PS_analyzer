@@ -1,16 +1,16 @@
 {
-  "generated_at": "2026-05-18T09:16:56Z",
+  "generated_at": "2026-05-18T09:37:10Z",
   "workflow": "Collect streaming data",
-  "run_number": "41",
-  "run_id": "26024504389",
-  "run_url": "https://github.com/wagasode/PS_analyzer/actions/runs/26024504389",
-  "commit_sha": "b77e4f0532cb6ef3b82ef8c7fbf8b9933a66d138",
+  "run_number": "42",
+  "run_id": "26025479847",
+  "run_url": "https://github.com/wagasode/PS_analyzer/actions/runs/26025479847",
+  "commit_sha": "17ed0b4841638c8a7423e9a31326977bc7ea5c9a",
   "repository": "wagasode/PS_analyzer",
   "branch_name": "feature/issue-41-hide-debug-info",
   "save_api_endpoint": "https://ps-analyzer-save-deck-links.seeking-origin.workers.dev/",
   "player_count": 25,
   "team_count": 8,
   "total_streams": 940,
-  "total_hours": 3944.65,
-  "shadowverse_hours": 3865.69
+  "total_hours": 3944.99,
+  "shadowverse_hours": 3866.03
 }
