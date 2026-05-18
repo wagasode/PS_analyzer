@@ -600,35 +600,6 @@ HTML = """<!doctype html>
       padding: 24px 0 40px;
     }
 
-    .summary {
-      display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
-      gap: 12px;
-      margin-bottom: 18px;
-    }
-
-    .stat {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 14px;
-      box-shadow: var(--shadow);
-    }
-
-    .stat span {
-      display: block;
-      color: var(--muted);
-      font-size: 12px;
-      text-transform: uppercase;
-    }
-
-    .stat strong {
-      display: block;
-      margin-top: 4px;
-      font-size: 22px;
-      line-height: 1.2;
-    }
-
     .toolbar {
       display: flex;
       align-items: center;
@@ -1622,10 +1593,6 @@ HTML = """<!doctype html>
         justify-content: flex-start;
       }
 
-      .summary {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-
       h1 {
         font-size: 24px;
       }
@@ -1660,14 +1627,6 @@ HTML = """<!doctype html>
 
   <main>
     <div class="shell">
-      <section class="summary" aria-label="概要">
-        <div class="stat"><span>チーム数</span><strong id="team-count">-</strong></div>
-        <div class="stat"><span>選手数</span><strong id="player-count">-</strong></div>
-        <div class="stat"><span>配信数</span><strong id="stream-count">-</strong></div>
-        <div class="stat"><span>総配信時間</span><strong id="total-hours">-</strong></div>
-        <div class="stat"><span>SV時間</span><strong id="sv-hours">-</strong></div>
-      </section>
-
       <div class="toolbar">
         <div class="tabs" role="tablist" aria-label="表示切り替え">
           <button class="tab active" type="button" data-view="team">チーム別</button>
@@ -3333,13 +3292,13 @@ HTML = """<!doctype html>
     function renderMetadata() {
       const meta = state.metadata;
       document.getElementById("metadata").textContent = `更新: ${formatDate(meta.generated_at)}`;
-      document.getElementById("team-count").textContent = formatNumber(meta.team_count);
-      document.getElementById("player-count").textContent = formatNumber(meta.player_count);
-      document.getElementById("stream-count").textContent = formatNumber(meta.total_streams);
-      document.getElementById("total-hours").textContent = formatNumber(meta.total_hours);
-      document.getElementById("sv-hours").textContent = formatNumber(meta.shadowverse_hours);
       const debugRows = [
         ["生成日時", formatDate(meta.generated_at)],
+        ["チーム数", formatNumber(meta.team_count)],
+        ["選手数", formatNumber(meta.player_count)],
+        ["配信数", formatNumber(meta.total_streams)],
+        ["総配信時間", formatNumber(meta.total_hours)],
+        ["SV時間", formatNumber(meta.shadowverse_hours)],
         ["リポジトリ", meta.repository || "未設定"],
         ["ブランチ", meta.branch_name || "未設定"],
         ["ワークフロー実行", meta.run_number ? `#${meta.run_number}` : "未設定"],

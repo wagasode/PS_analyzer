@@ -26,6 +26,21 @@ class DashboardDebugVisibilityTest(unittest.TestCase):
         self.assertIn('document.getElementById("metadata").textContent = `更新: ${formatDate(meta.generated_at)}`;', html)
         self.assertIn('["ワークフロー実行", meta.run_number ? `#${meta.run_number}` : "未設定"]', html)
 
+    def test_summary_counts_are_operational_details_only(self) -> None:
+        html = render_html()
+
+        self.assertNotIn('<section class="summary" aria-label="概要">', html)
+        self.assertNotIn('id="team-count"', html)
+        self.assertNotIn('id="player-count"', html)
+        self.assertNotIn('id="stream-count"', html)
+        self.assertNotIn('id="total-hours"', html)
+        self.assertNotIn('id="sv-hours"', html)
+        self.assertIn('["チーム数", formatNumber(meta.team_count)]', html)
+        self.assertIn('["選手数", formatNumber(meta.player_count)]', html)
+        self.assertIn('["配信数", formatNumber(meta.total_streams)]', html)
+        self.assertIn('["総配信時間", formatNumber(meta.total_hours)]', html)
+        self.assertIn('["SV時間", formatNumber(meta.shadowverse_hours)]', html)
+
     def test_save_api_debug_detail_is_collapsed(self) -> None:
         html = render_html()
 
