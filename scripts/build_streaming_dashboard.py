@@ -17,6 +17,61 @@ PUBLIC_DIR = ROOT_DIR / "public"
 INT_FIELDS = {"stream_count", "has_youtube_channel", "has_twitch_channel"}
 FLOAT_FIELDS = {"total_hours", "shadowverse_hours", "youtube_hours", "twitch_hours"}
 
+DECK_CLASS_DEFINITIONS: tuple[dict[str, Any], ...] = (
+    {
+        "value": "E",
+        "display_name": "エルフ",
+        "aliases": ("E", "ELF", "エルフ"),
+    },
+    {
+        "value": "R",
+        "display_name": "ロイヤル",
+        "aliases": ("R", "ROYAL", "ロイヤル"),
+    },
+    {
+        "value": "W",
+        "display_name": "ウィッチ",
+        "aliases": ("W", "WITCH", "ウィッチ"),
+    },
+    {
+        "value": "D",
+        "display_name": "ドラゴン",
+        "aliases": ("D", "DRAGON", "ドラゴン"),
+    },
+    {
+        "value": "Ni",
+        "display_name": "ナイトメア",
+        "aliases": (
+            "Ni",
+            "NI",
+            "NIGHTMARE",
+            "ナイトメア",
+            "Nc",
+            "NC",
+            "NECRO",
+            "NECROMANCER",
+            "ネクロ",
+            "ネクロマンサー",
+            "V",
+            "VAMPIRE",
+            "ヴァンプ",
+            "ヴァンパイア",
+        ),
+    },
+    {
+        "value": "B",
+        "display_name": "ビショップ",
+        "aliases": ("B", "BISHOP", "ビショップ"),
+    },
+    {
+        "value": "Nm",
+        "display_name": "ネメシス",
+        "aliases": ("Nm", "NM", "NEMESIS", "ネメシス"),
+    },
+)
+DECK_CLASS_VALUES = tuple(definition["value"] for definition in DECK_CLASS_DEFINITIONS)
+DECK_CLASS_DEFINITIONS_JSON = json.dumps(DECK_CLASS_DEFINITIONS, ensure_ascii=False, indent=6)
+
 
 def utc_now() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
@@ -1640,6 +1695,8 @@ HTML = """<!doctype html>
       not_checked: "未確認",
       unknown: "不明"
     };
+    const deckClassDefinitions = __DECK_CLASS_DEFINITIONS__;
+    const deckClassByValue = new Map(deckClassDefinitions.map(definition => [definition.value, definition]));
 
     function activeColumns() {
       if (state.view === "player") {
@@ -1934,7 +1991,7 @@ HTML = """<!doctype html>
     }
 
     function deckLabel(deck) {
-      const parts = [deck.class_name, deck.archetype].filter(Boolean).join(" / ");
+      const parts = deckSummary(deck);
       return parts ? `${deck.deck_name} (${parts})` : deck.deck_name;
     }
 
@@ -1946,27 +2003,57 @@ HTML = """<!doctype html>
       return `<span class="pill deck">${label}</span>`;
     }
 
-    const classAliases = [
-      ["Nm", ["Nm", "NM", "ナイトメア", "NIGHTMARE"]],
-      ["Nc", ["Nc", "NC", "ネクロ", "ネクロマンサー", "NECRO", "NECROMANCER"]],
-      ["R", ["R", "ロイヤル", "ROYAL"]],
-      ["E", ["E", "エルフ", "ELF"]],
-      ["W", ["W", "ウィッチ", "WITCH"]],
-      ["D", ["D", "ドラゴン", "DRAGON"]],
-      ["B", ["B", "ビショップ", "BISHOP"]],
-      ["V", ["V", "ヴァンプ", "ヴァンパイア", "VAMPIRE"]]
-    ];
+    const classAliases = deckClassDefinitions
+      .flatMap(definition => [definition.value, ...(definition.aliases || [])]
+        .map(alias => [definition.value, normalizeClassToken(alias)]))
+      .filter(([, alias]) => alias)
+      .sort((left, right) => right[1].length - left[1].length);
+
+    function normalizeClassToken(value) {
+      return normalizeText(value).normalize("NFKC").toUpperCase();
+    }
+
+    function normalizeClassName(value) {
+      const token = normalizeClassToken(value);
+      if (!token) return "";
+      const direct = deckClassDefinitions.find(definition => normalizeClassToken(definition.value) === token);
+      if (direct) return direct.value;
+      const matched = classAliases.find(([, alias]) => alias === token);
+      return matched ? matched[0] : "";
+    }
+
+    function effectiveDeckClassName(deck) {
+      return normalizeClassName(deck.class_name) || inferClassName(deck.deck_name);
+    }
+
+    function deckClassLabel(className) {
+      const normalized = normalizeClassName(className);
+      const definition = deckClassByValue.get(normalized);
+      return definition ? `${definition.display_name} (${definition.value})` : normalizeText(className);
+    }
+
+    function deckClassLabelForDeck(deck) {
+      const className = effectiveDeckClassName(deck);
+      return className ? deckClassLabel(className) : normalizeText(deck.class_name);
+    }
+
+    function deckSummary(deck) {
+      return [deckClassLabelForDeck(deck), deck.archetype].filter(Boolean).join(" / ");
+    }
+
+    function isClassSuffixMatch(name, alias) {
+      if (!name.endsWith(alias)) return false;
+      if (name === alias || alias.length > 1) return true;
+      const previous = name.slice(0, -alias.length).slice(-1);
+      return !/^[A-Z0-9]$/.test(previous);
+    }
 
     function inferClassName(deckName) {
-      const name = normalizeText(deckName);
+      const name = normalizeClassToken(deckName);
       if (!name) return "";
-      const upperName = name.toUpperCase();
       for (const [className, aliases] of classAliases) {
-        for (const alias of aliases) {
-          const normalizedAlias = alias.toUpperCase();
-          if (upperName.endsWith(normalizedAlias)) {
-            return className;
-          }
+        if (isClassSuffixMatch(name, aliases)) {
+          return className;
         }
       }
       return "";
@@ -2371,6 +2458,9 @@ HTML = """<!doctype html>
       if (key === "player_name") {
         return `<td>${playerLabelHtml(row)}</td>`;
       }
+      if (key === "class_name") {
+        return `<td>${escapeHtml(deckClassLabelForDeck(row))}</td>`;
+      }
       if (numberFields.has(key)) {
         return `<td class="num">${formatNumber(value)}</td>`;
       }
@@ -2556,7 +2646,7 @@ HTML = """<!doctype html>
 
       const streams = deck.streams || [];
       title.textContent = `${deck.deck_name}のアーカイブ`;
-      summary.textContent = [deck.class_name, deck.archetype, deck.notes].filter(Boolean).join(" · ");
+      summary.textContent = [deckClassLabelForDeck(deck), deck.archetype, deck.notes].filter(Boolean).join(" · ");
       count.textContent = streamCountLabel(streams.length);
       empty.textContent = "紐づいた配信アーカイブはありません。";
       empty.hidden = streams.length > 0;
@@ -2692,9 +2782,9 @@ HTML = """<!doctype html>
 
     function renderNewDeckAdvanced() {
       const inferredClass = inferClassName(state.newDeckDraft.deck_name);
-      const className = state.newDeckDraft.class_name || inferredClass;
+      const className = normalizeClassName(state.newDeckDraft.class_name) || inferredClass;
       document.getElementById("new-deck-class-hint").textContent = state.newDeckDraft.deck_name
-        ? `推定クラス: ${className || "不明"}`
+        ? `推定クラス: ${className ? deckClassLabel(className) : "不明"}`
         : "デッキ名を入力すると推定クラスが表示されます。";
       document.querySelectorAll(".advanced-deck-field").forEach(field => {
         field.hidden = !state.showNewDeckAdvanced;
@@ -2737,7 +2827,7 @@ HTML = """<!doctype html>
             <div class="linked-deck-head">
               <div class="deck-heading">
                 <strong>${escapeHtml(deck.deck_name || link.deck_key)}</strong>
-                <span>${escapeHtml([deck.class_name, deck.archetype].filter(Boolean).join(" / ") || link.deck_key)}</span>
+                <span>${escapeHtml(deckSummary(deck) || link.deck_key)}</span>
               </div>
               <div class="linked-deck-actions">
                 <button class="secondary-button toggle-link-details" type="button" data-link-key="${escapeHtml(keyValue)}">${expanded ? "詳細を閉じる" : "詳細"}</button>
@@ -2801,7 +2891,7 @@ HTML = """<!doctype html>
           <div class="search-result">
             <div class="deck-heading">
               <strong>${escapeHtml(deck.deck_name)}</strong>
-              <span>${escapeHtml([deck.class_name, deck.archetype].filter(Boolean).join(" / ") || deck.deck_key)}</span>
+              <span>${escapeHtml(deckSummary(deck) || deck.deck_key)}</span>
             </div>
             <button class="secondary-button add-existing-deck" type="button" data-deck-key="${escapeHtml(deck.deck_key)}"${alreadyLinked ? " disabled" : ""}>${alreadyLinked ? "リンク済み" : "追加"}</button>
           </div>
@@ -2854,6 +2944,7 @@ HTML = """<!doctype html>
 
     function createAndLinkDeck() {
       const draft = deckMeta(state.newDeckDraft);
+      draft.class_name = normalizeClassName(draft.class_name);
       if (!draft.class_name) {
         draft.class_name = inferClassName(draft.deck_name);
       }
@@ -3019,9 +3110,13 @@ HTML = """<!doctype html>
 """
 
 
+def render_html() -> str:
+    return HTML.replace("__DECK_CLASS_DEFINITIONS__", DECK_CLASS_DEFINITIONS_JSON)
+
+
 def write_html(path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(HTML, encoding="utf-8")
+    path.write_text(render_html(), encoding="utf-8")
 
 
 def main() -> None:
