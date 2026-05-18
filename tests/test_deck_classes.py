@@ -39,12 +39,32 @@ class DeckClassDefinitionTest(unittest.TestCase):
         self.assertIn("Nc", definitions["Ni"]["aliases"])
         self.assertIn("V", definitions["Ni"]["aliases"])
 
+    def test_deck_class_definitions_include_issue33_display_colors(self) -> None:
+        expected_colors = {
+            "E": "緑",
+            "R": "黄色",
+            "W": "青",
+            "D": "オレンジ",
+            "Ni": "茶色",
+            "B": "灰色",
+            "Nm": "水色",
+        }
+
+        definitions = {definition["value"]: definition for definition in DECK_CLASS_DEFINITIONS}
+        self.assertEqual(set(definitions), set(expected_colors))
+        for value, color_name in expected_colors.items():
+            self.assertEqual(definitions[value]["color_name"], color_name)
+            self.assertEqual(definitions[value]["css_class"], f"deck-class-{value.lower()}")
+
     def test_rendered_html_contains_deck_class_definitions(self) -> None:
         html = render_html()
 
         self.assertNotIn("__DECK_CLASS_DEFINITIONS__", html)
         self.assertIn('"value": "Ni"', html)
         self.assertIn('"display_name": "ネメシス"', html)
+        self.assertIn("deck-class-legend", html)
+        self.assertNotIn('["class_name", "クラス"]', html)
+        self.assertNotIn('["archetype", "アーキタイプ"]', html)
 
 
 if __name__ == "__main__":

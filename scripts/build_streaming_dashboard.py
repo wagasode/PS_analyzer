@@ -21,26 +21,36 @@ DECK_CLASS_DEFINITIONS: tuple[dict[str, Any], ...] = (
     {
         "value": "E",
         "display_name": "エルフ",
+        "color_name": "緑",
+        "css_class": "deck-class-e",
         "aliases": ("E", "ELF", "エルフ"),
     },
     {
         "value": "R",
         "display_name": "ロイヤル",
+        "color_name": "黄色",
+        "css_class": "deck-class-r",
         "aliases": ("R", "ROYAL", "ロイヤル"),
     },
     {
         "value": "W",
         "display_name": "ウィッチ",
+        "color_name": "青",
+        "css_class": "deck-class-w",
         "aliases": ("W", "WITCH", "ウィッチ"),
     },
     {
         "value": "D",
         "display_name": "ドラゴン",
+        "color_name": "オレンジ",
+        "css_class": "deck-class-d",
         "aliases": ("D", "DRAGON", "ドラゴン"),
     },
     {
         "value": "Ni",
         "display_name": "ナイトメア",
+        "color_name": "茶色",
+        "css_class": "deck-class-ni",
         "aliases": (
             "Ni",
             "NI",
@@ -61,11 +71,15 @@ DECK_CLASS_DEFINITIONS: tuple[dict[str, Any], ...] = (
     {
         "value": "B",
         "display_name": "ビショップ",
+        "color_name": "灰色",
+        "css_class": "deck-class-b",
         "aliases": ("B", "BISHOP", "ビショップ"),
     },
     {
         "value": "Nm",
         "display_name": "ネメシス",
+        "color_name": "水色",
+        "css_class": "deck-class-nm",
         "aliases": ("Nm", "NM", "NEMESIS", "ネメシス"),
     },
 )
@@ -709,7 +723,7 @@ HTML = """<!doctype html>
     }
 
     .deck-table-wrap table {
-      min-width: 760px;
+      min-width: 640px;
     }
 
     .player-detail-table-wrap table {
@@ -765,6 +779,14 @@ HTML = """<!doctype html>
 
     tbody tr:hover {
       background: #f8fafc;
+    }
+
+    tbody tr.deck-class-row {
+      background: linear-gradient(90deg, var(--deck-class-border, var(--border)) 0 6px, var(--deck-class-row, #fff) 6px 38px, #fff 38px);
+    }
+
+    tbody tr.deck-class-row:hover {
+      background: linear-gradient(90deg, var(--deck-class-border, var(--border)) 0 6px, var(--deck-class-soft, #f8fafc) 6px 38px, #f8fafc 38px);
     }
 
     td.num {
@@ -998,9 +1020,127 @@ HTML = """<!doctype html>
     }
 
     .pill.deck {
-      background: #e0f2fe;
-      color: #075985;
+      border: 1px solid var(--deck-class-border, #bae6fd);
+      background: var(--deck-class-soft, #e0f2fe);
+      color: var(--deck-class-color, #075985);
       text-decoration: none;
+    }
+
+    .deck-class-e {
+      --deck-class-color: #166534;
+      --deck-class-soft: #dcfce7;
+      --deck-class-border: #86efac;
+      --deck-class-row: #f2fbf4;
+    }
+
+    .deck-class-r {
+      --deck-class-color: #854d0e;
+      --deck-class-soft: #fef9c3;
+      --deck-class-border: #fde047;
+      --deck-class-row: #fffbea;
+    }
+
+    .deck-class-w {
+      --deck-class-color: #1d4ed8;
+      --deck-class-soft: #dbeafe;
+      --deck-class-border: #93c5fd;
+      --deck-class-row: #f1f7ff;
+    }
+
+    .deck-class-d {
+      --deck-class-color: #c2410c;
+      --deck-class-soft: #ffedd5;
+      --deck-class-border: #fdba74;
+      --deck-class-row: #fff7ed;
+    }
+
+    .deck-class-ni {
+      --deck-class-color: #78350f;
+      --deck-class-soft: #f3e4d0;
+      --deck-class-border: #d6a977;
+      --deck-class-row: #fbf4ec;
+    }
+
+    .deck-class-b {
+      --deck-class-color: #475569;
+      --deck-class-soft: #e2e8f0;
+      --deck-class-border: #94a3b8;
+      --deck-class-row: #f4f7fb;
+    }
+
+    .deck-class-nm {
+      --deck-class-color: #0e7490;
+      --deck-class-soft: #cffafe;
+      --deck-class-border: #67e8f9;
+      --deck-class-row: #ecfeff;
+    }
+
+    .deck-class-unknown {
+      --deck-class-color: var(--none);
+      --deck-class-soft: var(--none-soft);
+      --deck-class-border: var(--border);
+      --deck-class-row: #f8fafc;
+    }
+
+    .deck-cell {
+      display: grid;
+      gap: 4px;
+      min-width: 0;
+    }
+
+    .deck-cell-main {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      flex-wrap: wrap;
+    }
+
+    .deck-cell-meta {
+      color: var(--muted);
+      font-size: 12px;
+      overflow-wrap: anywhere;
+      white-space: normal;
+    }
+
+    .deck-class-badge,
+    .deck-legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 24px;
+      max-width: 100%;
+      border: 1px solid var(--deck-class-border, var(--border));
+      border-radius: 999px;
+      padding: 0 8px;
+      background: var(--deck-class-soft, var(--none-soft));
+      color: var(--deck-class-color, var(--none));
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+
+    .deck-class-dot {
+      flex: 0 0 auto;
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--deck-class-color, var(--none));
+    }
+
+    .deck-class-badge strong,
+    .deck-legend-item strong {
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .deck-class-legend {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 6px;
+      flex-wrap: wrap;
     }
 
     .timeline-note {
@@ -1288,6 +1428,11 @@ HTML = """<!doctype html>
       background: #f8fafc;
     }
 
+    .deck-card {
+      border-color: var(--deck-class-border, var(--border));
+      background: linear-gradient(90deg, var(--deck-class-border, var(--border)) 0 5px, var(--deck-class-row, #f8fafc) 5px);
+    }
+
     .linked-deck-head,
     .search-result {
       display: flex;
@@ -1310,12 +1455,20 @@ HTML = """<!doctype html>
       min-width: 0;
     }
 
-    .deck-heading strong,
-    .deck-heading span {
+    .deck-heading-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      flex-wrap: wrap;
+    }
+
+    .deck-heading-title > strong,
+    .deck-heading > span {
       overflow-wrap: anywhere;
     }
 
-    .deck-heading span {
+    .deck-heading > span {
       color: var(--muted);
       font-size: 13px;
     }
@@ -1472,6 +1625,7 @@ HTML = """<!doctype html>
                 <input id="show-player-details" type="checkbox">
                 詳細を表示
               </label>
+              <div class="deck-class-legend" id="deck-class-legend" hidden></div>
               <div class="count" id="row-count">0行</div>
             </div>
           </div>
@@ -1673,8 +1827,6 @@ HTML = """<!doctype html>
       ],
       deck: [
         ["deck_name", "デッキ"],
-        ["class_name", "クラス"],
-        ["archetype", "アーキタイプ"],
         ["deck_usage", "利用状況"],
         ["stream_count", "配信数"],
         ["player_count", "選手数"]
@@ -1997,10 +2149,11 @@ HTML = """<!doctype html>
 
     function deckPillHtml(deck) {
       const label = escapeHtml(deckLabel(deck));
+      const className = `pill deck ${deckClassCssClass(deck)}`;
       if (deck.deck_url) {
-        return `<a class="pill deck" href="${escapeHtml(deck.deck_url)}" target="_blank" rel="noreferrer">${label}</a>`;
+        return `<a class="${className}" href="${escapeHtml(deck.deck_url)}" target="_blank" rel="noreferrer">${label}</a>`;
       }
-      return `<span class="pill deck">${label}</span>`;
+      return `<span class="${className}">${label}</span>`;
     }
 
     const classAliases = deckClassDefinitions
@@ -2037,8 +2190,85 @@ HTML = """<!doctype html>
       return className ? deckClassLabel(className) : normalizeText(deck.class_name);
     }
 
+    function deckClassDefinitionForDeck(deck) {
+      const className = effectiveDeckClassName(deck);
+      return deckClassByValue.get(className) || null;
+    }
+
+    function deckClassCssClass(deck) {
+      const definition = deckClassDefinitionForDeck(deck);
+      return definition ? definition.css_class : "deck-class-unknown";
+    }
+
+    function deckClassBadgeHtml(deck) {
+      const definition = deckClassDefinitionForDeck(deck);
+      const label = definition ? `${definition.display_name} (${definition.value})` : "クラス不明";
+      const displayName = definition ? definition.display_name : "不明";
+      const code = definition ? definition.value : "?";
+      return `
+        <span class="deck-class-badge ${escapeHtml(deckClassCssClass(deck))}" title="${escapeHtml(label)}">
+          <span class="deck-class-dot" aria-hidden="true"></span>
+          <span>${escapeHtml(displayName)}</span>
+          <strong>${escapeHtml(code)}</strong>
+        </span>
+      `;
+    }
+
+    function deckClassLegendHtml() {
+      return deckClassDefinitions.map(definition => `
+        <span class="deck-legend-item ${escapeHtml(definition.css_class)}" title="${escapeHtml(`${definition.display_name} (${definition.value}) / ${definition.color_name}`)}">
+          <span class="deck-class-dot" aria-hidden="true"></span>
+          <span>${escapeHtml(definition.display_name)}</span>
+          <strong>${escapeHtml(definition.value)}</strong>
+        </span>
+      `).join("");
+    }
+
+    function deckSecondarySummary(deck) {
+      return [deck.archetype].filter(Boolean).join(" / ");
+    }
+
     function deckSummary(deck) {
       return [deckClassLabelForDeck(deck), deck.archetype].filter(Boolean).join(" / ");
+    }
+
+    function deckNameCellHtml(deck) {
+      const name = escapeHtml(deck.deck_name || deck.deck_key || "不明なデッキ");
+      const title = deck.deck_url
+        ? `<a class="timeline-title" href="${escapeHtml(deck.deck_url)}" target="_blank" rel="noreferrer">${name}</a>`
+        : `<span class="timeline-title">${name}</span>`;
+      const summary = deckSecondarySummary(deck);
+      const meta = summary ? `<div class="deck-cell-meta">${escapeHtml(summary)}</div>` : "";
+      return `
+        <td>
+          <div class="deck-cell">
+            <div class="deck-cell-main">
+              ${deckClassBadgeHtml(deck)}
+              ${title}
+            </div>
+            ${meta}
+          </div>
+        </td>
+      `;
+    }
+
+    function deckHeadingHtml(deck, fallbackKey = "") {
+      const name = deck.deck_name || fallbackKey || "不明なデッキ";
+      const summary = deckSecondarySummary(deck) || fallbackKey;
+      return `
+        <div class="deck-heading">
+          <div class="deck-heading-title">
+            ${deckClassBadgeHtml(deck)}
+            <strong>${escapeHtml(name)}</strong>
+          </div>
+          ${summary ? `<span>${escapeHtml(summary)}</span>` : ""}
+        </div>
+      `;
+    }
+
+    function rowAttributes(row) {
+      if (state.view !== "deck") return "";
+      return ` class="deck-class-row ${escapeHtml(deckClassCssClass(row))}"`;
     }
 
     function isClassSuffixMatch(name, alias) {
@@ -2452,8 +2682,8 @@ HTML = """<!doctype html>
         const active = row.deck_key === state.selectedDeckKey ? " active" : "";
         return `<td class="action"><button class="detail-button deck-detail-button${active}" type="button" data-deck-key="${escapeHtml(row.deck_key)}">表示</button></td>`;
       }
-      if (key === "deck_name" && row.deck_url) {
-        return `<td><a class="timeline-title" href="${escapeHtml(row.deck_url)}" target="_blank" rel="noreferrer">${escapeHtml(value)}</a></td>`;
+      if (key === "deck_name") {
+        return deckNameCellHtml(row);
       }
       if (key === "player_name") {
         return `<td>${playerLabelHtml(row)}</td>`;
@@ -2492,6 +2722,7 @@ HTML = """<!doctype html>
       const workspace = document.getElementById("workspace");
       const tableWrap = document.getElementById("table-wrap");
       const playerDetailsControl = document.getElementById("player-details-control");
+      const deckClassLegend = document.getElementById("deck-class-legend");
       workspace.classList.toggle("player-mode", state.view === "player");
       workspace.classList.toggle("deck-mode", state.view === "deck");
       workspace.classList.toggle("team-mode", state.view === "team");
@@ -2499,6 +2730,8 @@ HTML = """<!doctype html>
       tableWrap.classList.toggle("player-detail-table-wrap", state.view === "player" && state.showPlayerDetails);
       tableWrap.classList.toggle("deck-table-wrap", state.view === "deck");
       playerDetailsControl.hidden = state.view !== "player";
+      deckClassLegend.hidden = state.view !== "deck";
+      deckClassLegend.innerHTML = state.view === "deck" ? deckClassLegendHtml() : "";
       if (state.view === "player") {
         const visibleKeys = new Set(rows.map(playerKey));
         if (!visibleKeys.has(state.selectedPlayerKey)) {
@@ -2521,7 +2754,7 @@ HTML = """<!doctype html>
       }).join("")}</tr>`;
 
       document.getElementById("table-body").innerHTML = rows.map(row => (
-        `<tr>${activeTableColumns.map(([key]) => cellHtml(row, key)).join("")}</tr>`
+        `<tr${rowAttributes(row)}>${activeTableColumns.map(([key]) => cellHtml(row, key)).join("")}</tr>`
       )).join("");
 
       document.querySelectorAll("th.sortable").forEach(th => {
@@ -2823,12 +3056,9 @@ HTML = """<!doctype html>
           </div>
         ` : "";
         return `
-          <article class="linked-deck">
+          <article class="linked-deck deck-card ${escapeHtml(deckClassCssClass(deck))}">
             <div class="linked-deck-head">
-              <div class="deck-heading">
-                <strong>${escapeHtml(deck.deck_name || link.deck_key)}</strong>
-                <span>${escapeHtml(deckSummary(deck) || link.deck_key)}</span>
-              </div>
+              ${deckHeadingHtml(deck, link.deck_key)}
               <div class="linked-deck-actions">
                 <button class="secondary-button toggle-link-details" type="button" data-link-key="${escapeHtml(keyValue)}">${expanded ? "詳細を閉じる" : "詳細"}</button>
                 <button class="danger-button unlink-deck" type="button" data-link-key="${escapeHtml(keyValue)}">使用デッキから削除</button>
@@ -2888,11 +3118,8 @@ HTML = """<!doctype html>
       container.innerHTML = decks.map(deck => {
         const alreadyLinked = linked.has(deck.deck_key);
         return `
-          <div class="search-result">
-            <div class="deck-heading">
-              <strong>${escapeHtml(deck.deck_name)}</strong>
-              <span>${escapeHtml(deckSummary(deck) || deck.deck_key)}</span>
-            </div>
+          <div class="search-result deck-card ${escapeHtml(deckClassCssClass(deck))}">
+            ${deckHeadingHtml(deck, deck.deck_key)}
             <button class="secondary-button add-existing-deck" type="button" data-deck-key="${escapeHtml(deck.deck_key)}"${alreadyLinked ? " disabled" : ""}>${alreadyLinked ? "使用デッキに追加済み" : "動画内使用デッキとして追加"}</button>
           </div>
         `;
