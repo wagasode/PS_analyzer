@@ -15,7 +15,7 @@
 | #46 公開データ棚卸しと分類を行う | dashboard生成物、`public/data/*.json`、deck/timeline情報、preview/artifact/`gh-pages`露出、将来の戦績データ候補を分類する | docs-only / 棚卸し | `public/`, `public/data/*.json`, `data/*.csv`, `.github/workflows/*.yml`, `scripts/build_streaming_dashboard.py`, docs | #15 | Yes. Wave 1で先行する |
 | #47 GitHub Pages直URLを停止・無害化する | Cloudflare AccessをバイパスするGitHub Pages直URLとpreview URLを停止または無害化する | GitHub Pages設定 / GitHub Actions変更 / stub検討 | `.github/workflows/publish-dashboard.yml`, `gh-pages`, GitHub Pages settings, stub page案 | #46, #49, #50 | Not yet. 代替公開先確認後に進める |
 | #48 PS_analyzerリポジトリをprivate化する影響を確認する | repository private化がGitHub Pages、Actions、Cloudflare Pages、Save API Worker、team access、CSV保存に与える影響を確認する | docs-only / 設定調査 | `docs/cloudflare_access/private_repo_impact.md`, docs, `.github/workflows/*.yml`, `workers/save-deck-links/*`, GitHub/Cloudflare設定調査 | #15, #46の分類結果を参照 | Yes. Wave 1で#46と並列調査する |
-| #49 Cloudflare Pages + Access配信基盤を作成する | Cloudflare Pages projectとAccess applicationを作り、dashboard公開先をチーム限定公開にする | Cloudflare側設定 / 配信基盤 / docs | Cloudflare Pages, Cloudflare Access, custom domain, `pages.dev`, preview URL, access policy docs | #48, 人間によるCloudflare方針決定 | Not yet. 人間判断後に進める |
+| #49 Cloudflare Pages + Access配信基盤を作成する | Cloudflare Pages projectとAccess applicationの作成手順、production/preview保護方針、後続issueへの引き継ぎを整理する | docs-only / Cloudflare dashboard checklist | Cloudflare Pages, Cloudflare Access, `pages.dev`, preview URL, access policy docs | #48, 人間によるCloudflare方針決定 | In progress. 実設定は人間がdashboardで行う |
 | #50 dashboard publish flowをCloudflare Pagesへ移行する | `public/` dashboard生成物のpublish先をGitHub PagesからCloudflare Pagesへ移行する | GitHub Actions変更 / dashboard配信変更 | `.github/workflows/collect-streams.yml`, `.github/workflows/publish-dashboard.yml`, `scripts/build_streaming_dashboard.py`, GitHub Actions secrets/vars | #46, #49 | Not yet. #49で配信基盤が見えてから進める |
 | #51 Save API WorkerをAccess前提で保護する | dashboardからの保存APIをCloudflare Access前提で保護し、CORSと認証の責務を分ける | Worker/API変更 / Cloudflare Access / CORS | `workers/save-deck-links/worker.mjs`, `workers/save-deck-links/wrangler.toml`, dashboard fetch, `SAVE_API_ENDPOINT` | #49, #50, Save API route決定 | Not yet. Access境界とroute決定後に進める |
 | #52 戦績管理ページの限定公開設計を行う | 相手PN、CR、備考などを含む戦績データの限定公開設計と保存先候補を整理する | docs-only / 設計 | docs, 戦績schema案, private repo CSV MVP検討 | #46, #48, #49 | Later. 前提整理後に進める |
@@ -24,6 +24,8 @@
 ## Issue別レポート
 
 - #46: `docs/cloudflare_access/public_data_classification.md`
+- #48: `docs/cloudflare_access/private_repo_impact.md`
+- #49: `docs/cloudflare_access/cloudflare_pages_access_setup.md`, `docs/cloudflare_access/access_policy_checklist.md`
 
 ## Dependency graph
 
@@ -62,7 +64,9 @@
 
 - #49 Cloudflare Pages + Access配信基盤
 
-#49はCloudflare account / zone / custom domain / Pages project名 / Access policy / 許可ユーザー管理単位が決まってから開始します。Cloudflare側設定を伴うため、司令塔スレッドでは人間側の判断事項を明確にしてから実装スレッドへ渡します。
+#49はCloudflare Pages project名を `ps-analyzer`、初期 production URL を `https://ps-analyzer.pages.dev`、認証方式を Google login、許可方式をチームメンバーの Google account 個別 allowlist として開始します。初期は独自ドメインを使わず、preview URL も Access 保護対象に含めます。
+
+#49 の PR では Cloudflare dashboard の実操作、GitHub Actions 変更、Save API Worker 変更、GitHub Pages停止、repository private化は行いません。出力は Cloudflare Pages + Access の設定手順、Access policy checklist、#50/#51/#47/#53 への引き継ぎに限定します。
 
 ### Wave 3
 
@@ -81,27 +85,29 @@
 
 ## Worktree creation decision
 
-現時点で作成するworktreeは、Wave 1の#46と#48のみです。
+初期計画時点で作成するworktreeは、Wave 1の#46と#48のみでした。#46/#48 の結果と人間側の #49 初期方針決定を受けて、現在は #49 の専用worktreeを作成済みです。
 
-#46は公開データ棚卸しで、後続issueの判断材料になります。#48はprivate化影響確認で、#46の分類結果を参照しつつも、影響調査そのものは並列に進められます。
+#49 は Cloudflare 側設定そのものではなく、人間が dashboard で行う作業の手順化と、後続 issue へ渡す設定情報の整理を docs-only で行います。
 
-#49〜#53は、依存関係または人間側のCloudflare/GitHub方針決定が残っているため、現時点ではworktreeを作成しません。依存関係が未整理のissueを先に分離すると、後から前提が変わりやすく、不要な差分や設定変更を生みやすいためです。
+#50〜#53は、#49 の checklist 記録と Cloudflare Pages + Access の確認結果を受けて進めます。
 
 ## Worktrees to create now
 
-- #46
+- #46 完了済み
   - path: `/Users/wagasode/Documents/GitHub/wagasode/PS_analyzer_issue46`
   - branch: `feature/issue-46-public-data-inventory`
   - purpose: 公開データ棚卸しと分類をdocs/reportとして残す
-- #48
+- #48 完了済み
   - path: `/Users/wagasode/Documents/GitHub/wagasode/PS_analyzer_issue48`
   - branch: `feature/issue-48-private-repo-impact`
   - purpose: repository private化の影響をdocs/reportとして残す
+- #49 進行中
+  - path: `/Users/wagasode/Documents/GitHub/wagasode/PS_analyzer_issue49`
+  - branch: `feature/issue-49-cloudflare-pages-access`
+  - purpose: Cloudflare Pages + Access の設定手順、policy checklist、後続issueへの引き継ぎをdocsとして残す
 
 ## Worktrees not to create yet
 
-- #49
-  - Cloudflare account / zone / custom domain / Pages project名 / Access policy / 許可ユーザー管理単位の人間判断が先に必要なため。
 - #50
   - #49でCloudflare Pages + Access配信基盤が見えてから、publish flowを移行する方が安全なため。
 - #47
@@ -115,15 +121,30 @@
 
 ## Human decisions required before later waves
 
-- Cloudflare account / zone / custom domain / Pages project名
-- `pages.dev` と preview URL の保護方針
-- Access login方式: Google login / メールallowlist / One-time PIN
-- 許可ユーザーの管理単位
+- Cloudflare account / zone
+- deployment mode: Git integration / Direct Upload
+- Cloudflare Workers & Pages GitHub App の repository access 範囲
+- preview deployment の対象 branch / URL 形式
+- One-time PIN fallback を使う条件と期限
 - GitHub Pagesを完全停止するか、stubを残すか
 - repo private化のタイミング
 - Save API Worker route / domain / Access JWT検証方針
 - `SAVE_API_ENDPOINT` と GitHub Actions secrets/vars の命名
 - 戦績データの保存先: private repo CSV MVPか、別DB検討か
+
+## Decisions resolved for #49 initial setup
+
+- Pages project名: `ps-analyzer`
+- 初期 production URL: `https://ps-analyzer.pages.dev`
+- custom domain: 初期は使わない
+- Access login方式: Google login
+- 許可方式: チームメンバーの Google account 個別 allowlist
+- One-time PIN: 初期必須ではなく、Google loginで詰まる場合の補助候補
+- preview URL: Access 保護対象に含める
+- GitHub Pages停止/無害化: #47
+- dashboard publish flow移行: #50
+- Save API Worker保護: #51
+- repo private化: Cloudflare Pages連携確認後に段階的に実施
 
 ## Risks
 
@@ -136,10 +157,12 @@
 ## Issue outputs
 
 - #48: `docs/cloudflare_access/private_repo_impact.md`
+- #49: `docs/cloudflare_access/cloudflare_pages_access_setup.md`, `docs/cloudflare_access/access_policy_checklist.md`
 
 ## Next actions
 
-1. #46専用スレッドを開き、公開データ棚卸しを行う。
-2. #48専用スレッドを開き、private化影響確認を行う。
-3. #46/#48の結果を踏まえ、司令塔スレッドで #49 の開始条件を再確認する。
-4. 人間側でCloudflareのaccount/zone/domain/Access policy方針を決める。
+1. #49 の手順に沿って、人間が Cloudflare Pages project と Access application を dashboard で設定する。
+2. `docs/cloudflare_access/access_policy_checklist.md` に production / preview の Access 確認結果を記録する。
+3. #49 の記録を前提に #50 で dashboard publish flow を Cloudflare Pages へ移行する。
+4. #50 の代替公開先確認後、#47 で GitHub Pages 直URLを停止または無害化する。
+5. #49/#50 の Access境界と origin を前提に #51 で Save API Worker 保護を進める。
