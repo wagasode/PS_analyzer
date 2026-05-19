@@ -14,7 +14,7 @@
 |---|---|---|---|---|---|
 | #46 公開データ棚卸しと分類を行う | dashboard生成物、`public/data/*.json`、deck/timeline情報、preview/artifact/`gh-pages`露出、将来の戦績データ候補を分類する | docs-only / 棚卸し | `public/`, `public/data/*.json`, `data/*.csv`, `.github/workflows/*.yml`, `scripts/build_streaming_dashboard.py`, docs | #15 | Yes. Wave 1で先行する |
 | #47 GitHub Pages直URLを停止・無害化する | Cloudflare AccessをバイパスするGitHub Pages直URLとpreview URLを停止または無害化する | GitHub Pages設定 / GitHub Actions変更 / stub検討 | `.github/workflows/publish-dashboard.yml`, `gh-pages`, GitHub Pages settings, stub page案 | #46, #49, #50 | Not yet. 代替公開先確認後に進める |
-| #48 PS_analyzerリポジトリをprivate化する影響を確認する | repository private化がGitHub Pages、Actions、Cloudflare Pages、Save API Worker、team access、CSV保存に与える影響を確認する | docs-only / 設定調査 | docs, `.github/workflows/*.yml`, `workers/save-deck-links/*`, GitHub/Cloudflare設定調査 | #15, #46の分類結果を参照 | Yes. Wave 1で#46と並列調査する |
+| #48 PS_analyzerリポジトリをprivate化する影響を確認する | repository private化がGitHub Pages、Actions、Cloudflare Pages、Save API Worker、team access、CSV保存に与える影響を確認する | docs-only / 設定調査 | `docs/cloudflare_access/private_repo_impact.md`, docs, `.github/workflows/*.yml`, `workers/save-deck-links/*`, GitHub/Cloudflare設定調査 | #15, #46の分類結果を参照 | Yes. Wave 1で#46と並列調査する |
 | #49 Cloudflare Pages + Access配信基盤を作成する | Cloudflare Pages projectとAccess applicationを作り、dashboard公開先をチーム限定公開にする | Cloudflare側設定 / 配信基盤 / docs | Cloudflare Pages, Cloudflare Access, custom domain, `pages.dev`, preview URL, access policy docs | #48, 人間によるCloudflare方針決定 | Not yet. 人間判断後に進める |
 | #50 dashboard publish flowをCloudflare Pagesへ移行する | `public/` dashboard生成物のpublish先をGitHub PagesからCloudflare Pagesへ移行する | GitHub Actions変更 / dashboard配信変更 | `.github/workflows/collect-streams.yml`, `.github/workflows/publish-dashboard.yml`, `scripts/build_streaming_dashboard.py`, GitHub Actions secrets/vars | #46, #49 | Not yet. #49で配信基盤が見えてから進める |
 | #51 Save API WorkerをAccess前提で保護する | dashboardからの保存APIをCloudflare Access前提で保護し、CORSと認証の責務を分ける | Worker/API変更 / Cloudflare Access / CORS | `workers/save-deck-links/worker.mjs`, `workers/save-deck-links/wrangler.toml`, dashboard fetch, `SAVE_API_ENDPOINT` | #49, #50, Save API route決定 | Not yet. Access境界とroute決定後に進める |
@@ -132,6 +132,10 @@
 - #51 はCORS変更だけでは認証にならない。CORS allowlist、Cloudflare Access、Worker側JWT検証の責務を分けて判断する必要がある。
 - #48 はGitHub/Cloudflareの仕様確認が必要。private repository、GitHub Pages、Cloudflare Pages連携、Actions artifact、token権限の仕様は変わり得る。
 - #46 の分類で `保存不可` が出た場合、後続issueの設計が変わる。
+
+## Issue outputs
+
+- #48: `docs/cloudflare_access/private_repo_impact.md`
 
 ## Next actions
 
