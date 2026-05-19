@@ -21,6 +21,10 @@
 | #52 戦績管理ページの限定公開設計を行う | 相手PN、CR、備考などを含む戦績データの限定公開設計と保存先候補を整理する | docs-only / 設計 | docs, 戦績schema案, private repo CSV MVP検討 | #46, #48, #49 | Later. 前提整理後に進める |
 | #53 Cloudflare Access移行後の運用ドキュメントを整備する | Access移行後の閲覧、保存、preview、障害時切り分け、チーム運用をdocs化する | docs-only / 運用手順 | docs, README必要箇所, Cloudflare/GitHub運用手順 | #47, #49, #50, #51, #52 | Last. 実装結果反映後に進める |
 
+## Issue別レポート
+
+- #46: `docs/cloudflare_access/public_data_classification.md`
+
 ## Dependency graph
 
 ```text
