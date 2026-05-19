@@ -89,6 +89,41 @@
     ]
   },
   {
+    "deck_key": "deck-e-1779172826463",
+    "deck_name": "進化E",
+    "class_name": "E",
+    "archetype": "",
+    "deck_url": "",
+    "deck_code": "",
+    "notes": "",
+    "stream_count": 1,
+    "player_count": 1,
+    "players": [
+      "TBT"
+    ],
+    "streams": [
+      {
+        "team": "ZETA DIVISION",
+        "player_name": "TBT",
+        "platform": "youtube",
+        "external_stream_id": "jkCHWwiFNhk",
+        "title": "【CR2位】進化エルフを極める朝活",
+        "url": "https://www.youtube.com/watch?v=jkCHWwiFNhk",
+        "thumbnail_url": "https://i.ytimg.com/vi/jkCHWwiFNhk/maxresdefault.jpg",
+        "started_at": "2026-05-18T17:59:51Z",
+        "published_at": "2026-05-19T09:29:37Z",
+        "occurred_at": "2026-05-18T17:59:51Z",
+        "duration_sec": 6991,
+        "is_shadowverse_related": 1,
+        "confidence": "",
+        "source_note": "",
+        "display_order": 1,
+        "decks": [],
+        "missing_deck_info": 1
+      }
+    ]
+  },
+  {
     "deck_key": "deck-r-1778681117704",
     "deck_name": "連携R",
     "class_name": "R",
