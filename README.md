@@ -18,7 +18,7 @@ All repository changes should be made on an issue-specific branch. See
 - `scripts/fetch_youtube_archives.py`: fetches recent YouTube upload/archive metadata.
 - `scripts/fetch_twitch_vods.py`: fetches Twitch archive VOD metadata.
 - `scripts/build_streaming_report.py`: writes aggregate CSV reports.
-- `scripts/build_streaming_dashboard.py`: writes a static dashboard for GitHub Pages.
+- `scripts/build_streaming_dashboard.py`: writes a static dashboard for Cloudflare Pages.
 
 Generated files are ignored:
 
@@ -174,6 +174,17 @@ The `Collect streaming data` workflow passes this variable into the dashboard
 build. If the variable is empty, the dashboard still allows draft edits but
 disables saving.
 
+The dashboard publish workflow deploys the generated static site to Cloudflare
+Pages. Configure these GitHub Actions values before enabling the publish flow:
+
+- `CF_PAGES_PROJECT_NAME`: repository variable. Initial value: `ps-analyzer`.
+- `CLOUDFLARE_ACCOUNT_ID`: repository variable or secret for the target
+  Cloudflare account.
+- `CLOUDFLARE_API_TOKEN`: repository secret with Cloudflare Pages edit
+  permission.
+- `PAGES_BASE_URL`: repository variable for the production dashboard URL.
+  Initial value: `https://ps-analyzer.pages.dev`.
+
 For access control, put the Worker behind Cloudflare Access or an equivalent
 trusted-user gate. CORS allowlists reduce accidental browser use from other
 origins, but they are not authentication by themselves.
@@ -235,23 +246,25 @@ archive timelines, deck usage lookup, and links back to the GitHub Actions run
 when built in CI.
 
 After the `Collect streaming data` workflow completes successfully, the
-`Publish dashboard` workflow publishes the dashboard to GitHub Pages.
+`Publish dashboard` workflow deploys the dashboard to Cloudflare Pages.
 
 The `main` branch dashboard is published at:
 
-- https://wagasode.github.io/PS_analyzer/
+- https://ps-analyzer.pages.dev/
 
-Feature branch previews are published under `previews/<branch-slug>/`.
-For example, `codex/issue-branch-workflow` is published at:
+Feature branch previews are published as Cloudflare Pages branch aliases. For
+example, `codex/issue-branch-workflow` is published at:
 
-- https://wagasode.github.io/PS_analyzer/previews/codex-issue-branch-workflow/
+- https://codex-issue-branch-workflow.ps-analyzer.pages.dev/
 
-For the first deployment, configure the repository's Pages source to
-`GitHub Actions` in `Settings` -> `Pages`.
+For the first deployment, create the Cloudflare Pages project `ps-analyzer` and
+configure the GitHub Actions variables/secrets listed above. If Cloudflare Git
+integration automatic deploys are still enabled, disable them or make sure they
+do not run the Workers-oriented `npx wrangler deploy` command.
 
 Branch previews require `.github/workflows/publish-dashboard.yml` to exist on
-the default branch. The first PR that adds this workflow must be merged before
-preview publishing is available for later issue branches.
+the default branch. Cloudflare Access protection for production and preview
+URLs is configured outside this repository.
 
 ## GitHub Actions
 
@@ -271,7 +284,8 @@ Manual run:
 6. Keep `youtube_max_pages=1` and `twitch_max_pages=1` for the first run.
 7. Wait for `Collect streaming data` to finish.
 8. Wait for the automatically triggered `Publish dashboard` workflow to finish.
-9. Open the GitHub Pages dashboard or branch preview URL from the workflow summary.
+9. Open the Cloudflare Pages production or branch preview URL from the workflow
+   summary.
 
 The artifact contains:
 
@@ -282,6 +296,7 @@ The artifact contains:
 - `public/index.html`
 - `public/data/*.json`
 
-The `Publish dashboard` workflow deploys the static dashboard in `public/` to
-GitHub Pages. `main` updates the root dashboard, and feature branches update
-their own preview directories.
+The `Publish dashboard` workflow downloads the `dashboard-site` artifact and
+deploys it to Cloudflare Pages with `wrangler pages deploy`. `main` updates
+`https://ps-analyzer.pages.dev/`, and feature branches update their Cloudflare
+Pages preview branch aliases.
