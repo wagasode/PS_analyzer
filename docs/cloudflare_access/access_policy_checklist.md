@@ -15,8 +15,8 @@
 | [ ] Cloudflare account を確認した | account名: |
 | [ ] Cloudflare Zero Trust team domain を確認した | team domain: |
 | [ ] Pages project名を `ps-analyzer` にする | project名: `ps-analyzer` |
-| [ ] 初期 production URL を `https://ps-analyzer.pages.dev` として扱う | production URL: `https://ps-analyzer.pages.dev` |
-| [ ] 独自ドメインは初期では使わない | custom domain: なし |
+| [ ] 初期 production URL `https://ps-analyzer.pages.dev` は deploy 検証用として扱う | production URL: `https://ps-analyzer.pages.dev` |
+| [ ] チーム限定本番URL用の custom domain 要否を後続判断に残す | custom domain: 未設定 |
 | [ ] Google login を第一候補にする | identity provider: Google |
 | [ ] 許可ユーザーは Google account email の個別 allowlist にする | allowlist owner: |
 | [ ] One-time PIN は初期必須にしない | fallback要否: |
@@ -35,7 +35,7 @@
 | [ ] Direct Upload の場合、#50 で必要な API token 方針を記録した | token方針: |
 | [ ] production URL を確認した | URL: |
 | [ ] preview deployment の対象 branch / URL 形式を確認した | preview設定: |
-| [ ] Access 保護確認前に production / preview URL を共有しない | 共有状態: |
+| [ ] `ps-analyzer.pages.dev` を限定公開本番URLとして共有しない | 共有状態: |
 
 ## Google identity provider チェック
 
@@ -51,8 +51,11 @@
 
 | チェック | 記録 |
 |---|---|
-| [ ] production `ps-analyzer.pages.dev` 用 Access application を作成した | application名: |
-| [ ] public hostname に `ps-analyzer.pages.dev` を設定した | hostname: |
+| [ ] `Restrict previews` は preview deployment URL だけを保護すると確認した | 確認日: 2026-05-20 |
+| [ ] production `pages.dev` と custom domain は Zero Trust 側で別管理だと確認した | 確認者: |
+| [ ] production custom domain を Cloudflare に onboard した | hostname: |
+| [ ] production custom domain 用 Access application を作成した | application名: |
+| [ ] public hostname に production custom domain を設定した | hostname: |
 | [ ] preview URL 用の Access policy / application を作成した | application名: |
 | [ ] preview wildcard が保護対象に入っている | hostname / wildcard: |
 | [ ] branch alias URL と deployment hash URL の扱いを確認した | 対象URL形式: |
@@ -80,9 +83,10 @@
 
 | 対象URL | ユーザー状態 | 期待結果 | 実結果 | 確認日 |
 |---|---|---|---|---|
-| `https://ps-analyzer.pages.dev` | 未ログイン / private window | Access login に誘導される | | |
-| `https://ps-analyzer.pages.dev` | allowlist 外 Google account | Access denied になる | | |
-| `https://ps-analyzer.pages.dev` | allowlist 内 Google account | Pages の内容を表示できる | | |
+| `https://ps-analyzer.pages.dev` | 通常ブラウザ / private window | deploy 検証用URLとして dashboard が表示できる。限定公開確認には使わない | | |
+| production custom domain | 未ログイン / private window | Access login に誘導される | | |
+| production custom domain | allowlist 外 Google account | Access denied になる | | |
+| production custom domain | allowlist 内 Google account | Pages の内容を表示できる | | |
 | preview branch URL | 未ログイン / private window | Access login に誘導される | | |
 | preview branch URL | allowlist 外 Google account | Access denied になる | | |
 | preview branch URL | allowlist 内 Google account | preview の内容を表示できる | | |
@@ -95,7 +99,8 @@
 | 項目 | 記録 |
 |---|---|
 | Pages project名 | `ps-analyzer` |
-| production URL | `https://ps-analyzer.pages.dev` |
+| production URL | `https://ps-analyzer.pages.dev`。deploy 検証用として扱う |
+| チーム限定本番URL | custom domain + Cloudflare Access で後続確保する |
 | deployment mode | |
 | production branch | |
 | preview branch 対象 | |
@@ -110,7 +115,8 @@
 
 | 項目 | 記録 |
 |---|---|
-| Save API の production origin 候補 | `https://ps-analyzer.pages.dev` |
+| Save API の deploy 検証 origin 候補 | `https://ps-analyzer.pages.dev` |
+| Save API の production origin 候補 | custom domain 確保後に #51 で決定 |
 | Save API の preview origin 方針 | |
 | `ALLOWED_ORIGINS` に入れる候補 | #51 で決定 |
 | Worker 側 Access JWT 検証の要否 | #51 で決定 |
@@ -123,11 +129,12 @@
 
 | 項目 | 記録 |
 |---|---|
-| Cloudflare Pages production の Access 確認 | 未確認 / 確認済み: |
+| Cloudflare Pages `pages.dev` deploy 確認 | 未確認 / 確認済み: |
+| production custom domain + Access 確認 | 未確認 / 確認済み: |
 | Cloudflare Pages preview の Access 確認 | 未確認 / 確認済み: |
 | #50 publish flow 移行 | 未完了 / 完了: |
-| GitHub Pages root 停止/無害化の開始可否 | #50 完了後に判断 |
-| GitHub Pages preview 停止/無害化の開始可否 | #50 完了後に判断 |
+| GitHub Pages root 停止/無害化の開始可否 | 限定公開本番URL確保後に判断 |
+| GitHub Pages preview 停止/無害化の開始可否 | 限定公開本番URL確保後に判断 |
 | public stub が必要な場合の禁止事項 | `data/*.json`、`save_api_endpoint`、deck/timeline payload を含めない |
 
 ## #53 への引き継ぎ
@@ -146,11 +153,12 @@
 | 確認項目 | 記録 |
 |---|---|
 | Cloudflare Pages project名 | `ps-analyzer` |
-| production URL | `https://ps-analyzer.pages.dev` |
+| production URL | `https://ps-analyzer.pages.dev`。deploy 検証用として扱う |
 | GitHub Actions deploy方式 | `dashboard-site` artifact を download し、`wrangler pages deploy dashboard --project-name ps-analyzer` で direct upload |
 | #49 初回deploy失敗理由 | Cloudflare Pages側で Workers向け `npx wrangler deploy` が実行され、GitHub Actions生成前提の静的directoryを検出できなかった |
 | Cloudflare側Git integration自動deploy | 未確認 / 無効化済み / direct uploadと競合しない設定へ変更済み: |
-| GitHub Pages直URL停止 | #47で実施。#50では `gh-pages` branch、Pages settings、過去previewを変更しない |
+| `Restrict previews` の範囲 | preview deployment URLのみ。production `pages.dev` と custom domain は Zero Trust 側で別管理 |
+| GitHub Pages直URL停止 | #47で実施。ただし限定公開本番URL確保後まで進めない。#50では `gh-pages` branch、Pages settings、過去previewを変更しない |
 
 ## GitHub secrets / vars 候補
 
