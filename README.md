@@ -263,8 +263,11 @@ integration automatic deploys are still enabled, disable them or make sure they
 do not run the Workers-oriented `npx wrangler deploy` command.
 
 Branch previews require `.github/workflows/publish-dashboard.yml` to exist on
-the default branch. Cloudflare Access protection for production and preview
-URLs is configured outside this repository.
+the default branch. `https://ps-analyzer.pages.dev/` is currently a deploy
+verification URL, not the team-limited production URL. Cloudflare Pages
+`Restrict previews` protects preview deployment URLs only; a team-limited
+production URL is expected to require a custom domain protected by Cloudflare
+Access outside this repository.
 
 ## GitHub Actions
 
