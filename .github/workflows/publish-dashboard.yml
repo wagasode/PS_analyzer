@@ -7,23 +7,23 @@ on:
 
 permissions:
   actions: read
-  contents: write
-  pages: write
-  id-token: write
+  contents: read
+  deployments: write
 
 concurrency:
-  group: pages-dashboard
+  group: cloudflare-pages-dashboard
   cancel-in-progress: false
 
 env:
-  PAGES_BASE_URL: https://wagasode.github.io/PS_analyzer
+  CF_PAGES_PROJECT_NAME: ${{ vars.CF_PAGES_PROJECT_NAME || 'ps-analyzer' }}
+  PAGES_BASE_URL: ${{ vars.PAGES_BASE_URL || 'https://ps-analyzer.pages.dev' }}
 
 jobs:
   publish:
     if: github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     environment:
-      name: github-pages
+      name: cloudflare-pages
       url: ${{ steps.prepare.outputs.page_url }}
 
     steps:
@@ -38,99 +38,59 @@ jobs:
           github-token: ${{ github.token }}
           path: dashboard
 
-      - name: Check publisher branch
-        id: publisher
+      - name: Validate dashboard artifact
         run: |
           set -euo pipefail
-          if git ls-remote --exit-code --heads origin gh-pages >/dev/null 2>&1; then
-            echo "exists=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "exists=false" >> "$GITHUB_OUTPUT"
-          fi
+          test -d dashboard
+          test -f dashboard/index.html
 
-      - name: Checkout publisher branch
-        if: steps.publisher.outputs.exists == 'true'
-        uses: actions/checkout@v4
-        with:
-          ref: gh-pages
-          path: site
-
-      - name: Initialize publisher branch
-        if: steps.publisher.outputs.exists != 'true'
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          mkdir site
-          git -C site init
-          git -C site checkout --orphan gh-pages
-          git -C site remote add origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
-
-      - name: Prepare published site
+      - name: Prepare Cloudflare Pages deployment
         id: prepare
-        env:
-          HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
-        run: |
-          set -euo pipefail
-          slug="$(printf '%s' "$HEAD_BRANCH" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9._-]+/-/g; s/^-+//; s/-+$//')"
-          if [ -z "$slug" ]; then
-            slug="branch"
-          fi
-
-          if [ "$HEAD_BRANCH" = "main" ]; then
-            find site -mindepth 1 -maxdepth 1 ! -name .git ! -name previews -exec rm -rf {} +
-            cp -R dashboard/. site/
-            page_url="${PAGES_BASE_URL}/"
-          else
-            mkdir -p "site/previews"
-            rm -rf "site/previews/${slug}"
-            mkdir -p "site/previews/${slug}"
-            cp -R dashboard/. "site/previews/${slug}/"
-            page_url="${PAGES_BASE_URL}/previews/${slug}/"
-          fi
-
-          touch site/.nojekyll
-          echo "page_url=${page_url}" >> "$GITHUB_OUTPUT"
-          {
-            echo "## Dashboard"
-            echo
-            echo "- Branch: \`${HEAD_BRANCH}\`"
-            echo "- URL: ${page_url}"
-          } >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Commit published site
-        id: commit
         env:
           HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
           RUN_ID: ${{ github.event.workflow_run.id }}
         run: |
           set -euo pipefail
-          git -C site config user.name "github-actions[bot]"
-          git -C site config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git -C site add -A
-          if git -C site diff --cached --quiet; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-          else
-            git -C site commit -m "Publish dashboard for ${HEAD_BRANCH} (${RUN_ID})"
-            git -C site push origin HEAD:gh-pages
-            echo "changed=true" >> "$GITHUB_OUTPUT"
+          slug="$(printf '%s' "$HEAD_BRANCH" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//')"
+          if [ -z "$slug" ]; then
+            slug="branch"
           fi
 
-      - name: Configure GitHub Pages
-        uses: actions/configure-pages@v5
+          production_url="${PAGES_BASE_URL%/}"
+          if [ "$HEAD_BRANCH" = "main" ]; then
+            deployment_type="production"
+            page_url="${production_url}/"
+          else
+            deployment_type="preview"
+            pages_host="${production_url#https://}"
+            pages_host="${pages_host#http://}"
+            page_url="https://${slug}.${pages_host}/"
+          fi
 
-      - name: Prepare Pages artifact
-        run: |
-          set -euo pipefail
-          rm -rf pages-artifact
-          mkdir pages-artifact
-          tar --exclude=.git -C site -cf - . | tar -C pages-artifact -xf -
+          echo "page_url=${page_url}" >> "$GITHUB_OUTPUT"
+          echo "deploy_branch=${HEAD_BRANCH}" >> "$GITHUB_OUTPUT"
+          echo "deployment_type=${deployment_type}" >> "$GITHUB_OUTPUT"
+          echo "preview_slug=${slug}" >> "$GITHUB_OUTPUT"
+          {
+            echo "## Dashboard"
+            echo
+            echo "- Branch: \`${HEAD_BRANCH}\`"
+            echo "- Cloudflare Pages project: \`${CF_PAGES_PROJECT_NAME}\`"
+            echo "- Deployment type: \`${deployment_type}\`"
+            echo "- Artifact directory: \`dashboard/\`"
+            echo "- URL: ${page_url}"
+            echo "- Source workflow run: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}"
+          } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Deploy dashboard to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
         with:
-          path: pages-artifact
-
-      - name: Deploy dashboard to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID || secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: >-
+            pages deploy dashboard
+            --project-name=${{ env.CF_PAGES_PROJECT_NAME }}
+            --branch=${{ steps.prepare.outputs.deploy_branch }}
+            --commit-hash=${{ github.event.workflow_run.head_sha }}
+            --commit-dirty=true
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}

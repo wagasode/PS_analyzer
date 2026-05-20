@@ -6,7 +6,7 @@
 
 この文書は #49「Cloudflare Pages + Access配信基盤を作成する」で、人間が Cloudflare dashboard で行う作業と、Codex / repository 側へ記録する作業を分けるための checklist です。
 
-この PR では Cloudflare 側の実設定、GitHub settings 変更、GitHub Actions 変更、Save API Worker 変更、GitHub Pages 停止、repository private 化は行いません。
+#49 PR では Cloudflare 側の実設定、GitHub settings 変更、GitHub Actions 変更、Save API Worker 変更、GitHub Pages 停止、repository private 化は行いません。
 
 ## 作業前チェック
 
@@ -141,16 +141,27 @@
 | Save API 障害 | Access、CORS、Worker、GitHub API token、branch allowlist の切り分け |
 | GitHub / Cloudflare 管理分離 | repository collaborator と Access 閲覧者を同一管理にするか、別管理にするか |
 
+## #50 publish flow 確認欄
+
+| 確認項目 | 記録 |
+|---|---|
+| Cloudflare Pages project名 | `ps-analyzer` |
+| production URL | `https://ps-analyzer.pages.dev` |
+| GitHub Actions deploy方式 | `dashboard-site` artifact を download し、`wrangler pages deploy dashboard --project-name ps-analyzer` で direct upload |
+| #49 初回deploy失敗理由 | Cloudflare Pages側で Workers向け `npx wrangler deploy` が実行され、GitHub Actions生成前提の静的directoryを検出できなかった |
+| Cloudflare側Git integration自動deploy | 未確認 / 無効化済み / direct uploadと競合しない設定へ変更済み: |
+| GitHub Pages直URL停止 | #47で実施。#50では `gh-pages` branch、Pages settings、過去previewを変更しない |
+
 ## GitHub secrets / vars 候補
 
-この checklist は候補整理のみです。#49 では GitHub secrets / vars を追加しません。
+この checklist は候補整理のみです。secret 値そのものは repository、PR、artifact、docs に残しません。
 
 | 名前候補 | 種別候補 | 用途 | 後続 issue |
 |---|---|---|---|
 | `CF_PAGES_PROJECT_NAME` | variable | Pages project名。初期値候補は `ps-analyzer` | #50 |
-| `CLOUDFLARE_ACCOUNT_ID` | variable または secret | Direct Upload / Wrangler deploy で account を指定する場合に使う | #50 |
-| `CLOUDFLARE_API_TOKEN` | secret | GitHub Actions から Cloudflare Pages へ deploy する場合に使う最小権限 token | #50 |
-| `PAGES_BASE_URL` | variable | workflow summary や metadata に出す production URL | #50 |
+| `CLOUDFLARE_ACCOUNT_ID` | variable または secret | GitHub Actions から Cloudflare Pages direct upload する account を指定する | #50 |
+| `CLOUDFLARE_API_TOKEN` | secret | GitHub Actions から Cloudflare Pages へ deploy する。権限は Account / Cloudflare Pages / Edit を候補にする | #50 |
+| `PAGES_BASE_URL` | variable | workflow summary に出す production URL。初期値候補は `https://ps-analyzer.pages.dev` | #50 |
 | `CF_ACCESS_TEAM_DOMAIN` | variable | Access JWT 検証や運用 docs で team domain を参照する場合に使う | #51/#53 |
 | `CF_ACCESS_AUD` | variable または secret | Worker 側で Access JWT の audience を検証する場合に使う | #51 |
 | `SAVE_API_ENDPOINT` | variable | dashboard から呼ぶ Save API endpoint。#49 では変更しない | #51 |

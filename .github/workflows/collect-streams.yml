@@ -20,6 +20,7 @@ permissions:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  PAGES_BASE_URL: ${{ vars.PAGES_BASE_URL || 'https://ps-analyzer.pages.dev' }}
 
 jobs:
   collect:
@@ -88,19 +89,22 @@ jobs:
       - name: Write dashboard URL summary
         run: |
           set -euo pipefail
-          slug="$(printf '%s' "$GITHUB_REF_NAME" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9._-]+/-/g; s/^-+//; s/-+$//')"
+          slug="$(printf '%s' "$GITHUB_REF_NAME" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//')"
           if [ -z "$slug" ]; then
             slug="branch"
           fi
+          production_url="${PAGES_BASE_URL%/}"
           if [ "$GITHUB_REF_NAME" = "main" ]; then
-            dashboard_url="https://wagasode.github.io/PS_analyzer/"
+            dashboard_url="${production_url}/"
           else
-            dashboard_url="https://wagasode.github.io/PS_analyzer/previews/${slug}/"
+            pages_host="${production_url#https://}"
+            pages_host="${pages_host#http://}"
+            dashboard_url="https://${slug}.${pages_host}/"
           fi
           {
             echo "## Dashboard"
             echo
-            echo "The dashboard will be published by the \`Publish dashboard\` workflow:"
+            echo "The dashboard will be deployed to Cloudflare Pages by the \`Publish dashboard\` workflow:"
             echo
             echo "- ${dashboard_url}"
           } >> "$GITHUB_STEP_SUMMARY"

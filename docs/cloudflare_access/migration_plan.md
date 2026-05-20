@@ -16,7 +16,7 @@
 | #47 GitHub Pages直URLを停止・無害化する | Cloudflare AccessをバイパスするGitHub Pages直URLとpreview URLを停止または無害化する | GitHub Pages設定 / GitHub Actions変更 / stub検討 | `.github/workflows/publish-dashboard.yml`, `gh-pages`, GitHub Pages settings, stub page案 | #46, #49, #50 | Not yet. 代替公開先確認後に進める |
 | #48 PS_analyzerリポジトリをprivate化する影響を確認する | repository private化がGitHub Pages、Actions、Cloudflare Pages、Save API Worker、team access、CSV保存に与える影響を確認する | docs-only / 設定調査 | `docs/cloudflare_access/private_repo_impact.md`, docs, `.github/workflows/*.yml`, `workers/save-deck-links/*`, GitHub/Cloudflare設定調査 | #15, #46の分類結果を参照 | Yes. Wave 1で#46と並列調査する |
 | #49 Cloudflare Pages + Access配信基盤を作成する | Cloudflare Pages projectとAccess applicationの作成手順、production/preview保護方針、後続issueへの引き継ぎを整理する | docs-only / Cloudflare dashboard checklist | Cloudflare Pages, Cloudflare Access, `pages.dev`, preview URL, access policy docs | #48, 人間によるCloudflare方針決定 | In progress. 実設定は人間がdashboardで行う |
-| #50 dashboard publish flowをCloudflare Pagesへ移行する | `public/` dashboard生成物のpublish先をGitHub PagesからCloudflare Pagesへ移行する | GitHub Actions変更 / dashboard配信変更 | `.github/workflows/collect-streams.yml`, `.github/workflows/publish-dashboard.yml`, `scripts/build_streaming_dashboard.py`, GitHub Actions secrets/vars | #46, #49 | Not yet. #49で配信基盤が見えてから進める |
+| #50 dashboard publish flowをCloudflare Pagesへ移行する | `public/` dashboard生成物のpublish先をGitHub PagesからCloudflare Pagesへ移行する | GitHub Actions変更 / dashboard配信変更 | `.github/workflows/collect-streams.yml`, `.github/workflows/publish-dashboard.yml`, GitHub Actions secrets/vars | #46, #49 | This PR. `dashboard-site` artifactをCloudflare Pagesへdirect uploadする |
 | #51 Save API WorkerをAccess前提で保護する | dashboardからの保存APIをCloudflare Access前提で保護し、CORSと認証の責務を分ける | Worker/API変更 / Cloudflare Access / CORS | `workers/save-deck-links/worker.mjs`, `workers/save-deck-links/wrangler.toml`, dashboard fetch, `SAVE_API_ENDPOINT` | #49, #50, Save API route決定 | Not yet. Access境界とroute決定後に進める |
 | #52 戦績管理ページの限定公開設計を行う | 相手PN、CR、備考などを含む戦績データの限定公開設計と保存先候補を整理する | docs-only / 設計 | docs, 戦績schema案, private repo CSV MVP検討 | #46, #48, #49 | Later. 前提整理後に進める |
 | #53 Cloudflare Access移行後の運用ドキュメントを整備する | Access移行後の閲覧、保存、preview、障害時切り分け、チーム運用をdocs化する | docs-only / 運用手順 | docs, README必要箇所, Cloudflare/GitHub運用手順 | #47, #49, #50, #51, #52 | Last. 実装結果反映後に進める |
@@ -76,6 +76,8 @@
 
 #50が先行です。Cloudflare Pages + Access側で代替公開先とpreview導線が確認できてから、#47でGitHub Pages直URLを停止または無害化します。#51はAccess境界、Worker route、`SAVE_API_ENDPOINT`の向き先が決まってから進めます。
 
+#50 では `Collect streaming data` が生成した `public/` を `dashboard-site` artifact として受け渡し、`Publish dashboard` workflow が `dashboard/` にdownloadして `wrangler pages deploy` で Cloudflare Pages project `ps-analyzer` へdeployします。#49後の初回deploy失敗は Cloudflare Pages側で Workers向け `npx wrangler deploy` が実行されたことが原因であり、この用途では Pages向けの `wrangler pages deploy` を使います。
+
 ### Wave 4
 
 - #52 戦績管理ページ限定公開設計
@@ -91,7 +93,7 @@
 
 #50〜#53は、#49 の checklist 記録と Cloudflare Pages + Access の確認結果を受けて進めます。
 
-## Worktrees to create now
+## Created / active worktrees
 
 - #46 完了済み
   - path: `/Users/wagasode/Documents/GitHub/wagasode/PS_analyzer_issue46`
@@ -105,11 +107,13 @@
   - path: `/Users/wagasode/Documents/GitHub/wagasode/PS_analyzer_issue49`
   - branch: `feature/issue-49-cloudflare-pages-access`
   - purpose: Cloudflare Pages + Access の設定手順、policy checklist、後続issueへの引き継ぎをdocsとして残す
+- #50 着手済み
+  - path: `/Users/wagasode/Documents/GitHub/wagasode/PS_analyzer_issue50`
+  - branch: `feature/issue-50-cloudflare-pages-publish`
+  - purpose: dashboard publish flow を Cloudflare Pages direct upload へ移行する
 
 ## Worktrees not to create yet
 
-- #50
-  - #49でCloudflare Pages + Access配信基盤が見えてから、publish flowを移行する方が安全なため。
 - #47
   - #50で代替公開先とpreview導線が動いてからGitHub Pagesを停止または無害化しないと、dashboard確認導線が一時的に失われるため。
 - #51
