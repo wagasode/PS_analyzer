@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from common import DEFAULT_DB_PATH, ROOT_DIR, connect, dedupe_simulcast_groups, init_schema
+from ps_simulator_ui import write_ps_simulator_assets
 
 
 REPORTS_DIR = ROOT_DIR / "reports"
@@ -1684,6 +1685,7 @@ HTML = """<!doctype html>
           <button class="tab" type="button" data-view="player">選手別</button>
           <button class="tab" type="button" data-view="deck">デッキ別</button>
         </div>
+        <a class="button" href="ps-simulator.html">提出案作成</a>
         <input class="search" id="search" type="search" placeholder="チーム、選手、デッキ、ステータスで絞り込み" autocomplete="off">
       </div>
 
@@ -3631,6 +3633,7 @@ def main() -> None:
     write_json(args.out_dir / "data" / "streaming_timeline_by_player.json", timelines)
     write_json(args.out_dir / "data" / "streaming_deck_usage.json", deck_usage)
     write_json(args.out_dir / "data" / "metadata.json", metadata)
+    write_ps_simulator_assets(args.out_dir)
 
     print(f"wrote {args.out_dir / 'index.html'}")
     print(f"wrote {args.out_dir / 'data' / 'streaming_by_player.json'}")
@@ -3638,6 +3641,8 @@ def main() -> None:
     print(f"wrote {args.out_dir / 'data' / 'streaming_timeline_by_player.json'}")
     print(f"wrote {args.out_dir / 'data' / 'streaming_deck_usage.json'}")
     print(f"wrote {args.out_dir / 'data' / 'metadata.json'}")
+    print(f"wrote {args.out_dir / 'ps-simulator.html'}")
+    print(f"wrote {args.out_dir / 'data' / 'ps_simulator' / 'sample_dataset.json'}")
 
 
 if __name__ == "__main__":
