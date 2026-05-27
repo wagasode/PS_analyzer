@@ -727,6 +727,11 @@ PS_SIMULATOR_HTML = """<!doctype html>
         .map(roleDef => roleDef.role);
     }
 
+    function shouldShowClassForRole(role, className) {
+      const selectedRoles = selectedRolesForClass(className);
+      return selectedRoles.length === 0 || selectedRoles.includes(role);
+    }
+
     function roleClassSummaryHtml(role) {
       const selectedDecks = (assignmentForRole(role).deckIds || []).map(deckById).filter(Boolean);
       if (selectedDecks.length === 0) {
@@ -748,9 +753,6 @@ PS_SIMULATOR_HTML = """<!doctype html>
       }
       if (selectedHere) {
         return ["ok", "この担当で選択中"];
-      }
-      if (selectedRoles.length > 0) {
-        return ["warn", `他担当で選択中: ${selectedRoles.join("/")}`];
       }
       return ["", "未選択"];
     }
@@ -983,14 +985,16 @@ PS_SIMULATOR_HTML = """<!doctype html>
           </option>
         `;
       }).join("");
-      const deckOptions = (state.dataset?.classDefinitions || []).map(definition => {
-        const classDecks = decksByClass(definition.className);
-        const selectedHere = selectedClassesForRole(roleDef.role).includes(definition.className);
-        const [stateKind, stateLabel] = classGroupState(roleDef.role, definition.className);
-        const deckRows = classDecks.map(deck => {
-          const checked = assignment.deckIds.includes(deck.deckId);
-          const status = statusFor(assignment.playerId, deck.deckId);
-          return `
+      const deckOptions = (state.dataset?.classDefinitions || [])
+        .filter(definition => shouldShowClassForRole(roleDef.role, definition.className))
+        .map(definition => {
+          const classDecks = decksByClass(definition.className);
+          const selectedHere = selectedClassesForRole(roleDef.role).includes(definition.className);
+          const [stateKind, stateLabel] = classGroupState(roleDef.role, definition.className);
+          const deckRows = classDecks.map(deck => {
+            const checked = assignment.deckIds.includes(deck.deckId);
+            const status = statusFor(assignment.playerId, deck.deckId);
+            return `
               <label class="deck-option ${checked ? "selected" : ""} ${escapeHtml(classCssClass(deck.className))}">
                 <input type="checkbox" data-role-deck="${escapeHtml(roleDef.role)}" data-deck-id="${escapeHtml(deck.deckId)}"${checked ? " checked" : ""}>
                 <span class="deck-main">
@@ -1002,8 +1006,8 @@ PS_SIMULATOR_HTML = """<!doctype html>
                 </span>
               </label>
             `;
-        }).join("") || `<div class="empty">このクラスの候補はありません。</div>`;
-        return `
+          }).join("") || `<div class="empty">このクラスの候補はありません。</div>`;
+          return `
             <div class="deck-class-group ${selectedHere ? "selected-class" : ""} ${escapeHtml(classCssClass(definition.className))}">
               <div class="deck-class-group-head">
                 <div class="badge-row">
@@ -1015,7 +1019,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
               <div class="deck-options">${deckRows}</div>
             </div>
           `;
-      }).join("");
+        }).join("");
 
       return `
         <section class="role-panel ${invalid ? "invalid" : ""}">
