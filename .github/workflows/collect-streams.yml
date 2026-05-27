@@ -89,24 +89,18 @@ jobs:
       - name: Write dashboard URL summary
         run: |
           set -euo pipefail
-          slug="$(printf '%s' "$GITHUB_REF_NAME" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//')"
-          if [ -z "$slug" ]; then
-            slug="branch"
-          fi
           production_url="${PAGES_BASE_URL%/}"
-          if [ "$GITHUB_REF_NAME" = "main" ]; then
-            dashboard_url="${production_url}/"
-          else
-            pages_host="${production_url#https://}"
-            pages_host="${pages_host#http://}"
-            dashboard_url="https://${slug}.${pages_host}/"
-          fi
           {
             echo "## Dashboard"
             echo
             echo "The dashboard will be deployed to Cloudflare Pages by the \`Publish dashboard\` workflow:"
             echo
-            echo "- ${dashboard_url}"
+            if [ "$GITHUB_REF_NAME" = "main" ]; then
+              echo "- Production URL: ${production_url}/"
+            else
+              echo "- Branch preview URL: shown after deploy in the \`Publish dashboard\` workflow summary and the Cloudflare Pages check/comment."
+              echo "- Do not construct a preview URL from this branch name. Cloudflare Pages may shorten branch aliases."
+            fi
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload SQLite database, reports, and dashboard

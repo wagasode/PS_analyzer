@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: cloudflare-pages
-      url: ${{ steps.prepare.outputs.page_url }}
+      url: ${{ steps.pages-url.outputs.page_url }}
 
     steps:
       - name: Checkout default branch
@@ -48,41 +48,21 @@ jobs:
         id: prepare
         env:
           HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
-          RUN_ID: ${{ github.event.workflow_run.id }}
         run: |
           set -euo pipefail
-          slug="$(printf '%s' "$HEAD_BRANCH" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//')"
-          if [ -z "$slug" ]; then
-            slug="branch"
-          fi
-
           production_url="${PAGES_BASE_URL%/}"
           if [ "$HEAD_BRANCH" = "main" ]; then
             deployment_type="production"
-            page_url="${production_url}/"
           else
             deployment_type="preview"
-            pages_host="${production_url#https://}"
-            pages_host="${pages_host#http://}"
-            page_url="https://${slug}.${pages_host}/"
           fi
 
-          echo "page_url=${page_url}" >> "$GITHUB_OUTPUT"
           echo "deploy_branch=${HEAD_BRANCH}" >> "$GITHUB_OUTPUT"
           echo "deployment_type=${deployment_type}" >> "$GITHUB_OUTPUT"
-          echo "preview_slug=${slug}" >> "$GITHUB_OUTPUT"
-          {
-            echo "## Dashboard"
-            echo
-            echo "- Branch: \`${HEAD_BRANCH}\`"
-            echo "- Cloudflare Pages project: \`${CF_PAGES_PROJECT_NAME}\`"
-            echo "- Deployment type: \`${deployment_type}\`"
-            echo "- Artifact directory: \`dashboard/\`"
-            echo "- URL: ${page_url}"
-            echo "- Source workflow run: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}"
-          } >> "$GITHUB_STEP_SUMMARY"
+          echo "production_url=${production_url}" >> "$GITHUB_OUTPUT"
 
       - name: Deploy dashboard to Cloudflare Pages
+        id: deploy
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -94,3 +74,61 @@ jobs:
             --commit-hash=${{ github.event.workflow_run.head_sha }}
             --commit-dirty=true
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Report Cloudflare Pages URL
+        id: pages-url
+        env:
+          DEPLOY_BRANCH: ${{ steps.prepare.outputs.deploy_branch }}
+          DEPLOYMENT_TYPE: ${{ steps.prepare.outputs.deployment_type }}
+          DEPLOYMENT_URL: ${{ steps.deploy.outputs.deployment-url }}
+          DEPLOYMENT_ALIAS_URL: ${{ steps.deploy.outputs.pages-deployment-alias-url }}
+          PRODUCTION_URL: ${{ steps.prepare.outputs.production_url }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          set -euo pipefail
+
+          page_url=""
+          url_label="Cloudflare Pages URL"
+
+          if [ "$DEPLOYMENT_TYPE" = "preview" ]; then
+            if [ -n "$DEPLOYMENT_ALIAS_URL" ]; then
+              page_url="$DEPLOYMENT_ALIAS_URL"
+              url_label="Branch preview URL"
+            elif [ -n "$DEPLOYMENT_URL" ]; then
+              page_url="$DEPLOYMENT_URL"
+              url_label="Preview deployment URL"
+            fi
+          else
+            if [ -n "$DEPLOYMENT_URL" ]; then
+              page_url="$DEPLOYMENT_URL"
+            elif [ -n "$DEPLOYMENT_ALIAS_URL" ]; then
+              page_url="$DEPLOYMENT_ALIAS_URL"
+            else
+              page_url="${PRODUCTION_URL}/"
+            fi
+            url_label="Production URL"
+          fi
+
+          if [ -n "$page_url" ]; then
+            echo "page_url=${page_url}" >> "$GITHUB_OUTPUT"
+          fi
+
+          {
+            echo "## Dashboard"
+            echo
+            echo "- Branch: \`${DEPLOY_BRANCH}\`"
+            echo "- Cloudflare Pages project: \`${CF_PAGES_PROJECT_NAME}\`"
+            echo "- Deployment type: \`${DEPLOYMENT_TYPE}\`"
+            echo "- Artifact directory: \`dashboard/\`"
+            if [ -n "$page_url" ]; then
+              echo "- ${url_label}: ${page_url}"
+            else
+              echo "- URL: Cloudflare Pages deploy output did not include a URL."
+              echo "- Confirmation: open the \`Cloudflare Pages\` check or Cloudflare Pages PR comment and use the Branch Preview URL / Preview URL from that deployment."
+            fi
+            echo "- Source workflow run: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}"
+            if [ "$DEPLOYMENT_TYPE" = "preview" ]; then
+              echo
+              echo "This workflow does not construct a preview URL from the branch name. Cloudflare Pages may shorten branch aliases, so the Cloudflare deployment output is the source of truth."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

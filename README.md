@@ -261,10 +261,11 @@ The `main` branch dashboard is published at:
 
 - https://ps-analyzer.pages.dev/
 
-Feature branch previews are published as Cloudflare Pages branch aliases. For
-example, `codex/issue-branch-workflow` is published at:
-
-- https://codex-issue-branch-workflow.ps-analyzer.pages.dev/
+Feature branch previews are published as Cloudflare Pages preview deployments.
+Use the Branch preview URL shown in the `Publish dashboard` workflow summary or
+the Cloudflare Pages check/comment for the PR. Do not derive the review URL from
+the Git branch name: Cloudflare Pages may shorten long branch aliases, and a
+locally guessed URL can return `404`.
 
 For the first deployment, create the Cloudflare Pages project `ps-analyzer` and
 configure the GitHub Actions variables/secrets listed above. If Cloudflare Git
@@ -296,8 +297,10 @@ Manual run:
 6. Keep `youtube_max_pages=1` and `twitch_max_pages=1` for the first run.
 7. Wait for `Collect streaming data` to finish.
 8. Wait for the automatically triggered `Publish dashboard` workflow to finish.
-9. Open the Cloudflare Pages production or branch preview URL from the workflow
-   summary.
+9. Open the Cloudflare Pages production URL or the Branch preview URL from the
+   `Publish dashboard` workflow summary. If the summary does not contain a URL,
+   use the Cloudflare Pages check/comment on the PR and open its Branch preview
+   URL / Preview URL.
 
 The artifact contains:
 
@@ -311,4 +314,5 @@ The artifact contains:
 The `Publish dashboard` workflow downloads the `dashboard-site` artifact and
 deploys it to Cloudflare Pages with `wrangler pages deploy`. `main` updates
 `https://ps-analyzer.pages.dev/`, and feature branches update their Cloudflare
-Pages preview branch aliases.
+Pages preview deployments. The workflow reports the URL returned by the
+Cloudflare deployment instead of constructing a preview URL from the branch name.
