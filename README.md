@@ -12,6 +12,7 @@ All repository changes should be made on an issue-specific branch. See
 - `data/players_channels.csv`: player/channel master.
 - `data/decks.csv`: deck definition master.
 - `data/stream_session_decks.csv`: stream archive to deck links.
+- `data/ps_simulator/sample_dataset.json`: PS 7デッキ制シミュレーターのrepo-localサンプルデータ。
 - `sql/schema.sql`: SQLite schema.
 - `scripts/init_db.py`: imports the master CSV into SQLite.
 - `scripts/import_deck_links.py`: imports deck definitions and stream archive links.
@@ -234,16 +235,24 @@ python3 scripts/build_streaming_dashboard.py
 Outputs:
 
 - `public/index.html`
+- `public/ps-simulator.html`
 - `public/data/streaming_by_player.json`
 - `public/data/streaming_by_team.json`
 - `public/data/streaming_timeline_by_player.json`
 - `public/data/streaming_deck_usage.json`
 - `public/data/metadata.json`
+- `public/data/ps_simulator/sample_dataset.json`
 
 The dashboard is a static table UI for the latest generated reports. It supports
 team/player views, filtering, sorting, channel status checks, player-level
 archive timelines, deck usage lookup, and links back to the GitHub Actions run
 when built in CI.
+
+The generated `ps-simulator.html` page uses only
+`data/ps_simulator/sample_dataset.json` for the deck submission MVP. It lets the
+user draft a 7-class submission, assign decks to A/B/C as 3/2/2, inspect
+PlayerDeckStatus risks, and preview JSON. Google Sheets import, matchup loading,
+battle simulation, and replay logging are intentionally outside this build step.
 
 After the `Collect streaming data` workflow completes successfully, the
 `Publish dashboard` workflow deploys the dashboard to Cloudflare Pages.
