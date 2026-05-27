@@ -1,0 +1,420 @@
+{
+  "schemaVersion": "ps-simulator.v1",
+  "classDefinitions": [
+    {
+      "className": "E",
+      "displayName": "エルフ"
+    },
+    {
+      "className": "R",
+      "displayName": "ロイヤル"
+    },
+    {
+      "className": "W",
+      "displayName": "ウィッチ"
+    },
+    {
+      "className": "D",
+      "displayName": "ドラゴン"
+    },
+    {
+      "className": "Ni",
+      "displayName": "ナイトメア"
+    },
+    {
+      "className": "B",
+      "displayName": "ビショップ"
+    },
+    {
+      "className": "Nm",
+      "displayName": "ネメシス"
+    }
+  ],
+  "decks": [
+    {
+      "deckId": "deck-e-1779172826463",
+      "className": "E",
+      "deckName": "進化E",
+      "weaknessTags": [
+        "序盤面処理"
+      ],
+      "note": "既存data/decks.csvのdeck_keyをdeckIdとして利用する例。",
+      "source": "repo_csv",
+      "sourceDeckKey": "deck-e-1779172826463"
+    },
+    {
+      "deckId": "deck-r-1778681117704",
+      "className": "R",
+      "deckName": "連携R",
+      "weaknessTags": [
+        "大型守護"
+      ],
+      "note": "既存data/decks.csvのdeck_keyをdeckIdとして利用する例。",
+      "source": "repo_csv",
+      "sourceDeckKey": "deck-r-1778681117704"
+    },
+    {
+      "deckId": "ps-w-spellboost",
+      "className": "W",
+      "deckName": "スペルW",
+      "weaknessTags": [
+        "アグロ"
+      ],
+      "note": "シミュレーター用サンプルデッキ。",
+      "source": "repo_sample"
+    },
+    {
+      "deckId": "ps-d-ramp",
+      "className": "D",
+      "deckName": "ランプD",
+      "weaknessTags": [
+        "序盤圧"
+      ],
+      "note": "シミュレーター用サンプルデッキ。",
+      "source": "repo_sample"
+    },
+    {
+      "deckId": "deck-1778742968583",
+      "className": "Ni",
+      "deckName": "ミルティオNi",
+      "weaknessTags": [
+        "消滅"
+      ],
+      "note": "既存data/decks.csvのdeck_keyをdeckIdとして利用する例。",
+      "source": "repo_csv",
+      "sourceDeckKey": "deck-1778742968583"
+    },
+    {
+      "deckId": "deck-b-1778743160748",
+      "className": "B",
+      "deckName": "アミュB",
+      "weaknessTags": [
+        "展開速度"
+      ],
+      "note": "既存data/decks.csvのdeck_keyをdeckIdとして利用する例。",
+      "source": "repo_csv",
+      "sourceDeckKey": "deck-b-1778743160748"
+    },
+    {
+      "deckId": "ps-nm-artifact",
+      "className": "Nm",
+      "deckName": "AFNm",
+      "weaknessTags": [
+        "リソース切れ"
+      ],
+      "note": "シミュレーター用サンプルデッキ。",
+      "source": "repo_sample"
+    }
+  ],
+  "players": [
+    {
+      "playerId": "player-maito",
+      "playerName": "マイト",
+      "team": "MURASH GAMING",
+      "note": "サンプル提出A担当。"
+    },
+    {
+      "playerId": "player-glory",
+      "playerName": "glory",
+      "team": "MURASH GAMING",
+      "note": "サンプル提出B担当。"
+    },
+    {
+      "playerId": "player-toby",
+      "playerName": "Toby",
+      "team": "MURASH GAMING",
+      "note": "サンプル提出C担当。"
+    }
+  ],
+  "playerDeckStatuses": [
+    {
+      "playerId": "player-maito",
+      "deckId": "deck-e-1779172826463",
+      "status": "confident",
+      "practiceCost": 0,
+      "note": ""
+    },
+    {
+      "playerId": "player-maito",
+      "deckId": "deck-r-1778681117704",
+      "status": "available",
+      "practiceCost": 1,
+      "note": ""
+    },
+    {
+      "playerId": "player-maito",
+      "deckId": "ps-w-spellboost",
+      "status": "trainable",
+      "practiceCost": 3,
+      "note": "練習負荷の警告表示に使う。"
+    },
+    {
+      "playerId": "player-maito",
+      "deckId": "ps-d-ramp",
+      "status": "hard",
+      "practiceCost": 5,
+      "note": "未割当のhard例。"
+    },
+    {
+      "playerId": "player-maito",
+      "deckId": "deck-1778742968583",
+      "status": "available",
+      "practiceCost": 1,
+      "note": ""
+    },
+    {
+      "playerId": "player-maito",
+      "deckId": "deck-b-1778743160748",
+      "status": "trainable",
+      "practiceCost": 2,
+      "note": ""
+    },
+    {
+      "playerId": "player-maito",
+      "deckId": "ps-nm-artifact",
+      "status": "hard",
+      "practiceCost": 5,
+      "note": ""
+    },
+    {
+      "playerId": "player-glory",
+      "deckId": "deck-e-1779172826463",
+      "status": "available",
+      "practiceCost": 1,
+      "note": ""
+    },
+    {
+      "playerId": "player-glory",
+      "deckId": "deck-r-1778681117704",
+      "status": "confident",
+      "practiceCost": 0,
+      "note": ""
+    },
+    {
+      "playerId": "player-glory",
+      "deckId": "ps-w-spellboost",
+      "status": "available",
+      "practiceCost": 1,
+      "note": ""
+    },
+    {
+      "playerId": "player-glory",
+      "deckId": "ps-d-ramp",
+      "status": "available",
+      "practiceCost": 1,
+      "note": ""
+    },
+    {
+      "playerId": "player-glory",
+      "deckId": "deck-1778742968583",
+      "status": "trainable",
+      "practiceCost": 2,
+      "note": ""
+    },
+    {
+      "playerId": "player-glory",
+      "deckId": "deck-b-1778743160748",
+      "status": "hard",
+      "practiceCost": 5,
+      "note": "割当時のhard警告表示に使う。"
+    },
+    {
+      "playerId": "player-glory",
+      "deckId": "ps-nm-artifact",
+      "status": "available",
+      "practiceCost": 1,
+      "note": ""
+    },
+    {
+      "playerId": "player-toby",
+      "deckId": "deck-e-1779172826463",
+      "status": "hard",
+      "practiceCost": 5,
+      "note": ""
+    },
+    {
+      "playerId": "player-toby",
+      "deckId": "deck-r-1778681117704",
+      "status": "available",
+      "practiceCost": 1,
+      "note": ""
+    },
+    {
+      "playerId": "player-toby",
+      "deckId": "ps-w-spellboost",
+      "status": "trainable",
+      "practiceCost": 2,
+      "note": ""
+    },
+    {
+      "playerId": "player-toby",
+      "deckId": "ps-d-ramp",
+      "status": "confident",
+      "practiceCost": 0,
+      "note": ""
+    },
+    {
+      "playerId": "player-toby",
+      "deckId": "deck-1778742968583",
+      "status": "available",
+      "practiceCost": 1,
+      "note": ""
+    },
+    {
+      "playerId": "player-toby",
+      "deckId": "deck-b-1778743160748",
+      "status": "trainable",
+      "practiceCost": 2,
+      "note": "練習負荷の警告表示に使う。"
+    },
+    {
+      "playerId": "player-toby",
+      "deckId": "ps-nm-artifact",
+      "status": "confident",
+      "practiceCost": 0,
+      "note": ""
+    }
+  ],
+  "sampleSubmission": {
+    "submissionId": "sample-self-submission",
+    "side": "self",
+    "assignments": [
+      {
+        "role": "A",
+        "playerId": "player-maito",
+        "deckIds": [
+          "deck-e-1779172826463",
+          "deck-r-1778681117704",
+          "ps-w-spellboost"
+        ]
+      },
+      {
+        "role": "B",
+        "playerId": "player-glory",
+        "deckIds": [
+          "ps-d-ramp",
+          "deck-b-1778743160748"
+        ]
+      },
+      {
+        "role": "C",
+        "playerId": "player-toby",
+        "deckIds": [
+          "deck-1778742968583",
+          "ps-nm-artifact"
+        ]
+      }
+    ]
+  },
+  "sampleMatchups": [
+    {
+      "deckIdA": "deck-e-1779172826463",
+      "deckIdB": "ps-d-ramp",
+      "winRateForA": 0.47,
+      "note": "相性表JSON形の例。"
+    },
+    {
+      "deckIdA": "deck-r-1778681117704",
+      "deckIdB": "deck-1778742968583",
+      "winRateForA": 0.52,
+      "note": ""
+    },
+    {
+      "deckIdA": "ps-w-spellboost",
+      "deckIdB": "deck-b-1778743160748",
+      "winRateForA": 0.58,
+      "note": ""
+    }
+  ],
+  "sampleBattleLog": {
+    "seed": "sample-seed-001",
+    "selfSubmissionId": "sample-self-submission",
+    "rounds": [
+      {
+        "roundNumber": 1,
+        "selfCandidateDeckIds": [
+          "deck-e-1779172826463",
+          "deck-r-1778681117704",
+          "ps-w-spellboost"
+        ],
+        "opponentCandidateDeckIds": [
+          "ps-d-ramp",
+          "deck-1778742968583",
+          "deck-b-1778743160748"
+        ],
+        "selfSelectedDeckId": "deck-e-1779172826463",
+        "opponentSelectedDeckId": "ps-d-ramp",
+        "selfWinRate": 0.47,
+        "result": "opponent_win",
+        "usedDeckIdsAfterRound": {
+          "self": [
+            "deck-e-1779172826463"
+          ],
+          "opponent": [
+            "ps-d-ramp"
+          ]
+        }
+      },
+      {
+        "roundNumber": 2,
+        "selfCandidateDeckIds": [
+          "deck-r-1778681117704",
+          "ps-w-spellboost",
+          "ps-nm-artifact"
+        ],
+        "opponentCandidateDeckIds": [
+          "deck-1778742968583",
+          "deck-b-1778743160748",
+          "ps-nm-artifact"
+        ],
+        "selfSelectedDeckId": "deck-r-1778681117704",
+        "opponentSelectedDeckId": "deck-1778742968583",
+        "selfWinRate": 0.52,
+        "result": "self_win",
+        "usedDeckIdsAfterRound": {
+          "self": [
+            "deck-e-1779172826463",
+            "deck-r-1778681117704"
+          ],
+          "opponent": [
+            "ps-d-ramp",
+            "deck-1778742968583"
+          ]
+        }
+      },
+      {
+        "roundNumber": 3,
+        "selfCandidateDeckIds": [
+          "ps-w-spellboost",
+          "ps-d-ramp",
+          "deck-b-1778743160748"
+        ],
+        "opponentCandidateDeckIds": [
+          "deck-b-1778743160748",
+          "ps-nm-artifact"
+        ],
+        "selfSelectedDeckId": "ps-w-spellboost",
+        "opponentSelectedDeckId": "deck-b-1778743160748",
+        "selfWinRate": 0.58,
+        "result": "self_win",
+        "usedDeckIdsAfterRound": {
+          "self": [
+            "deck-e-1779172826463",
+            "deck-r-1778681117704",
+            "ps-w-spellboost"
+          ],
+          "opponent": [
+            "ps-d-ramp",
+            "deck-1778742968583",
+            "deck-b-1778743160748"
+          ]
+        }
+      }
+    ],
+    "finalResult": {
+      "winner": "self",
+      "selfWins": 2,
+      "opponentWins": 1
+    }
+  }
+}
