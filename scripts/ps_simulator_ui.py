@@ -212,6 +212,44 @@ PS_SIMULATOR_HTML = """<!doctype html>
       flex-wrap: wrap;
     }
 
+    .player-select-row {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 8px;
+      align-items: center;
+    }
+
+    .player-select-row select {
+      width: 100%;
+      min-width: 0;
+    }
+
+    .player-avatar {
+      position: relative;
+      display: inline-grid;
+      place-items: center;
+      flex: 0 0 auto;
+      width: 32px;
+      height: 32px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--none-soft);
+      color: var(--none);
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .player-avatar img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      background: var(--panel);
+    }
+
     .deck-options {
       display: grid;
       gap: 8px;
@@ -684,6 +722,27 @@ PS_SIMULATOR_HTML = """<!doctype html>
       return (state.dataset?.players || []).find(player => player.playerId === playerId) || null;
     }
 
+    function initials(value) {
+      const name = String(value || "?").trim();
+      return Array.from(name || "?").slice(0, 2).join("").toUpperCase();
+    }
+
+    function playerIconUrl(player) {
+      return player?.playerIconUrl || player?.player_icon_url || player?.iconUrl || "";
+    }
+
+    function avatarHtml(name, imageUrl) {
+      const fallback = escapeHtml(initials(name));
+      const image = imageUrl
+        ? `<img src="${escapeHtml(imageUrl)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">`
+        : "";
+      return `<span class="player-avatar" aria-hidden="true">${image}<span>${fallback}</span></span>`;
+    }
+
+    function playerAvatarHtml(player) {
+      return avatarHtml(player?.playerName || "?", playerIconUrl(player));
+    }
+
     function classDefinition(className) {
       return (state.dataset?.classDefinitions || []).find(definition => definition.className === className) || null;
     }
@@ -977,11 +1036,11 @@ PS_SIMULATOR_HTML = """<!doctype html>
       const assignment = state.assignments[roleDef.role] || { playerId: "", deckIds: [] };
       const selectedCount = assignment.deckIds.length;
       const invalid = selectedCount !== roleDef.expectedDeckCount;
+      const selectedPlayer = playerById(assignment.playerId);
       const playerOptions = (state.dataset?.players || []).map(player => {
-        const teamLabel = player.team ? ` / ${escapeHtml(player.team)}` : "";
         return `
           <option value="${escapeHtml(player.playerId)}"${player.playerId === assignment.playerId ? " selected" : ""}>
-            ${escapeHtml(player.playerName)}${teamLabel}
+            ${escapeHtml(player.playerName)}
           </option>
         `;
       }).join("");
@@ -1028,9 +1087,12 @@ PS_SIMULATOR_HTML = """<!doctype html>
             <span class="badge ${invalid ? "warn" : "ok"}">${selectedCount}/${roleDef.expectedDeckCount}デッキ</span>
           </div>
           <label class="field">担当選手
-            <select data-role-player="${escapeHtml(roleDef.role)}">
-              ${playerOptions}
-            </select>
+            <span class="player-select-row">
+              ${playerAvatarHtml(selectedPlayer)}
+              <select data-role-player="${escapeHtml(roleDef.role)}">
+                ${playerOptions}
+              </select>
+            </span>
           </label>
           ${roleClassSummaryHtml(roleDef.role)}
           <div class="deck-options">${deckOptions}</div>

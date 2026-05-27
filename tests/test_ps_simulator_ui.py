@@ -38,6 +38,10 @@ class PsSimulatorUiTest(unittest.TestCase):
         self.assertIn("debug-dataset-meta", html)
         self.assertIn("schemaVersion", html)
         self.assertIn("頑張れば可", html)
+        self.assertIn("function avatarHtml(name, imageUrl)", html)
+        self.assertIn('class="player-select-row"', html)
+        self.assertIn('class="player-avatar"', html)
+        self.assertNotIn("teamLabel", html)
         self.assertNotIn("各担当選手の使用可能度を見ながら選択します。", html)
         self.assertNotIn("提出条件と使用可能度リスクを分けて表示します。", html)
 
