@@ -217,6 +217,29 @@ PS_SIMULATOR_HTML = """<!doctype html>
       gap: 8px;
     }
 
+    .deck-class-group {
+      display: grid;
+      gap: 8px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+      background: #fff;
+    }
+
+    .deck-class-group.selected-class {
+      border-color: var(--deck-class-border, var(--accent));
+      background: var(--deck-class-row, #f8fafc);
+    }
+
+    .deck-class-group-head,
+    .validation-section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
     .deck-option {
       display: grid;
       grid-template-columns: auto minmax(0, 1fr);
@@ -255,11 +278,17 @@ PS_SIMULATOR_HTML = """<!doctype html>
     }
 
     .deck-note,
+    .deck-meta,
+    .role-class-summary,
     .status-note,
     .source-note {
       color: var(--muted);
       font-size: 12px;
       overflow-wrap: anywhere;
+    }
+
+    .deck-meta {
+      font-size: 11px;
     }
 
     .badge-row,
@@ -381,6 +410,11 @@ PS_SIMULATOR_HTML = """<!doctype html>
       gap: 8px;
     }
 
+    .validation-section {
+      display: grid;
+      gap: 8px;
+    }
+
     .validation-item {
       border: 1px solid var(--border);
       border-radius: 8px;
@@ -388,6 +422,12 @@ PS_SIMULATOR_HTML = """<!doctype html>
       background: #f8fafc;
       color: var(--muted);
       font-size: 14px;
+    }
+
+    .validation-item.ok {
+      border-color: #99f6e4;
+      background: var(--accent-soft);
+      color: var(--accent);
     }
 
     .validation-item.error {
@@ -414,6 +454,26 @@ PS_SIMULATOR_HTML = """<!doctype html>
       color: var(--muted);
       padding: 18px 0;
       text-align: center;
+    }
+
+    details {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #f8fafc;
+    }
+
+    summary {
+      cursor: pointer;
+      padding: 12px;
+      font-weight: 700;
+    }
+
+    details[open] summary {
+      border-bottom: 1px solid var(--border);
+    }
+
+    .details-body {
+      padding: 12px;
     }
 
     pre {
@@ -531,24 +591,6 @@ PS_SIMULATOR_HTML = """<!doctype html>
             </div>
           </section>
 
-          <section class="panel" aria-labelledby="reference-title">
-            <div class="panel-head">
-              <div>
-                <h2 id="reference-title">読み込みデータ</h2>
-                <div class="hint">MVPではrepo-localのサンプルJSONだけを使い、Google Sheets連携、相性評価、バトル処理は行いません。</div>
-              </div>
-            </div>
-            <div class="panel-body stack">
-              <div>
-                <h3>デッキ一覧</h3>
-                <div id="deck-reference"></div>
-              </div>
-              <div>
-                <h3>選手一覧 / PlayerDeckStatus</h3>
-                <div id="player-reference"></div>
-              </div>
-            </div>
-          </section>
         </div>
 
         <aside class="stack">
@@ -565,15 +607,33 @@ PS_SIMULATOR_HTML = """<!doctype html>
             </div>
           </section>
 
-          <section class="panel" aria-labelledby="preview-title">
+          <section class="panel" aria-labelledby="debug-title">
             <div class="panel-head">
               <div>
-                <h2 id="preview-title">JSONプレビュー</h2>
-                <div class="hint">後続のバトル機能に渡せる提出案と検証結果です。</div>
+                <h2 id="debug-title">Debug</h2>
+                <div class="hint">通常操作では閉じておき、後続開発や確認時だけ開きます。Google Sheets連携、相性評価、バトル処理はここでは行いません。</div>
               </div>
             </div>
-            <div class="panel-body">
-              <pre id="json-preview">{}</pre>
+            <div class="panel-body stack">
+              <details>
+                <summary>JSONプレビュー</summary>
+                <div class="details-body">
+                  <pre id="json-preview">{}</pre>
+                </div>
+              </details>
+              <details>
+                <summary>読み込みデータ詳細</summary>
+                <div class="details-body stack">
+                  <div>
+                    <h3>デッキ一覧</h3>
+                    <div id="deck-reference"></div>
+                  </div>
+                  <div>
+                    <h3>選手一覧 / PlayerDeckStatus</h3>
+                    <div id="player-reference"></div>
+                  </div>
+                </div>
+              </details>
             </div>
           </section>
         </aside>
@@ -590,9 +650,9 @@ PS_SIMULATOR_HTML = """<!doctype html>
     const datasetUrl = "data/ps_simulator/sample_dataset.json";
     const statusLabels = {
       confident: "自信あり",
-      available: "使用可",
-      trainable: "練習必要",
-      hard: "困難"
+      available: "使用可能",
+      trainable: "頑張れば可",
+      hard: "きつそう"
     };
     const state = {
       dataset: null,
@@ -651,6 +711,55 @@ PS_SIMULATOR_HTML = """<!doctype html>
           <strong>${escapeHtml(code)}</strong>
         </span>
       `;
+    }
+
+    function decksByClass(className) {
+      return (state.dataset?.decks || []).filter(deck => deck.className === className);
+    }
+
+    function assignmentForRole(role) {
+      return state.assignments[role] || { playerId: "", deckIds: [] };
+    }
+
+    function selectedClassesForRole(role) {
+      return (assignmentForRole(role).deckIds || [])
+        .map(deckById)
+        .filter(Boolean)
+        .map(deck => deck.className);
+    }
+
+    function selectedRolesForClass(className) {
+      return roles
+        .filter(roleDef => selectedClassesForRole(roleDef.role).includes(className))
+        .map(roleDef => roleDef.role);
+    }
+
+    function roleClassSummaryHtml(role) {
+      const selectedDecks = (assignmentForRole(role).deckIds || []).map(deckById).filter(Boolean);
+      if (selectedDecks.length === 0) {
+        return `<div class="role-class-summary">選択クラスなし</div>`;
+      }
+      return `
+          <div class="role-class-summary">
+            選択中:
+            ${selectedDecks.map(deck => `${escapeHtml(deck.deckName)} ${classBadgeHtml(deck.className)}`).join(" ")}
+          </div>
+      `;
+    }
+
+    function classGroupState(role, className) {
+      const selectedRoles = selectedRolesForClass(className);
+      const selectedHere = selectedRoles.includes(role);
+      if (selectedHere && selectedRoles.length > 1) {
+        return ["bad", `重複: ${selectedRoles.join("/")}`];
+      }
+      if (selectedHere) {
+        return ["ok", "この担当で選択中"];
+      }
+      if (selectedRoles.length > 0) {
+        return ["warn", `他担当で選択中: ${selectedRoles.join("/")}`];
+      }
+      return ["", "未選択"];
     }
 
     function statusKey(playerId, deckId) {
@@ -748,6 +857,9 @@ PS_SIMULATOR_HTML = """<!doctype html>
       const warnings = [];
       const expectedClasses = (state.dataset?.classDefinitions || []).map(definition => definition.className);
       const entries = selectedEntries(submission);
+      let hardCount = 0;
+      let trainableCount = 0;
+      let missingStatusCount = 0;
 
       submission.assignments.forEach(assignment => {
         const roleDef = roles.find(role => role.role === assignment.role);
@@ -792,22 +904,32 @@ PS_SIMULATOR_HTML = """<!doctype html>
         }
         const status = statusFor(entry.playerId, entry.deckId);
         if (!status) {
+          missingStatusCount += 1;
           warnings.push(`${entry.role}: ${playerName} / ${deckName} はPlayerDeckStatusがありません。データなし / 要確認です。`);
           return;
         }
         if (status.status === "hard") {
+          hardCount += 1;
           hardWarnings.push(`${entry.role}: ${playerName} / ${deckName} はhardです。強い警告として扱います。`);
         }
         if (status.status === "trainable") {
+          trainableCount += 1;
           warnings.push(`${entry.role}: ${playerName} / ${deckName} はtrainableです。練習負荷を確認してください。`);
         }
       });
+
+      if (trainableCount + missingStatusCount >= 3) {
+        warnings.push(`trainable / データなし が合計${trainableCount + missingStatusCount}件あります。練習負荷・確認負荷が高い提出案です。`);
+      }
 
       return {
         canStartBattle: errors.length === 0,
         errors,
         hardWarnings,
         warnings,
+        hardCount,
+        trainableCount,
+        missingStatusCount,
         selectedDeckCount: entries.length,
         selectedClassCount: classCounts.size,
         missingClasses,
@@ -823,6 +945,9 @@ PS_SIMULATOR_HTML = """<!doctype html>
           errors: validation.errors,
           hardWarnings: validation.hardWarnings,
           warnings: validation.warnings,
+          hardCount: validation.hardCount,
+          trainableCount: validation.trainableCount,
+          missingStatusCount: validation.missingStatusCount,
           selectedDeckCount: validation.selectedDeckCount,
           selectedClassCount: validation.selectedClassCount,
           sourceDataset: datasetUrl
@@ -843,11 +968,12 @@ PS_SIMULATOR_HTML = """<!doctype html>
     }
 
     function renderClassCoverage(validation) {
-      const selectedClassSet = new Set(selectedEntries(currentSubmission()).map(entry => entry.deck?.className).filter(Boolean));
+      const classCounts = countBy(selectedEntries(currentSubmission()).map(entry => entry.deck?.className).filter(Boolean));
       document.getElementById("class-coverage").innerHTML = (state.dataset?.classDefinitions || []).map(definition => {
-        const ok = selectedClassSet.has(definition.className);
-        const badgeClass = ok ? "badge ok" : "badge warn";
-        return `<span class="${badgeClass}">${escapeHtml(definition.displayName)} ${ok ? "選択済み" : "未選択"}</span>`;
+        const count = classCounts.get(definition.className) || 0;
+        const badgeClass = count === 1 ? "badge ok" : count === 0 ? "badge warn" : "badge bad";
+        const stateLabel = count === 1 ? "選択済み" : count === 0 ? "未選択" : `重複 ${count}`;
+        return `<span class="${badgeClass}">${escapeHtml(definition.displayName)} ${stateLabel}</span>`;
       }).join("");
     }
 
@@ -863,22 +989,39 @@ PS_SIMULATOR_HTML = """<!doctype html>
           </option>
         `;
       }).join("");
-      const deckOptions = (state.dataset?.decks || []).map(deck => {
-        const checked = assignment.deckIds.includes(deck.deckId);
-        const status = statusFor(assignment.playerId, deck.deckId);
+      const deckOptions = (state.dataset?.classDefinitions || []).map(definition => {
+        const classDecks = decksByClass(definition.className);
+        const selectedHere = selectedClassesForRole(roleDef.role).includes(definition.className);
+        const [stateKind, stateLabel] = classGroupState(roleDef.role, definition.className);
+        const deckRows = classDecks.map(deck => {
+          const checked = assignment.deckIds.includes(deck.deckId);
+          const status = statusFor(assignment.playerId, deck.deckId);
+          return `
+              <label class="deck-option ${checked ? "selected" : ""} ${escapeHtml(classCssClass(deck.className))}">
+                <input type="checkbox" data-role-deck="${escapeHtml(roleDef.role)}" data-deck-id="${escapeHtml(deck.deckId)}"${checked ? " checked" : ""}>
+                <span class="deck-main">
+                  <span class="deck-name">
+                    <strong>${escapeHtml(deck.deckName)}</strong>
+                    ${statusBadgeHtml(status)}
+                  </span>
+                  <span class="deck-meta">className: ${escapeHtml(deck.className)} / deckId: ${escapeHtml(deck.deckId)}</span>
+                  ${statusNoteHtml(status)}
+                </span>
+              </label>
+            `;
+        }).join("") || `<div class="empty">このクラスの候補はありません。</div>`;
         return `
-          <label class="deck-option ${checked ? "selected" : ""} ${escapeHtml(classCssClass(deck.className))}">
-            <input type="checkbox" data-role-deck="${escapeHtml(roleDef.role)}" data-deck-id="${escapeHtml(deck.deckId)}"${checked ? " checked" : ""}>
-            <span class="deck-main">
-              <span class="deck-name">
-                ${classBadgeHtml(deck.className)}
-                <strong>${escapeHtml(deck.deckName)}</strong>
-                ${statusBadgeHtml(status)}
-              </span>
-              ${statusNoteHtml(status)}
-            </span>
-          </label>
-        `;
+            <div class="deck-class-group ${selectedHere ? "selected-class" : ""} ${escapeHtml(classCssClass(definition.className))}">
+              <div class="deck-class-group-head">
+                <div class="badge-row">
+                  ${classBadgeHtml(definition.className)}
+                  <span class="count">候補 ${classDecks.length}</span>
+                </div>
+                <span class="badge ${stateKind}">${escapeHtml(stateLabel)}</span>
+              </div>
+              <div class="deck-options">${deckRows}</div>
+            </div>
+          `;
       }).join("");
 
       return `
@@ -892,6 +1035,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
               ${playerOptions}
             </select>
           </label>
+          ${roleClassSummaryHtml(roleDef.role)}
           <div class="deck-options">${deckOptions}</div>
         </section>
       `;
@@ -929,20 +1073,41 @@ PS_SIMULATOR_HTML = """<!doctype html>
     function renderValidation(validation) {
       const badge = document.getElementById("validity-badge");
       badge.className = `badge ${validation.canStartBattle ? "ok" : "warn"}`;
-      badge.textContent = validation.canStartBattle ? "提出条件OK" : "提出条件に警告あり";
-      const items = [
-        ...validation.errors.map(message => ["error", message]),
+      badge.textContent = validation.canStartBattle ? "提出条件OK" : "提出案未成立";
+
+      const ruleItems = validation.errors.map(message => ["error", message]);
+      const operationItems = [
         ...validation.hardWarnings.map(message => ["hard", message]),
         ...validation.warnings.map(message => ["warn", message])
       ];
-      if (items.length === 0) {
-        document.getElementById("validation-list").innerHTML =
-          `<div class="validation-item">3/2/2、7クラス、選手使用可能度に確認対象はありません。</div>`;
-        return;
-      }
-      document.getElementById("validation-list").innerHTML = items
-        .map(([kind, message]) => `<div class="validation-item ${kind}">${escapeHtml(message)}</div>`)
-        .join("");
+
+      const sectionHtml = (title, description, items, emptyText) => `
+          <section class="validation-section">
+            <div class="validation-section-title">
+              <h3>${escapeHtml(title)}</h3>
+              <span class="badge ${items.length ? "warn" : "ok"}">${items.length ? `${items.length}件` : "なし"}</span>
+            </div>
+            <div class="hint">${escapeHtml(description)}</div>
+            ${items.length
+              ? items.map(([kind, message]) => `<div class="validation-item ${kind}">${escapeHtml(message)}</div>`).join("")
+              : `<div class="validation-item ok">${escapeHtml(emptyText)}</div>`}
+          </section>
+        `;
+
+      document.getElementById("validation-list").innerHTML = [
+        sectionHtml(
+          "ルール上の制約",
+          "提出案として成立していない条件を表示します。",
+          ruleItems,
+          "3/2/2、7クラス、未選択、重複に問題はありません。"
+        ),
+        sectionHtml(
+          "運用上の注意",
+          "ルール違反ではないが、作戦検討時に確認したい使用可能度です。",
+          operationItems,
+          "hard / trainable / データなし の確認対象はありません。"
+        )
+      ].join("");
     }
 
     function renderDeckReference() {

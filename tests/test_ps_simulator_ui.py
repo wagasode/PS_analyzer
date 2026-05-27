@@ -27,6 +27,12 @@ class PsSimulatorUiTest(unittest.TestCase):
         self.assertIn("function validateSubmission(submission)", html)
         self.assertIn("PlayerDeckStatus 行なし", html)
         self.assertIn("データなし / 要確認", html)
+        self.assertIn("deck-class-group", html)
+        self.assertIn("ルール上の制約", html)
+        self.assertIn("運用上の注意", html)
+        self.assertIn("<details>", html)
+        self.assertIn("className:", html)
+        self.assertIn("頑張れば可", html)
         self.assertIn("Google Sheets", html)
 
     def test_sample_dataset_keeps_missing_status_player_supported_by_ui(self) -> None:
