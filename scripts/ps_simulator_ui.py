@@ -275,23 +275,18 @@ PS_SIMULATOR_HTML = """<!doctype html>
       gap: 7px;
       flex-wrap: wrap;
       overflow-wrap: anywhere;
-    }
+      }
 
-    .deck-note,
-    .deck-meta,
-    .role-class-summary,
-    .status-note,
-    .source-note {
+      .deck-note,
+      .role-class-summary,
+      .status-note,
+      .source-note {
       color: var(--muted);
       font-size: 12px;
       overflow-wrap: anywhere;
-    }
+      }
 
-    .deck-meta {
-      font-size: 11px;
-    }
-
-    .badge-row,
+      .badge-row,
     .class-coverage,
     .data-summary {
       display: flex;
@@ -552,10 +547,10 @@ PS_SIMULATOR_HTML = """<!doctype html>
 <body>
   <header>
     <div class="shell topbar">
-      <div>
-        <h1>PS 7デッキ提出案</h1>
-        <div class="meta" id="dataset-meta">data/ps_simulator/sample_dataset.json を読み込み中...</div>
-      </div>
+        <div>
+          <h1>PS 7デッキ提出案</h1>
+          <div class="meta" id="dataset-meta">読み込み中...</div>
+        </div>
       <a class="button" href="index.html">配信レポートへ戻る</a>
     </div>
   </header>
@@ -580,10 +575,9 @@ PS_SIMULATOR_HTML = """<!doctype html>
         <div class="stack">
           <section class="panel" aria-labelledby="builder-title">
             <div class="panel-head">
-              <div>
-                <h2 id="builder-title">A/B/C 割当</h2>
-                <div class="hint">Aは3デッキ、B/Cは2デッキ。各担当選手の使用可能度を見ながら選択します。</div>
-              </div>
+                <div>
+                  <h2 id="builder-title">A/B/C 割当</h2>
+                </div>
               <div class="class-coverage" id="class-coverage"></div>
             </div>
             <div class="panel-body">
@@ -596,10 +590,9 @@ PS_SIMULATOR_HTML = """<!doctype html>
         <aside class="stack">
           <section class="panel" aria-labelledby="validation-title">
             <div class="panel-head">
-              <div>
-                <h2 id="validation-title">バリデーション</h2>
-                <div class="hint">提出条件と使用可能度リスクを分けて表示します。</div>
-              </div>
+                <div>
+                  <h2 id="validation-title">バリデーション</h2>
+                </div>
               <span class="badge" id="validity-badge">確認中</span>
             </div>
             <div class="panel-body">
@@ -609,10 +602,9 @@ PS_SIMULATOR_HTML = """<!doctype html>
 
           <section class="panel" aria-labelledby="debug-title">
             <div class="panel-head">
-              <div>
-                <h2 id="debug-title">Debug</h2>
-                <div class="hint">通常操作では閉じておき、後続開発や確認時だけ開きます。Google Sheets連携、相性評価、バトル処理はここでは行いません。</div>
-              </div>
+                <div>
+                  <h2 id="debug-title">Debug</h2>
+                </div>
             </div>
             <div class="panel-body stack">
               <details>
@@ -621,10 +613,11 @@ PS_SIMULATOR_HTML = """<!doctype html>
                   <pre id="json-preview">{}</pre>
                 </div>
               </details>
-              <details>
-                <summary>読み込みデータ詳細</summary>
-                <div class="details-body stack">
-                  <div>
+                <details>
+                  <summary>読み込みデータ詳細</summary>
+                  <div class="details-body stack">
+                    <div class="source-note" id="debug-dataset-meta"></div>
+                    <div>
                     <h3>デッキ一覧</h3>
                     <div id="deck-reference"></div>
                   </div>
@@ -962,9 +955,10 @@ PS_SIMULATOR_HTML = """<!doctype html>
         `${dataset?.decks?.length || 0}デッキ`,
         `${dataset?.players?.length || 0}選手`,
         `${statuses.length} status行`
-      ].map(label => `<span class="badge">${escapeHtml(label)}</span>`).join("");
-      document.getElementById("dataset-meta").textContent =
-        `${datasetUrl} を読み込みました。schemaVersion: ${dataset?.schemaVersion || "不明"}`;
+        ].map(label => `<span class="badge">${escapeHtml(label)}</span>`).join("");
+        document.getElementById("dataset-meta").textContent = "サンプルデータ読込済み";
+        document.getElementById("debug-dataset-meta").textContent =
+          `${datasetUrl} を読み込みました。schemaVersion: ${dataset?.schemaVersion || "不明"}`;
     }
 
     function renderClassCoverage(validation) {
@@ -1004,7 +998,6 @@ PS_SIMULATOR_HTML = """<!doctype html>
                     <strong>${escapeHtml(deck.deckName)}</strong>
                     ${statusBadgeHtml(status)}
                   </span>
-                  <span class="deck-meta">className: ${escapeHtml(deck.className)} / deckId: ${escapeHtml(deck.deckId)}</span>
                   ${statusNoteHtml(status)}
                 </span>
               </label>
@@ -1081,13 +1074,12 @@ PS_SIMULATOR_HTML = """<!doctype html>
         ...validation.warnings.map(message => ["warn", message])
       ];
 
-      const sectionHtml = (title, description, items, emptyText) => `
+        const sectionHtml = (title, items, emptyText) => `
           <section class="validation-section">
             <div class="validation-section-title">
               <h3>${escapeHtml(title)}</h3>
               <span class="badge ${items.length ? "warn" : "ok"}">${items.length ? `${items.length}件` : "なし"}</span>
             </div>
-            <div class="hint">${escapeHtml(description)}</div>
             ${items.length
               ? items.map(([kind, message]) => `<div class="validation-item ${kind}">${escapeHtml(message)}</div>`).join("")
               : `<div class="validation-item ok">${escapeHtml(emptyText)}</div>`}
@@ -1095,26 +1087,24 @@ PS_SIMULATOR_HTML = """<!doctype html>
         `;
 
       document.getElementById("validation-list").innerHTML = [
-        sectionHtml(
-          "ルール上の制約",
-          "提出案として成立していない条件を表示します。",
-          ruleItems,
-          "3/2/2、7クラス、未選択、重複に問題はありません。"
-        ),
-        sectionHtml(
-          "運用上の注意",
-          "ルール違反ではないが、作戦検討時に確認したい使用可能度です。",
-          operationItems,
-          "hard / trainable / データなし の確認対象はありません。"
-        )
+          sectionHtml(
+            "ルール上の制約",
+            ruleItems,
+            "3/2/2、7クラス、未選択、重複に問題はありません。"
+          ),
+          sectionHtml(
+            "運用上の注意",
+            operationItems,
+            "hard / trainable / データなし の確認対象はありません。"
+          )
       ].join("");
     }
 
     function renderDeckReference() {
       const rows = (state.dataset?.decks || []).map(deck => `
-        <tr>
-          <td>${classBadgeHtml(deck.className)}</td>
-          <td><strong>${escapeHtml(deck.deckName)}</strong><div class="source-note">${escapeHtml(deck.deckId)}</div></td>
+          <tr>
+            <td>${classBadgeHtml(deck.className)}</td>
+            <td><strong>${escapeHtml(deck.deckName)}</strong><div class="source-note">className: ${escapeHtml(deck.className)} / deckId: ${escapeHtml(deck.deckId)}</div></td>
           <td>${escapeHtml(deck.source || "")}</td>
           <td>${escapeHtml(deck.note || "")}</td>
         </tr>

@@ -32,8 +32,11 @@ class PsSimulatorUiTest(unittest.TestCase):
         self.assertIn("運用上の注意", html)
         self.assertIn("<details>", html)
         self.assertIn("className:", html)
+        self.assertIn("debug-dataset-meta", html)
+        self.assertIn("schemaVersion", html)
         self.assertIn("頑張れば可", html)
-        self.assertIn("Google Sheets", html)
+        self.assertNotIn("各担当選手の使用可能度を見ながら選択します。", html)
+        self.assertNotIn("提出条件と使用可能度リスクを分けて表示します。", html)
 
     def test_sample_dataset_keeps_missing_status_player_supported_by_ui(self) -> None:
         dataset = read_ps_simulator_sample_dataset()
