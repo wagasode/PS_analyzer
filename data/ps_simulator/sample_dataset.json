@@ -36,7 +36,6 @@
       "className": "E",
       "deckName": "進化E",
       "weaknessTags": [
-        "序盤面処理"
       ],
       "note": "既存data/decks.csvのdeck_keyをdeckIdとして利用する例。",
       "source": "repo_csv",
@@ -47,18 +46,16 @@
       "className": "R",
       "deckName": "連携R",
       "weaknessTags": [
-        "大型守護"
       ],
       "note": "既存data/decks.csvのdeck_keyをdeckIdとして利用する例。",
       "source": "repo_csv",
       "sourceDeckKey": "deck-r-1778681117704"
     },
     {
-      "deckId": "ps-w-spellboost",
+      "deckId": "ps-w-earth-rite",
       "className": "W",
-      "deckName": "スペルW",
+      "deckName": "秘術W",
       "weaknessTags": [
-        "アグロ"
       ],
       "note": "シミュレーター用サンプルデッキ。",
       "source": "repo_sample"
@@ -68,7 +65,6 @@
       "className": "D",
       "deckName": "ランプD",
       "weaknessTags": [
-        "序盤圧"
       ],
       "note": "シミュレーター用サンプルデッキ。",
       "source": "repo_sample"
@@ -78,7 +74,6 @@
       "className": "Ni",
       "deckName": "ミルティオNi",
       "weaknessTags": [
-        "消滅"
       ],
       "note": "既存data/decks.csvのdeck_keyをdeckIdとして利用する例。",
       "source": "repo_csv",
@@ -89,18 +84,16 @@
       "className": "B",
       "deckName": "アミュB",
       "weaknessTags": [
-        "展開速度"
       ],
       "note": "既存data/decks.csvのdeck_keyをdeckIdとして利用する例。",
       "source": "repo_csv",
       "sourceDeckKey": "deck-b-1778743160748"
     },
     {
-      "deckId": "ps-nm-artifact",
+      "deckId": "ps-nm-destruction",
       "className": "Nm",
-      "deckName": "AFNm",
+      "deckName": "破壊Nm",
       "weaknessTags": [
-        "リソース切れ"
       ],
       "note": "シミュレーター用サンプルデッキ。",
       "source": "repo_sample"
@@ -143,7 +136,7 @@
     },
     {
       "playerId": "player-maito",
-      "deckId": "ps-w-spellboost",
+      "deckId": "ps-w-earth-rite",
       "status": "trainable",
       "practiceCost": 3,
       "note": "練習負荷の警告表示に使う。"
@@ -171,7 +164,7 @@
     },
     {
       "playerId": "player-maito",
-      "deckId": "ps-nm-artifact",
+      "deckId": "ps-nm-destruction",
       "status": "hard",
       "practiceCost": 5,
       "note": ""
@@ -192,7 +185,7 @@
     },
     {
       "playerId": "player-glory",
-      "deckId": "ps-w-spellboost",
+      "deckId": "ps-w-earth-rite",
       "status": "available",
       "practiceCost": 1,
       "note": ""
@@ -220,7 +213,7 @@
     },
     {
       "playerId": "player-glory",
-      "deckId": "ps-nm-artifact",
+      "deckId": "ps-nm-destruction",
       "status": "available",
       "practiceCost": 1,
       "note": ""
@@ -241,7 +234,7 @@
     },
     {
       "playerId": "player-toby",
-      "deckId": "ps-w-spellboost",
+      "deckId": "ps-w-earth-rite",
       "status": "trainable",
       "practiceCost": 2,
       "note": ""
@@ -269,7 +262,7 @@
     },
     {
       "playerId": "player-toby",
-      "deckId": "ps-nm-artifact",
+      "deckId": "ps-nm-destruction",
       "status": "confident",
       "practiceCost": 0,
       "note": ""
@@ -285,7 +278,7 @@
         "deckIds": [
           "deck-e-1779172826463",
           "deck-r-1778681117704",
-          "ps-w-spellboost"
+          "ps-w-earth-rite"
         ]
       },
       {
@@ -301,7 +294,7 @@
         "playerId": "player-toby",
         "deckIds": [
           "deck-1778742968583",
-          "ps-nm-artifact"
+          "ps-nm-destruction"
         ]
       }
     ]
@@ -320,7 +313,7 @@
       "note": ""
     },
     {
-      "deckIdA": "ps-w-spellboost",
+      "deckIdA": "ps-w-earth-rite",
       "deckIdB": "deck-b-1778743160748",
       "winRateForA": 0.58,
       "note": ""
@@ -335,7 +328,7 @@
         "selfCandidateDeckIds": [
           "deck-e-1779172826463",
           "deck-r-1778681117704",
-          "ps-w-spellboost"
+          "ps-w-earth-rite"
         ],
         "opponentCandidateDeckIds": [
           "ps-d-ramp",
@@ -359,13 +352,13 @@
         "roundNumber": 2,
         "selfCandidateDeckIds": [
           "deck-r-1778681117704",
-          "ps-w-spellboost",
-          "ps-nm-artifact"
+          "ps-w-earth-rite",
+          "ps-nm-destruction"
         ],
         "opponentCandidateDeckIds": [
           "deck-1778742968583",
           "deck-b-1778743160748",
-          "ps-nm-artifact"
+          "ps-nm-destruction"
         ],
         "selfSelectedDeckId": "deck-r-1778681117704",
         "opponentSelectedDeckId": "deck-1778742968583",
@@ -385,15 +378,15 @@
       {
         "roundNumber": 3,
         "selfCandidateDeckIds": [
-          "ps-w-spellboost",
+          "ps-w-earth-rite",
           "ps-d-ramp",
           "deck-b-1778743160748"
         ],
         "opponentCandidateDeckIds": [
           "deck-b-1778743160748",
-          "ps-nm-artifact"
+          "ps-nm-destruction"
         ],
-        "selfSelectedDeckId": "ps-w-spellboost",
+        "selfSelectedDeckId": "ps-w-earth-rite",
         "opponentSelectedDeckId": "deck-b-1778743160748",
         "selfWinRate": 0.58,
         "result": "self_win",
@@ -401,7 +394,7 @@
           "self": [
             "deck-e-1779172826463",
             "deck-r-1778681117704",
-            "ps-w-spellboost"
+            "ps-w-earth-rite"
           ],
           "opponent": [
             "ps-d-ramp",
