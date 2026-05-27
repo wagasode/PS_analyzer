@@ -15,6 +15,7 @@ from ps_simulator_ui import (  # noqa: E402
     read_ps_simulator_sample_dataset,
     render_ps_simulator_html,
     write_ps_simulator_assets,
+    battle_candidate_deck_ids_for_round,
 )
 
 
@@ -25,6 +26,13 @@ class PsSimulatorUiTest(unittest.TestCase):
         self.assertIn('const datasetUrl = "data/ps_simulator/sample_dataset.json";', html)
         self.assertIn("fetch(datasetUrl)", html)
         self.assertIn("function validateSubmission(submission)", html)
+        self.assertIn("function candidateDeckIdsForRound(submission, roundNumber, usedDeckIds)", html)
+        self.assertIn("バトル進行MVP", html)
+        self.assertIn("現在の提出案を自分側にセット", html)
+        self.assertIn("暫定勝率", html)
+        self.assertIn("相性表未接続のため暫定0.5を使用しています。", html)
+        self.assertIn("function rollBattleRound()", html)
+        self.assertIn("function battlePreviewPayload()", html)
         self.assertIn("PlayerDeckStatus 行なし", html)
         self.assertIn("データなし / 要確認", html)
         self.assertIn("deck-class-group", html)
@@ -65,6 +73,27 @@ class PsSimulatorUiTest(unittest.TestCase):
             self.assertTrue(public_dataset_path.exists())
             copied_dataset = json.loads(public_dataset_path.read_text(encoding="utf-8"))
             self.assertEqual(copied_dataset, source_dataset)
+
+    def test_battle_candidate_generation_supports_r4_r5_minimum_flow(self) -> None:
+        submission = read_ps_simulator_sample_dataset()["sampleSubmission"]
+
+        r1_candidates = battle_candidate_deck_ids_for_round(submission, 1, set())
+        r2_candidates = battle_candidate_deck_ids_for_round(submission, 2, set())
+        r3_candidates = battle_candidate_deck_ids_for_round(submission, 3, set())
+
+        self.assertEqual(len(r1_candidates), 3)
+        self.assertEqual(len(r2_candidates), 2)
+        self.assertEqual(len(r3_candidates), 2)
+
+        used_after_r3 = {r1_candidates[0], r2_candidates[0], r3_candidates[0]}
+        r4_candidates = battle_candidate_deck_ids_for_round(submission, 4, used_after_r3)
+        self.assertEqual(len(r4_candidates), 4)
+        self.assertTrue(used_after_r3.isdisjoint(r4_candidates))
+
+        used_after_r4 = used_after_r3 | {r4_candidates[0]}
+        r5_candidates = battle_candidate_deck_ids_for_round(submission, 5, used_after_r4)
+        self.assertEqual(len(r5_candidates), 3)
+        self.assertTrue(used_after_r4.isdisjoint(r5_candidates))
 
 
 if __name__ == "__main__":

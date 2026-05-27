@@ -8,6 +8,30 @@ from typing import Any
 ROOT_DIR = Path(__file__).resolve().parents[1]
 PS_SIMULATOR_SAMPLE_DATASET_PATH = ROOT_DIR / "data" / "ps_simulator" / "sample_dataset.json"
 PS_SIMULATOR_PUBLIC_DATASET_PATH = Path("data") / "ps_simulator" / "sample_dataset.json"
+ROUND_ROLE_BY_NUMBER = {1: "A", 2: "B", 3: "C"}
+
+
+def submission_deck_ids(submission: dict[str, Any]) -> list[str]:
+    deck_ids: list[str] = []
+    for assignment in submission.get("assignments", []):
+        deck_ids.extend(assignment.get("deckIds", []))
+    return deck_ids
+
+
+def battle_candidate_deck_ids_for_round(
+    submission: dict[str, Any],
+    round_number: int,
+    used_deck_ids: set[str],
+) -> list[str]:
+    if round_number in ROUND_ROLE_BY_NUMBER:
+        role = ROUND_ROLE_BY_NUMBER[round_number]
+        for assignment in submission.get("assignments", []):
+            if assignment.get("role") == role:
+                return [deck_id for deck_id in assignment.get("deckIds", []) if deck_id not in used_deck_ids]
+        return []
+    if round_number in {4, 5}:
+        return [deck_id for deck_id in submission_deck_ids(submission) if deck_id not in used_deck_ids]
+    raise ValueError(f"unsupported round_number: {round_number}")
 
 
 PS_SIMULATOR_HTML = """<!doctype html>
@@ -145,6 +169,16 @@ PS_SIMULATOR_HTML = """<!doctype html>
     }
 
     select {
+      min-height: 36px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0 10px;
+      background: var(--panel);
+      color: var(--text);
+      font: inherit;
+    }
+
+    input[type="text"] {
       min-height: 36px;
       border: 1px solid var(--border);
       border-radius: 6px;
@@ -443,6 +477,94 @@ PS_SIMULATOR_HTML = """<!doctype html>
       gap: 8px;
     }
 
+    .battle-submissions,
+    .battle-status-grid,
+    .battle-round-grid,
+    .battle-deck-lists {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .battle-card,
+    .battle-round,
+    .battle-submission,
+    .battle-list {
+      display: grid;
+      gap: 9px;
+      min-width: 0;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      background: #f8fafc;
+    }
+
+    .battle-card.ended {
+      border-color: #99f6e4;
+      background: var(--accent-soft);
+    }
+
+    .battle-card.blocked {
+      border-color: #fdba74;
+      background: var(--warn-soft);
+    }
+
+    .battle-controls {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .choice-list,
+    .battle-progress {
+      display: grid;
+      gap: 8px;
+    }
+
+    .choice-button {
+      justify-content: flex-start;
+      min-height: 0;
+      width: 100%;
+      padding: 10px;
+      text-align: left;
+      white-space: normal;
+    }
+
+    .choice-button.selected {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .choice-button:disabled {
+      cursor: not-allowed;
+      opacity: 0.62;
+      box-shadow: none;
+    }
+
+    .progress-item {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+      background: #fff;
+    }
+
+    .progress-item.current {
+      border-color: #99f6e4;
+      background: var(--accent-soft);
+    }
+
+    .progress-item.done {
+      border-color: #cbd5e1;
+    }
+
+    .scoreline {
+      font-size: 20px;
+      font-weight: 700;
+    }
+
     .validation-section {
       display: grid;
       gap: 8px;
@@ -554,7 +676,11 @@ PS_SIMULATOR_HTML = """<!doctype html>
 
     @media (max-width: 980px) {
       .layout,
-      .role-grid {
+      .role-grid,
+      .battle-submissions,
+      .battle-status-grid,
+      .battle-round-grid,
+      .battle-deck-lists {
         grid-template-columns: 1fr;
       }
     }
@@ -623,6 +749,34 @@ PS_SIMULATOR_HTML = """<!doctype html>
             </div>
           </section>
 
+          <section class="panel" aria-labelledby="battle-title">
+            <div class="panel-head">
+              <div>
+                <h2 id="battle-title">バトル進行MVP</h2>
+                <div class="hint">提出案を自分側・相手側にセットして、R1〜R5を手動選出で進めます。</div>
+              </div>
+              <span class="badge" id="battle-state-badge">未開始</span>
+            </div>
+            <div class="panel-body stack">
+              <div class="control-row">
+                <div class="battle-controls">
+                  <button class="primary" id="set-self-submission" type="button">現在の提出案を自分側にセット</button>
+                  <button id="set-opponent-submission" type="button">現在の提出案を相手側にセット</button>
+                  <button id="reset-battle-sample" type="button">サンプルで両側リセット</button>
+                  <button id="reset-battle-progress" type="button">バトルをやり直す</button>
+                </div>
+                <label class="field">抽選seed
+                  <input id="battle-seed" type="text" value="sample-seed-001">
+                </label>
+              </div>
+              <div class="battle-submissions" id="battle-submissions"></div>
+              <div class="battle-status-grid" id="battle-status-grid"></div>
+              <div class="battle-round" id="battle-current-round"></div>
+              <div class="battle-deck-lists" id="battle-deck-lists"></div>
+              <div class="battle-progress" id="battle-progress"></div>
+            </div>
+          </section>
+
         </div>
 
         <aside class="stack">
@@ -688,7 +842,8 @@ PS_SIMULATOR_HTML = """<!doctype html>
     const state = {
       dataset: null,
       side: "self",
-      assignments: {}
+      assignments: {},
+      battle: null
     };
 
     function escapeHtml(value) {
@@ -887,6 +1042,510 @@ PS_SIMULATOR_HTML = """<!doctype html>
       };
     }
 
+    function cloneJson(value) {
+      return JSON.parse(JSON.stringify(value));
+    }
+
+    function normalizeSubmissionForSide(submission, side) {
+      return {
+        submissionId: submission?.submissionId || `draft-${side}-submission`,
+        side,
+        assignments: roles.map(roleDef => {
+          const source = (submission?.assignments || []).find(assignment => assignment.role === roleDef.role) || {};
+          return {
+            role: roleDef.role,
+            playerId: source.playerId || "",
+            deckIds: [...(source.deckIds || [])].sort(byDeckOrder)
+          };
+        })
+      };
+    }
+
+    function sampleSubmissionForSide(side) {
+      const sample = cloneJson(state.dataset?.sampleSubmission || { assignments: [] });
+      sample.side = side;
+      sample.submissionId = side === "self" ? "sample-self-submission" : "sample-opponent-submission";
+      return normalizeSubmissionForSide(sample, side);
+    }
+
+    function initializeBattleState() {
+      state.battle = {
+        seed: "sample-seed-001",
+        selfSubmission: sampleSubmissionForSide("self"),
+        opponentSubmission: sampleSubmissionForSide("opponent"),
+        rounds: [],
+        score: { self: 0, opponent: 0 },
+        isComplete: false,
+        winner: ""
+      };
+      resetBattleProgress(false);
+    }
+
+    function assignmentByRole(submission, role) {
+      return (submission?.assignments || []).find(assignment => assignment.role === role) || null;
+    }
+
+    function submissionDeckIds(submission) {
+      return (submission?.assignments || []).flatMap(assignment => assignment.deckIds || []);
+    }
+
+    function candidateDeckIdsForRound(submission, roundNumber, usedDeckIds) {
+      const used = new Set(usedDeckIds || []);
+      if (roundNumber === 1) {
+        return [...(assignmentByRole(submission, "A")?.deckIds || [])].filter(deckId => !used.has(deckId));
+      }
+      if (roundNumber === 2) {
+        return [...(assignmentByRole(submission, "B")?.deckIds || [])].filter(deckId => !used.has(deckId));
+      }
+      if (roundNumber === 3) {
+        return [...(assignmentByRole(submission, "C")?.deckIds || [])].filter(deckId => !used.has(deckId));
+      }
+      if (roundNumber === 4 || roundNumber === 5) {
+        return submissionDeckIds(submission).filter(deckId => !used.has(deckId));
+      }
+      return [];
+    }
+
+    function scoreFromRounds(rounds) {
+      return rounds.reduce((score, round) => {
+        if (round.result === "self_win") score.self += 1;
+        if (round.result === "opponent_win") score.opponent += 1;
+        return score;
+      }, { self: 0, opponent: 0 });
+    }
+
+    function usedDeckIdsForSide(side) {
+      return (state.battle?.rounds || [])
+        .filter(round => round.result)
+        .map(round => side === "self" ? round.selfSelectedDeckId : round.opponentSelectedDeckId)
+        .filter(Boolean);
+    }
+
+    function createBattleRound(roundNumber) {
+      const selfUsed = usedDeckIdsForSide("self");
+      const opponentUsed = usedDeckIdsForSide("opponent");
+      return {
+        roundNumber,
+        selfCandidateDeckIds: candidateDeckIdsForRound(state.battle.selfSubmission, roundNumber, selfUsed),
+        opponentCandidateDeckIds: candidateDeckIdsForRound(state.battle.opponentSubmission, roundNumber, opponentUsed),
+        selfSelectedDeckId: "",
+        opponentSelectedDeckId: "",
+        selfWinRate: 0.5,
+        winRateNote: "選択前です。",
+        result: "",
+        selfUsedDeckIds: [...selfUsed],
+        opponentUsedDeckIds: [...opponentUsed],
+        score: { ...state.battle.score }
+      };
+    }
+
+    function resetBattleProgress(shouldRender = true) {
+      if (!state.battle) return;
+      state.battle.rounds = [];
+      state.battle.score = { self: 0, opponent: 0 };
+      state.battle.isComplete = false;
+      state.battle.winner = "";
+      state.battle.rounds.push(createBattleRound(1));
+      if (shouldRender) render();
+    }
+
+    function resetBattleToSamples() {
+      if (!state.dataset) return;
+      const seed = state.battle?.seed || "sample-seed-001";
+      state.battle = {
+        seed,
+        selfSubmission: sampleSubmissionForSide("self"),
+        opponentSubmission: sampleSubmissionForSide("opponent"),
+        rounds: [],
+        score: { self: 0, opponent: 0 },
+        isComplete: false,
+        winner: ""
+      };
+      resetBattleProgress();
+    }
+
+    function activeBattleRound() {
+      if (state.battle?.isComplete) return null;
+      return (state.battle?.rounds || []).find(round => !round.result) || null;
+    }
+
+    function lookupSelfWinRate(selfDeckId, opponentDeckId) {
+      const matchup = (state.dataset?.sampleMatchups || []).find(item => (
+        item.deckIdA === selfDeckId && item.deckIdB === opponentDeckId
+      ));
+      if (matchup) {
+        return {
+          winRate: Number(matchup.winRateForA),
+          note: "sampleMatchupsの暫定値を使用しています。"
+        };
+      }
+      const reverseMatchup = (state.dataset?.sampleMatchups || []).find(item => (
+        item.deckIdA === opponentDeckId && item.deckIdB === selfDeckId
+      ));
+      if (reverseMatchup) {
+        return {
+          winRate: 1 - Number(reverseMatchup.winRateForA),
+          note: "sampleMatchupsの逆向き暫定値を使用しています。"
+        };
+      }
+      return {
+        winRate: 0.5,
+        note: "相性表未接続のため暫定0.5を使用しています。"
+      };
+    }
+
+    function updateRoundWinRate(round) {
+      if (!round.selfSelectedDeckId || !round.opponentSelectedDeckId) {
+        round.selfWinRate = 0.5;
+        round.winRateNote = "選択前です。";
+        return;
+      }
+      const lookup = lookupSelfWinRate(round.selfSelectedDeckId, round.opponentSelectedDeckId);
+      round.selfWinRate = lookup.winRate;
+      round.winRateNote = lookup.note;
+    }
+
+    function setBattleSubmission(side, submission) {
+      if (!state.battle) initializeBattleState();
+      state.battle[side === "self" ? "selfSubmission" : "opponentSubmission"] =
+        normalizeSubmissionForSide(submission, side);
+      resetBattleProgress();
+    }
+
+    function canUseBattleSubmission(submission) {
+      return validateSubmission(submission).canStartBattle;
+    }
+
+    function selectBattleDeck(side, deckId) {
+      const round = activeBattleRound();
+      if (!round) return;
+      const candidates = side === "self" ? round.selfCandidateDeckIds : round.opponentCandidateDeckIds;
+      const used = new Set(usedDeckIdsForSide(side));
+      if (!candidates.includes(deckId) || used.has(deckId)) return;
+      if (side === "self") {
+        round.selfSelectedDeckId = deckId;
+      } else {
+        round.opponentSelectedDeckId = deckId;
+      }
+      updateRoundWinRate(round);
+      render();
+    }
+
+    function deterministicUnitInterval(seedText) {
+      let hash = 2166136261;
+      for (const char of String(seedText)) {
+        hash ^= char.charCodeAt(0);
+        hash = Math.imul(hash, 16777619);
+      }
+      hash += hash << 13;
+      hash ^= hash >>> 7;
+      hash += hash << 3;
+      hash ^= hash >>> 17;
+      hash += hash << 5;
+      return (hash >>> 0) / 4294967296;
+    }
+
+    function rollBattleRound() {
+      const round = activeBattleRound();
+      if (!round || !round.selfSelectedDeckId || !round.opponentSelectedDeckId) return;
+      updateRoundWinRate(round);
+      const roll = deterministicUnitInterval([
+        state.battle.seed,
+        round.roundNumber,
+        round.selfSelectedDeckId,
+        round.opponentSelectedDeckId
+      ].join("|"));
+      decideBattleRound(roll < round.selfWinRate ? "self_win" : "opponent_win");
+    }
+
+    function decideBattleRound(result) {
+      const round = activeBattleRound();
+      if (!round || !round.selfSelectedDeckId || !round.opponentSelectedDeckId) return;
+      updateRoundWinRate(round);
+      round.result = result;
+      state.battle.score = scoreFromRounds(state.battle.rounds);
+      round.selfUsedDeckIds = usedDeckIdsForSide("self");
+      round.opponentUsedDeckIds = usedDeckIdsForSide("opponent");
+      round.score = { ...state.battle.score };
+
+      if (state.battle.score.self >= 3 || state.battle.score.opponent >= 3 || round.roundNumber >= 5) {
+        state.battle.isComplete = true;
+        state.battle.winner = state.battle.score.self > state.battle.score.opponent ? "self" : "opponent";
+      } else {
+        state.battle.rounds.push(createBattleRound(round.roundNumber + 1));
+      }
+      render();
+    }
+
+    function formatWinRate(value) {
+      return `${Math.round(Number(value) * 100)}%`;
+    }
+
+    function resultLabel(result) {
+      if (result === "self_win") return "自分勝ち";
+      if (result === "opponent_win") return "相手勝ち";
+      return "未決定";
+    }
+
+    function deckLabel(deckId) {
+      const deck = deckById(deckId);
+      return deck ? deck.deckName : deckId || "未選択";
+    }
+
+    function deckSummaryHtml(deckId) {
+      const deck = deckById(deckId);
+      if (!deck) return `<span class="badge">${escapeHtml(deckId || "未選択")}</span>`;
+      return `<span>${classBadgeHtml(deck.className)} <strong>${escapeHtml(deck.deckName)}</strong></span>`;
+    }
+
+    function submissionSummaryHtml(label, submission) {
+      const validation = validateSubmission(submission);
+      const assignments = roles.map(roleDef => {
+        const assignment = assignmentByRole(submission, roleDef.role) || {};
+        const player = playerById(assignment.playerId);
+        const deckNames = (assignment.deckIds || []).map(deckId => deckLabel(deckId)).join("、") || "未選択";
+        return `
+          <div>
+            <strong>${escapeHtml(roleDef.role)}</strong>
+            ${escapeHtml(player?.playerName || assignment.playerId || "未選択")}
+            <div class="source-note">${escapeHtml(deckNames)}</div>
+          </div>
+        `;
+      }).join("");
+      return `
+        <section class="battle-submission">
+          <div class="deck-class-group-head">
+            <h3>${escapeHtml(label)}</h3>
+            <span class="badge ${validation.canStartBattle ? "ok" : "warn"}">
+              ${validation.canStartBattle ? "使用可能" : "提出案未成立"}
+            </span>
+          </div>
+          ${assignments}
+        </section>
+      `;
+    }
+
+    function renderChoiceList(side, round) {
+      const candidates = side === "self" ? round.selfCandidateDeckIds : round.opponentCandidateDeckIds;
+      const selectedDeckId = side === "self" ? round.selfSelectedDeckId : round.opponentSelectedDeckId;
+      const used = new Set(usedDeckIdsForSide(side));
+      if (candidates.length === 0) {
+        return `<div class="validation-item warn">候補デッキがありません。</div>`;
+      }
+      return `
+        <div class="choice-list">
+          ${candidates.map(deckId => {
+            const usedDeck = used.has(deckId);
+            const selected = selectedDeckId === deckId;
+            const disabled = usedDeck || Boolean(round.result) || state.battle.isComplete;
+            return `
+              <button
+                class="choice-button ${selected ? "selected" : ""}"
+                type="button"
+                data-battle-side="${escapeHtml(side)}"
+                data-battle-deck-id="${escapeHtml(deckId)}"
+                ${disabled ? "disabled" : ""}
+              >
+                ${deckSummaryHtml(deckId)}
+                ${usedDeck ? `<span class="badge warn">使用済み</span>` : ""}
+              </button>
+            `;
+          }).join("")}
+        </div>
+      `;
+    }
+
+    function renderDeckList(title, deckIds) {
+      return `
+        <section class="battle-list">
+          <div class="deck-class-group-head">
+            <h3>${escapeHtml(title)}</h3>
+            <span class="badge">${deckIds.length}デッキ</span>
+          </div>
+          <div class="badge-row">
+            ${deckIds.length
+              ? deckIds.map(deckId => `<span class="badge">${escapeHtml(deckLabel(deckId))}</span>`).join("")
+              : `<span class="source-note">なし</span>`}
+          </div>
+        </section>
+      `;
+    }
+
+    function renderBattleStatus() {
+      const battle = state.battle;
+      const active = activeBattleRound();
+      const currentRoundLabel = battle.isComplete ? "終了済み" : `R${active?.roundNumber || 1}`;
+      const resultText = battle.isComplete
+        ? `最終結果: ${battle.winner === "self" ? "自分勝利" : "相手勝利"}`
+        : "進行中";
+      document.getElementById("battle-state-badge").className = `badge ${battle.isComplete ? "ok" : "warn"}`;
+      document.getElementById("battle-state-badge").textContent = battle.isComplete ? "マッチ終了" : "進行中";
+      document.getElementById("battle-status-grid").innerHTML = [
+        `
+          <section class="battle-card ${battle.isComplete ? "ended" : ""}">
+            <h3>現在スコア</h3>
+            <div class="scoreline">自分 ${battle.score.self} - ${battle.score.opponent} 相手</div>
+            <div class="source-note">現在ラウンド: ${escapeHtml(currentRoundLabel)}</div>
+          </section>
+        `,
+        `
+          <section class="battle-card ${battle.isComplete ? "ended" : ""}">
+            <h3>マッチ状態</h3>
+            <div><strong>${escapeHtml(resultText)}</strong></div>
+            <div class="source-note">3勝先取で終了します。</div>
+          </section>
+        `
+      ].join("");
+    }
+
+    function renderCurrentRound() {
+      const battle = state.battle;
+      const active = activeBattleRound();
+      if (!active) {
+        document.getElementById("battle-current-round").innerHTML = `
+          <div class="battle-card ended">
+            <h3>マッチ終了</h3>
+            <div class="scoreline">最終結果: ${battle.winner === "self" ? "自分勝利" : "相手勝利"}</div>
+          </div>
+        `;
+        return;
+      }
+      const canDecide = active.selfSelectedDeckId && active.opponentSelectedDeckId && !active.result;
+      document.getElementById("battle-current-round").innerHTML = `
+        <div class="deck-class-group-head">
+          <div>
+            <h3>R${active.roundNumber} 選出</h3>
+            <div class="source-note">暫定勝率: ${formatWinRate(active.selfWinRate)} / ${escapeHtml(active.winRateNote)}</div>
+          </div>
+          <span class="badge">${escapeHtml(resultLabel(active.result))}</span>
+        </div>
+        <div class="battle-round-grid">
+          <section class="battle-card">
+            <div class="deck-class-group-head">
+              <h3>自分側候補</h3>
+              <span class="badge">${active.selfCandidateDeckIds.length}デッキ</span>
+            </div>
+            ${renderChoiceList("self", active)}
+          </section>
+          <section class="battle-card">
+            <div class="deck-class-group-head">
+              <h3>相手側候補</h3>
+              <span class="badge">${active.opponentCandidateDeckIds.length}デッキ</span>
+            </div>
+            ${renderChoiceList("opponent", active)}
+          </section>
+        </div>
+        <div class="battle-controls">
+          <button class="primary" id="roll-round" type="button" ${canDecide ? "" : "disabled"}>抽選</button>
+          <button id="manual-self-win" type="button" ${canDecide ? "" : "disabled"}>手動: 自分勝ち</button>
+          <button id="manual-opponent-win" type="button" ${canDecide ? "" : "disabled"}>手動: 相手勝ち</button>
+        </div>
+      `;
+    }
+
+    function renderBattleDeckLists() {
+      const selfUsed = usedDeckIdsForSide("self");
+      const opponentUsed = usedDeckIdsForSide("opponent");
+      const selfRemaining = submissionDeckIds(state.battle.selfSubmission).filter(deckId => !selfUsed.includes(deckId));
+      const opponentRemaining = submissionDeckIds(state.battle.opponentSubmission).filter(deckId => !opponentUsed.includes(deckId));
+      document.getElementById("battle-deck-lists").innerHTML = [
+        renderDeckList("自分側 使用済み", selfUsed),
+        renderDeckList("相手側 使用済み", opponentUsed),
+        renderDeckList("自分側 残りデッキ", selfRemaining),
+        renderDeckList("相手側 残りデッキ", opponentRemaining)
+      ].join("");
+    }
+
+    function renderBattleProgress() {
+      const rows = [1, 2, 3, 4, 5].map(roundNumber => {
+        const round = state.battle.rounds.find(item => item.roundNumber === roundNumber);
+        const isCurrent = activeBattleRound()?.roundNumber === roundNumber;
+        if (!round) {
+          return `<div class="progress-item"><strong>R${roundNumber}</strong>: 未選択</div>`;
+        }
+        const selfDeck = round.selfSelectedDeckId ? deckLabel(round.selfSelectedDeckId) : "未選択";
+        const opponentDeck = round.opponentSelectedDeckId ? deckLabel(round.opponentSelectedDeckId) : "未選択";
+        const className = round.result ? "progress-item done" : isCurrent ? "progress-item current" : "progress-item";
+        return `
+          <div class="${className}">
+            <strong>R${roundNumber}</strong>:
+            自分 ${escapeHtml(selfDeck)} vs 相手 ${escapeHtml(opponentDeck)} / ${escapeHtml(resultLabel(round.result))}
+          </div>
+        `;
+      }).join("");
+      document.getElementById("battle-progress").innerHTML = rows;
+    }
+
+    function battlePreviewPayload() {
+      if (!state.battle) return null;
+      return {
+        seed: state.battle.seed,
+        selfSubmissionId: state.battle.selfSubmission.submissionId,
+        opponentSubmissionId: state.battle.opponentSubmission.submissionId,
+        rounds: state.battle.rounds.map(round => ({
+          roundNumber: round.roundNumber,
+          selfCandidateDeckIds: round.selfCandidateDeckIds,
+          opponentCandidateDeckIds: round.opponentCandidateDeckIds,
+          selfSelectedDeckId: round.selfSelectedDeckId,
+          opponentSelectedDeckId: round.opponentSelectedDeckId,
+          selfWinRate: round.selfWinRate,
+          result: round.result,
+          selfUsedDeckIds: round.selfUsedDeckIds,
+          opponentUsedDeckIds: round.opponentUsedDeckIds,
+          score: round.score
+        })),
+        finalResult: state.battle.isComplete ? {
+          winner: state.battle.winner,
+          selfWins: state.battle.score.self,
+          opponentWins: state.battle.score.opponent
+        } : null
+      };
+    }
+
+    function renderBattle(validation) {
+      if (!state.battle) initializeBattleState();
+      const battle = state.battle;
+      const currentSubmissionReady = validation.canStartBattle;
+      document.getElementById("set-self-submission").disabled = !currentSubmissionReady;
+      document.getElementById("set-opponent-submission").disabled = !currentSubmissionReady;
+      document.getElementById("battle-seed").value = battle.seed;
+      document.getElementById("battle-submissions").innerHTML = [
+        submissionSummaryHtml("自分側提出案", battle.selfSubmission),
+        submissionSummaryHtml("相手側提出案", battle.opponentSubmission)
+      ].join("");
+
+      const selfReady = canUseBattleSubmission(battle.selfSubmission);
+      const opponentReady = canUseBattleSubmission(battle.opponentSubmission);
+      if (!selfReady || !opponentReady) {
+        document.getElementById("battle-state-badge").className = "badge warn";
+        document.getElementById("battle-state-badge").textContent = "提出案未成立";
+        document.getElementById("battle-status-grid").innerHTML = `
+          <section class="battle-card blocked">
+            <h3>バトル開始不可</h3>
+            <div>自分側・相手側の提出案を3/2/2、7クラスで成立させてください。</div>
+          </section>
+        `;
+        document.getElementById("battle-current-round").innerHTML = "";
+        document.getElementById("battle-deck-lists").innerHTML = "";
+        document.getElementById("battle-progress").innerHTML = "";
+        return;
+      }
+
+      renderBattleStatus();
+      renderCurrentRound();
+      renderBattleDeckLists();
+      renderBattleProgress();
+
+      document.querySelectorAll("[data-battle-side]").forEach(button => {
+        button.addEventListener("click", event => {
+          selectBattleDeck(event.currentTarget.dataset.battleSide, event.currentTarget.dataset.battleDeckId);
+        });
+      });
+      document.getElementById("roll-round")?.addEventListener("click", rollBattleRound);
+      document.getElementById("manual-self-win")?.addEventListener("click", () => decideBattleRound("self_win"));
+      document.getElementById("manual-opponent-win")?.addEventListener("click", () => decideBattleRound("opponent_win"));
+    }
+
     function selectedEntries(submission) {
       return submission.assignments.flatMap(assignment => (
         assignment.deckIds.map(deckId => ({
@@ -994,6 +1653,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
     function previewPayload(submission, validation) {
       return {
         submission,
+        battle: battlePreviewPayload(),
         validation: {
           canStartBattle: validation.canStartBattle,
           errors: validation.errors,
@@ -1225,6 +1885,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
       renderDataSummary();
       renderBuilder(validation);
       renderValidation(validation);
+      renderBattle(validation);
       renderReferences();
       document.getElementById("json-preview").textContent =
         JSON.stringify(previewPayload(submission, validation), null, 2);
@@ -1237,6 +1898,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
       }
       state.dataset = await response.json();
       loadSampleSubmission();
+      initializeBattleState();
       render();
     }
 
@@ -1251,6 +1913,26 @@ PS_SIMULATOR_HTML = """<!doctype html>
     });
 
     document.getElementById("clear-decks").addEventListener("click", clearDeckSelections);
+
+    document.getElementById("set-self-submission").addEventListener("click", () => {
+      setBattleSubmission("self", currentSubmission());
+    });
+
+    document.getElementById("set-opponent-submission").addEventListener("click", () => {
+      setBattleSubmission("opponent", currentSubmission());
+    });
+
+    document.getElementById("reset-battle-sample").addEventListener("click", resetBattleToSamples);
+
+    document.getElementById("reset-battle-progress").addEventListener("click", () => {
+      resetBattleProgress();
+    });
+
+    document.getElementById("battle-seed").addEventListener("input", event => {
+      if (!state.battle) return;
+      state.battle.seed = event.target.value || "sample-seed-001";
+      render();
+    });
 
     loadDataset().catch(error => {
       document.getElementById("dataset-meta").textContent = error.message;

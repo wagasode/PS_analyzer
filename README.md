@@ -249,10 +249,12 @@ archive timelines, deck usage lookup, and links back to the GitHub Actions run
 when built in CI.
 
 The generated `ps-simulator.html` page uses only
-`data/ps_simulator/sample_dataset.json` for the deck submission MVP. It lets the
+`data/ps_simulator/sample_dataset.json` for the PS simulator MVP. It lets the
 user draft a 7-class submission, assign decks to A/B/C as 3/2/2, inspect
-PlayerDeckStatus risks, and preview JSON. Google Sheets import, matchup loading,
-battle simulation, and replay logging are intentionally outside this build step.
+PlayerDeckStatus risks, run a browser-state R1-R5 battle with manual deck
+selection, and preview JSON. Google Sheets import, full matchup loading,
+persistent BattleLog storage, and replay logging are intentionally outside this
+build step.
 
 After the `Collect streaming data` workflow completes successfully, the
 `Publish dashboard` workflow deploys the dashboard to Cloudflare Pages.
