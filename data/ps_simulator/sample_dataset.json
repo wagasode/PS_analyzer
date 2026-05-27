@@ -117,6 +117,12 @@
       "playerName": "Toby",
       "team": "MURASH GAMING",
       "note": "サンプル提出C担当。"
+    },
+    {
+      "playerId": "player-spicies",
+      "playerName": "Spicies",
+      "team": "MURASH GAMING",
+      "note": "サンプルの提出担当候補。"
     }
   ],
   "playerDeckStatuses": [
