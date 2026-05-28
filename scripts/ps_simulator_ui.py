@@ -9,13 +9,25 @@ ROOT_DIR = Path(__file__).resolve().parents[1]
 PS_SIMULATOR_SAMPLE_DATASET_PATH = ROOT_DIR / "data" / "ps_simulator" / "sample_dataset.json"
 PS_SIMULATOR_PUBLIC_DATASET_PATH = Path("data") / "ps_simulator" / "sample_dataset.json"
 ROUND_ROLE_BY_NUMBER = {1: "A", 2: "B", 3: "C"}
+EXPECTED_ROUND_CANDIDATE_COUNTS = {1: 3, 2: 2, 3: 2, 4: 4, 5: 3}
+
+
+def unique_deck_ids(deck_ids: list[str]) -> list[str]:
+    seen: set[str] = set()
+    unique: list[str] = []
+    for deck_id in deck_ids:
+        if not deck_id or deck_id in seen:
+            continue
+        seen.add(deck_id)
+        unique.append(deck_id)
+    return unique
 
 
 def submission_deck_ids(submission: dict[str, Any]) -> list[str]:
     deck_ids: list[str] = []
     for assignment in submission.get("assignments", []):
         deck_ids.extend(assignment.get("deckIds", []))
-    return deck_ids
+    return unique_deck_ids(deck_ids)
 
 
 def battle_candidate_deck_ids_for_round(
@@ -27,11 +39,62 @@ def battle_candidate_deck_ids_for_round(
         role = ROUND_ROLE_BY_NUMBER[round_number]
         for assignment in submission.get("assignments", []):
             if assignment.get("role") == role:
-                return [deck_id for deck_id in assignment.get("deckIds", []) if deck_id not in used_deck_ids]
+                return [
+                    deck_id
+                    for deck_id in unique_deck_ids(assignment.get("deckIds", []))
+                    if deck_id not in used_deck_ids
+                ]
         return []
     if round_number in {4, 5}:
         return [deck_id for deck_id in submission_deck_ids(submission) if deck_id not in used_deck_ids]
     raise ValueError(f"unsupported round_number: {round_number}")
+
+
+def selected_deck_id_for_side(round_state: dict[str, Any], side: str) -> str:
+    if side == "self":
+        return str(round_state.get("selfSelectedDeckId") or "")
+    if side == "opponent":
+        return str(round_state.get("opponentSelectedDeckId") or "")
+    raise ValueError(f"unsupported side: {side}")
+
+
+def battle_used_deck_ids_for_side(
+    rounds: list[dict[str, Any]],
+    side: str,
+    *,
+    through_round_number: int | None = None,
+) -> list[str]:
+    deck_ids: list[str] = []
+    for round_state in rounds:
+        round_number = int(round_state.get("roundNumber") or 0)
+        if through_round_number is not None and round_number > through_round_number:
+            continue
+        deck_id = selected_deck_id_for_side(round_state, side)
+        if deck_id:
+            deck_ids.append(deck_id)
+    return unique_deck_ids(deck_ids)
+
+
+def battle_remaining_deck_ids_for_side(
+    submission: dict[str, Any],
+    used_deck_ids: list[str] | set[str],
+) -> list[str]:
+    used = set(used_deck_ids)
+    return [deck_id for deck_id in submission_deck_ids(submission) if deck_id not in used]
+
+
+def reset_battle_rounds_from(
+    rounds: list[dict[str, Any]],
+    round_number: int,
+) -> list[dict[str, Any]]:
+    return [round_state for round_state in rounds if int(round_state.get("roundNumber") or 0) < round_number]
+
+
+def validate_round_candidate_count(round_number: int, candidate_deck_ids: list[str]) -> list[str]:
+    expected = EXPECTED_ROUND_CANDIDATE_COUNTS.get(round_number)
+    if expected is None or len(candidate_deck_ids) == expected:
+        return []
+    return [f"R{round_number}候補は{expected}デッキ想定です。現在は{len(candidate_deck_ids)}デッキです。"]
 
 
 PS_SIMULATOR_HTML = """<!doctype html>
@@ -1336,6 +1399,8 @@ PS_SIMULATOR_HTML = """<!doctype html>
       { role: "B", expectedDeckCount: 2 },
       { role: "C", expectedDeckCount: 2 }
     ];
+    const roundRoleByNumber = { 1: "A", 2: "B", 3: "C" };
+    const expectedRoundCandidateCounts = { 1: 3, 2: 2, 3: 2, 4: 4, 5: 3 };
     const datasetUrl = "data/ps_simulator/sample_dataset.json";
     const statusLabels = {
       confident: "自信あり",
@@ -1710,25 +1775,36 @@ PS_SIMULATOR_HTML = """<!doctype html>
       return playerById(assignmentForDeck(submission, deckId)?.playerId);
     }
 
+    function uniqueDeckIds(deckIds) {
+      const seen = new Set();
+      return (deckIds || []).filter(deckId => {
+        if (!deckId || seen.has(deckId)) return false;
+        seen.add(deckId);
+        return true;
+      });
+    }
+
     function submissionDeckIds(submission) {
-      return (submission?.assignments || []).flatMap(assignment => assignment.deckIds || []);
+      return uniqueDeckIds((submission?.assignments || []).flatMap(assignment => assignment.deckIds || []));
     }
 
     function candidateDeckIdsForRound(submission, roundNumber, usedDeckIds) {
       const used = new Set(usedDeckIds || []);
-      if (roundNumber === 1) {
-        return [...(assignmentByRole(submission, "A")?.deckIds || [])].filter(deckId => !used.has(deckId));
-      }
-      if (roundNumber === 2) {
-        return [...(assignmentByRole(submission, "B")?.deckIds || [])].filter(deckId => !used.has(deckId));
-      }
-      if (roundNumber === 3) {
-        return [...(assignmentByRole(submission, "C")?.deckIds || [])].filter(deckId => !used.has(deckId));
+      const role = roundRoleByNumber[roundNumber];
+      if (role) {
+        return uniqueDeckIds(assignmentByRole(submission, role)?.deckIds || [])
+          .filter(deckId => !used.has(deckId));
       }
       if (roundNumber === 4 || roundNumber === 5) {
         return submissionDeckIds(submission).filter(deckId => !used.has(deckId));
       }
       return [];
+    }
+
+    function validateRoundCandidates(roundNumber, candidateDeckIds) {
+      const expected = expectedRoundCandidateCounts[roundNumber];
+      if (!expected || candidateDeckIds.length === expected) return [];
+      return [`R${roundNumber}候補は${expected}デッキ想定です。現在は${candidateDeckIds.length}デッキです。`];
     }
 
     function scoreFromRounds(rounds) {
@@ -1739,20 +1815,66 @@ PS_SIMULATOR_HTML = """<!doctype html>
       }, { self: 0, opponent: 0 });
     }
 
+    function selectedDeckIdForSide(round, side) {
+      return side === "self" ? round.selfSelectedDeckId : round.opponentSelectedDeckId;
+    }
+
+    function usedDeckIdsForSideFromRounds(rounds, side, options = {}) {
+      const throughRoundNumber = Object.prototype.hasOwnProperty.call(options, "throughRoundNumber")
+        ? options.throughRoundNumber
+        : null;
+      const hasRoundLimit = Number.isInteger(throughRoundNumber);
+      return uniqueDeckIds((rounds || []).filter(round => (
+        !hasRoundLimit || round.roundNumber <= throughRoundNumber
+      )).map(round => selectedDeckIdForSide(round, side)).filter(Boolean));
+    }
+
+    function usedDeckIdsBeforeRound(side, roundNumber) {
+      return usedDeckIdsForSideFromRounds(
+        state.battle?.rounds || [],
+        side,
+        { throughRoundNumber: roundNumber - 1 }
+      );
+    }
+
     function usedDeckIdsForSide(side) {
-      return (state.battle?.rounds || [])
-        .filter(round => round.result)
-        .map(round => side === "self" ? round.selfSelectedDeckId : round.opponentSelectedDeckId)
-        .filter(Boolean);
+      return usedDeckIdsForSideFromRounds(state.battle?.rounds || [], side);
+    }
+
+    function remainingDeckIdsForSide(side, usedDeckIds) {
+      const submission = side === "self" ? state.battle.selfSubmission : state.battle.opponentSubmission;
+      const used = new Set(usedDeckIds || []);
+      return submissionDeckIds(submission).filter(deckId => !used.has(deckId));
+    }
+
+    function refreshRoundUsageSnapshot(round) {
+      round.selfUsedDeckIds = usedDeckIdsForSideFromRounds(
+        state.battle.rounds,
+        "self",
+        { throughRoundNumber: round.roundNumber }
+      );
+      round.opponentUsedDeckIds = usedDeckIdsForSideFromRounds(
+        state.battle.rounds,
+        "opponent",
+        { throughRoundNumber: round.roundNumber }
+      );
+      round.selfRemainingDeckIds = remainingDeckIdsForSide("self", round.selfUsedDeckIds);
+      round.opponentRemainingDeckIds = remainingDeckIdsForSide("opponent", round.opponentUsedDeckIds);
+    }
+
+    function refreshBattleUsageSnapshots() {
+      (state.battle?.rounds || []).forEach(refreshRoundUsageSnapshot);
     }
 
     function createBattleRound(roundNumber) {
-      const selfUsed = usedDeckIdsForSide("self");
-      const opponentUsed = usedDeckIdsForSide("opponent");
-      return {
+      const selfUsed = usedDeckIdsBeforeRound("self", roundNumber);
+      const opponentUsed = usedDeckIdsBeforeRound("opponent", roundNumber);
+      const selfCandidateDeckIds = candidateDeckIdsForRound(state.battle.selfSubmission, roundNumber, selfUsed);
+      const opponentCandidateDeckIds = candidateDeckIdsForRound(state.battle.opponentSubmission, roundNumber, opponentUsed);
+      const round = {
         roundNumber,
-        selfCandidateDeckIds: candidateDeckIdsForRound(state.battle.selfSubmission, roundNumber, selfUsed),
-        opponentCandidateDeckIds: candidateDeckIdsForRound(state.battle.opponentSubmission, roundNumber, opponentUsed),
+        selfCandidateDeckIds,
+        opponentCandidateDeckIds,
         selfSelectedDeckId: "",
         opponentSelectedDeckId: "",
         selfWinRate: 0.5,
@@ -1760,8 +1882,28 @@ PS_SIMULATOR_HTML = """<!doctype html>
         result: "",
         selfUsedDeckIds: [...selfUsed],
         opponentUsedDeckIds: [...opponentUsed],
+        selfRemainingDeckIds: remainingDeckIdsForSide("self", selfUsed),
+        opponentRemainingDeckIds: remainingDeckIdsForSide("opponent", opponentUsed),
+        candidateWarnings: [
+          ...validateRoundCandidates(roundNumber, selfCandidateDeckIds).map(message => `自分側: ${message}`),
+          ...validateRoundCandidates(roundNumber, opponentCandidateDeckIds).map(message => `相手側: ${message}`)
+        ],
         score: { ...state.battle.score }
       };
+      return round;
+    }
+
+    function resetRoundsFrom(roundNumber, shouldRender = true) {
+      if (!state.battle) return;
+      // 現行UIでは過去ラウンドを直接編集しない。将来編集可能にする場合は、
+      // 後続状態を保持せず、この関数で編集ラウンド以降を作り直す。
+      state.battle.rounds = state.battle.rounds.filter(round => round.roundNumber < roundNumber);
+      state.battle.score = scoreFromRounds(state.battle.rounds);
+      state.battle.isComplete = false;
+      state.battle.winner = "";
+      state.battle.rounds.push(createBattleRound(roundNumber));
+      refreshBattleUsageSnapshots();
+      if (shouldRender) render();
     }
 
     function resetBattleProgress(shouldRender = true) {
@@ -1837,7 +1979,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
       const round = activeBattleRound();
       if (!round) return;
       const candidates = side === "self" ? round.selfCandidateDeckIds : round.opponentCandidateDeckIds;
-      const used = new Set(usedDeckIdsForSide(side));
+      const used = new Set(usedDeckIdsBeforeRound(side, round.roundNumber));
       if (!candidates.includes(deckId) || used.has(deckId)) return;
       if (side === "self") {
         round.selfSelectedDeckId = deckId;
@@ -1845,6 +1987,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
         round.opponentSelectedDeckId = deckId;
       }
       updateRoundWinRate(round);
+      refreshRoundUsageSnapshot(round);
       render();
     }
 
@@ -1881,8 +2024,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
       updateRoundWinRate(round);
       round.result = result;
       state.battle.score = scoreFromRounds(state.battle.rounds);
-      round.selfUsedDeckIds = usedDeckIdsForSide("self");
-      round.opponentUsedDeckIds = usedDeckIdsForSide("opponent");
+      refreshRoundUsageSnapshot(round);
       round.score = { ...state.battle.score };
 
       if (state.battle.score.self >= 3 || state.battle.score.opponent >= 3 || round.roundNumber >= 5) {
@@ -2037,7 +2179,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
       const candidates = side === "self" ? round.selfCandidateDeckIds : round.opponentCandidateDeckIds;
       const selectedDeckId = side === "self" ? round.selfSelectedDeckId : round.opponentSelectedDeckId;
       const submission = side === "self" ? state.battle.selfSubmission : state.battle.opponentSubmission;
-      const used = new Set(usedDeckIdsForSide(side));
+      const used = new Set(usedDeckIdsBeforeRound(side, round.roundNumber));
       if (candidates.length === 0) {
         return `<div class="validation-item warn">候補デッキがありません。</div>`;
       }
@@ -2128,6 +2270,9 @@ PS_SIMULATOR_HTML = """<!doctype html>
           <div>
             <h3>${escapeHtml(battleLabel(active.roundNumber))} 選出</h3>
             <div class="source-note">暫定勝率: ${formatWinRate(active.selfWinRate)} / ${escapeHtml(active.winRateNote)}</div>
+            ${(active.candidateWarnings || []).map(message => (
+              `<div class="validation-item warn">${escapeHtml(message)}</div>`
+            )).join("")}
           </div>
         </div>
         <div class="battle-round-grid">
@@ -2215,6 +2360,17 @@ PS_SIMULATOR_HTML = """<!doctype html>
           result: round.result,
           selfUsedDeckIds: round.selfUsedDeckIds,
           opponentUsedDeckIds: round.opponentUsedDeckIds,
+          selfRemainingDeckIds: round.selfRemainingDeckIds,
+          opponentRemainingDeckIds: round.opponentRemainingDeckIds,
+          usedDeckIdsAfterRound: {
+            self: round.selfUsedDeckIds,
+            opponent: round.opponentUsedDeckIds
+          },
+          remainingDeckIdsAfterRound: {
+            self: round.selfRemainingDeckIds,
+            opponent: round.opponentRemainingDeckIds
+          },
+          candidateWarnings: round.candidateWarnings,
           score: round.score
         })),
         finalResult: state.battle.isComplete ? {

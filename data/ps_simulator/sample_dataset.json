@@ -328,6 +328,7 @@
   "sampleBattleLog": {
     "seed": "sample-seed-001",
     "selfSubmissionId": "sample-self-submission",
+    "opponentSubmissionId": "sample-opponent-submission",
     "rounds": [
       {
         "roundNumber": 1,
@@ -337,83 +338,216 @@
           "ps-w-earth-rite"
         ],
         "opponentCandidateDeckIds": [
-          "ps-d-ramp",
-          "deck-1778742968583",
-          "deck-b-1778743160748"
+          "deck-e-1779172826463",
+          "deck-r-1778681117704",
+          "ps-w-earth-rite"
         ],
         "selfSelectedDeckId": "deck-e-1779172826463",
-        "opponentSelectedDeckId": "ps-d-ramp",
-        "selfWinRate": 0.47,
+        "opponentSelectedDeckId": "deck-r-1778681117704",
+        "selfWinRate": 0.5,
         "result": "opponent_win",
         "usedDeckIdsAfterRound": {
           "self": [
             "deck-e-1779172826463"
           ],
           "opponent": [
-            "ps-d-ramp"
+            "deck-r-1778681117704"
+          ]
+        },
+        "remainingDeckIdsAfterRound": {
+          "self": [
+            "deck-r-1778681117704",
+            "ps-w-earth-rite",
+            "ps-d-ramp",
+            "deck-b-1778743160748",
+            "deck-1778742968583",
+            "ps-nm-destruction"
+          ],
+          "opponent": [
+            "deck-e-1779172826463",
+            "ps-w-earth-rite",
+            "ps-d-ramp",
+            "deck-b-1778743160748",
+            "deck-1778742968583",
+            "ps-nm-destruction"
           ]
         }
       },
       {
         "roundNumber": 2,
         "selfCandidateDeckIds": [
-          "deck-r-1778681117704",
-          "ps-w-earth-rite",
-          "ps-nm-destruction"
+          "ps-d-ramp",
+          "deck-b-1778743160748"
         ],
         "opponentCandidateDeckIds": [
-          "deck-1778742968583",
-          "deck-b-1778743160748",
-          "ps-nm-destruction"
+          "ps-d-ramp",
+          "deck-b-1778743160748"
         ],
-        "selfSelectedDeckId": "deck-r-1778681117704",
-        "opponentSelectedDeckId": "deck-1778742968583",
-        "selfWinRate": 0.52,
+        "selfSelectedDeckId": "ps-d-ramp",
+        "opponentSelectedDeckId": "deck-b-1778743160748",
+        "selfWinRate": 0.5,
         "result": "self_win",
         "usedDeckIdsAfterRound": {
           "self": [
             "deck-e-1779172826463",
-            "deck-r-1778681117704"
+            "ps-d-ramp"
           ],
           "opponent": [
+            "deck-r-1778681117704",
+            "deck-b-1778743160748"
+          ]
+        },
+        "remainingDeckIdsAfterRound": {
+          "self": [
+            "deck-r-1778681117704",
+            "ps-w-earth-rite",
+            "deck-b-1778743160748",
+            "deck-1778742968583",
+            "ps-nm-destruction"
+          ],
+          "opponent": [
+            "deck-e-1779172826463",
+            "ps-w-earth-rite",
             "ps-d-ramp",
-            "deck-1778742968583"
+            "deck-1778742968583",
+            "ps-nm-destruction"
           ]
         }
       },
       {
         "roundNumber": 3,
         "selfCandidateDeckIds": [
-          "ps-w-earth-rite",
-          "ps-d-ramp",
-          "deck-b-1778743160748"
-        ],
-        "opponentCandidateDeckIds": [
-          "deck-b-1778743160748",
+          "deck-1778742968583",
           "ps-nm-destruction"
         ],
-        "selfSelectedDeckId": "ps-w-earth-rite",
-        "opponentSelectedDeckId": "deck-b-1778743160748",
-        "selfWinRate": 0.58,
+        "opponentCandidateDeckIds": [
+          "deck-1778742968583",
+          "ps-nm-destruction"
+        ],
+        "selfSelectedDeckId": "deck-1778742968583",
+        "opponentSelectedDeckId": "ps-nm-destruction",
+        "selfWinRate": 0.5,
         "result": "self_win",
         "usedDeckIdsAfterRound": {
           "self": [
             "deck-e-1779172826463",
+            "ps-d-ramp",
+            "deck-1778742968583"
+          ],
+          "opponent": [
+            "deck-r-1778681117704",
+            "deck-b-1778743160748",
+            "ps-nm-destruction"
+          ]
+        },
+        "remainingDeckIdsAfterRound": {
+          "self": [
+            "deck-r-1778681117704",
+            "ps-w-earth-rite",
+            "deck-b-1778743160748",
+            "ps-nm-destruction"
+          ],
+          "opponent": [
+            "deck-e-1779172826463",
+            "ps-w-earth-rite",
+            "ps-d-ramp",
+            "deck-1778742968583"
+          ]
+        }
+      },
+      {
+        "roundNumber": 4,
+        "selfCandidateDeckIds": [
+          "deck-r-1778681117704",
+          "ps-w-earth-rite",
+          "deck-b-1778743160748",
+          "ps-nm-destruction"
+        ],
+        "opponentCandidateDeckIds": [
+          "deck-e-1779172826463",
+          "ps-w-earth-rite",
+          "ps-d-ramp",
+          "deck-1778742968583"
+        ],
+        "selfSelectedDeckId": "deck-r-1778681117704",
+        "opponentSelectedDeckId": "deck-e-1779172826463",
+        "selfWinRate": 0.5,
+        "result": "opponent_win",
+        "usedDeckIdsAfterRound": {
+          "self": [
+            "deck-e-1779172826463",
+            "ps-d-ramp",
+            "deck-1778742968583",
+            "deck-r-1778681117704"
+          ],
+          "opponent": [
+            "deck-r-1778681117704",
+            "deck-b-1778743160748",
+            "ps-nm-destruction",
+            "deck-e-1779172826463"
+          ]
+        },
+        "remainingDeckIdsAfterRound": {
+          "self": [
+            "ps-w-earth-rite",
+            "deck-b-1778743160748",
+            "ps-nm-destruction"
+          ],
+          "opponent": [
+            "ps-w-earth-rite",
+            "ps-d-ramp",
+            "deck-1778742968583"
+          ]
+        }
+      },
+      {
+        "roundNumber": 5,
+        "selfCandidateDeckIds": [
+          "ps-w-earth-rite",
+          "deck-b-1778743160748",
+          "ps-nm-destruction"
+        ],
+        "opponentCandidateDeckIds": [
+          "ps-w-earth-rite",
+          "ps-d-ramp",
+          "deck-1778742968583"
+        ],
+        "selfSelectedDeckId": "ps-w-earth-rite",
+        "opponentSelectedDeckId": "ps-d-ramp",
+        "selfWinRate": 0.5,
+        "result": "self_win",
+        "usedDeckIdsAfterRound": {
+          "self": [
+            "deck-e-1779172826463",
+            "ps-d-ramp",
+            "deck-1778742968583",
             "deck-r-1778681117704",
             "ps-w-earth-rite"
           ],
           "opponent": [
-            "ps-d-ramp",
-            "deck-1778742968583",
-            "deck-b-1778743160748"
+            "deck-r-1778681117704",
+            "deck-b-1778743160748",
+            "ps-nm-destruction",
+            "deck-e-1779172826463",
+            "ps-d-ramp"
+          ]
+        },
+        "remainingDeckIdsAfterRound": {
+          "self": [
+            "deck-b-1778743160748",
+            "ps-nm-destruction"
+          ],
+          "opponent": [
+            "ps-w-earth-rite",
+            "deck-1778742968583"
           ]
         }
       }
     ],
     "finalResult": {
       "winner": "self",
-      "selfWins": 2,
-      "opponentWins": 1
+      "selfWins": 3,
+      "opponentWins": 2
     }
   }
 }

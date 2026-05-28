@@ -106,14 +106,25 @@ class PsSimulatorDataModelTest(unittest.TestCase):
         battle_log = self.dataset["sampleBattleLog"]
         used_self: set[str] = set()
         used_opponent: set[str] = set()
+        submitted_deck_ids = {
+            deck_id
+            for assignment in self.dataset["sampleSubmission"]["assignments"]
+            for deck_id in assignment["deckIds"]
+        }
+        expected_candidate_counts = {1: 3, 2: 2, 3: 2, 4: 4, 5: 3}
 
         self.assertEqual(battle_log["seed"], "sample-seed-001")
         self.assertEqual(battle_log["selfSubmissionId"], self.dataset["sampleSubmission"]["submissionId"])
-        self.assertEqual([round_log["roundNumber"] for round_log in battle_log["rounds"]], [1, 2, 3])
+        self.assertEqual([round_log["roundNumber"] for round_log in battle_log["rounds"]], [1, 2, 3, 4, 5])
 
         for round_log in battle_log["rounds"]:
+            round_number = round_log["roundNumber"]
             self.assertTrue(set(round_log["selfCandidateDeckIds"]).issubset(self.deck_ids))
             self.assertTrue(set(round_log["opponentCandidateDeckIds"]).issubset(self.deck_ids))
+            self.assertEqual(len(round_log["selfCandidateDeckIds"]), expected_candidate_counts[round_number])
+            self.assertEqual(len(round_log["opponentCandidateDeckIds"]), expected_candidate_counts[round_number])
+            self.assertTrue(used_self.isdisjoint(round_log["selfCandidateDeckIds"]))
+            self.assertTrue(used_opponent.isdisjoint(round_log["opponentCandidateDeckIds"]))
             self.assertIn(round_log["selfSelectedDeckId"], round_log["selfCandidateDeckIds"])
             self.assertIn(round_log["opponentSelectedDeckId"], round_log["opponentCandidateDeckIds"])
             self.assertGreaterEqual(round_log["selfWinRate"], 0.0)
@@ -124,11 +135,13 @@ class PsSimulatorDataModelTest(unittest.TestCase):
             used_opponent.add(round_log["opponentSelectedDeckId"])
             self.assertEqual(set(round_log["usedDeckIdsAfterRound"]["self"]), used_self)
             self.assertEqual(set(round_log["usedDeckIdsAfterRound"]["opponent"]), used_opponent)
+            self.assertEqual(set(round_log["remainingDeckIdsAfterRound"]["self"]), submitted_deck_ids - used_self)
+            self.assertEqual(set(round_log["remainingDeckIdsAfterRound"]["opponent"]), submitted_deck_ids - used_opponent)
 
         final_result = battle_log["finalResult"]
         self.assertEqual(final_result["winner"], "self")
-        self.assertEqual(final_result["selfWins"], 2)
-        self.assertEqual(final_result["opponentWins"], 1)
+        self.assertEqual(final_result["selfWins"], 3)
+        self.assertEqual(final_result["opponentWins"], 2)
 
 
 if __name__ == "__main__":
