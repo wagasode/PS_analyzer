@@ -584,13 +584,16 @@ PS_SIMULATOR_HTML = """<!doctype html>
       flex-wrap: wrap;
       gap: 6px;
       align-items: center;
+      min-width: 0;
     }
 
     .deck-token {
       display: inline-flex;
       align-items: center;
+      flex-wrap: wrap;
       gap: 6px;
       max-width: 100%;
+      min-width: 0;
       min-height: 26px;
       border: 1px solid var(--deck-class-border, var(--border));
       border-radius: 7px;
@@ -599,12 +602,14 @@ PS_SIMULATOR_HTML = """<!doctype html>
       color: var(--deck-class-color, var(--text));
       font-size: 12px;
       line-height: 1.25;
-      white-space: nowrap;
+      white-space: normal;
       overflow-wrap: anywhere;
     }
 
     .deck-token strong {
       color: var(--text);
+      min-width: 0;
+      overflow-wrap: anywhere;
     }
 
     .deck-token-code {
@@ -623,6 +628,8 @@ PS_SIMULATOR_HTML = """<!doctype html>
     .deck-token-class {
       color: var(--deck-class-color, var(--muted));
       font-weight: 700;
+      min-width: 0;
+      overflow-wrap: anywhere;
     }
 
     .deck-list-group {
