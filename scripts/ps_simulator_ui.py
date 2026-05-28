@@ -625,7 +625,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
     .battle-submissions,
     .battle-status-grid,
     .battle-round-grid,
-    .battle-deck-lists {
+    .battle-side-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 12px;
@@ -633,7 +633,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
 
     .battle-main-grid {
       display: grid;
-      grid-template-columns: minmax(420px, 1.15fr) minmax(230px, 0.55fr) minmax(330px, 0.8fr);
+      grid-template-columns: minmax(260px, 0.8fr) minmax(420px, 1.2fr) minmax(260px, 0.8fr);
       gap: 12px;
       align-items: start;
     }
@@ -669,9 +669,8 @@ PS_SIMULATOR_HTML = """<!doctype html>
 
     .battle-assignment {
       display: grid;
-      grid-template-columns: auto minmax(0, 1fr);
-      gap: 8px;
-      align-items: center;
+      gap: 6px;
+      align-items: start;
       border: 1px solid var(--border);
       border-radius: 8px;
       padding: 8px;
@@ -688,7 +687,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
     .battle-assignment-head {
       display: flex;
       align-items: center;
-      gap: 7px;
+      gap: 6px;
       flex-wrap: wrap;
       min-width: 0;
     }
@@ -714,6 +713,30 @@ PS_SIMULATOR_HTML = """<!doctype html>
     .battle-progress {
       display: grid;
       gap: 8px;
+    }
+
+    .choice-group,
+    .deck-owner-group {
+      display: grid;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .choice-group + .choice-group,
+    .deck-owner-group + .deck-owner-group {
+      padding-top: 6px;
+      border-top: 1px solid var(--border);
+    }
+
+    .choice-group-head,
+    .deck-owner-head {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      min-width: 0;
     }
 
     .deck-token-row {
@@ -760,18 +783,6 @@ PS_SIMULATOR_HTML = """<!doctype html>
       font-size: 11px;
       font-weight: 800;
       line-height: 1;
-    }
-
-    .deck-owner {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      max-width: 100%;
-      color: var(--muted);
-      font-size: 11px;
-      font-weight: 700;
-      min-width: 0;
-      overflow-wrap: anywhere;
     }
 
     .deck-list-group {
@@ -844,10 +855,22 @@ PS_SIMULATOR_HTML = """<!doctype html>
     }
 
     .side-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
       color: var(--muted);
       font-size: 12px;
       font-weight: 700;
       white-space: nowrap;
+    }
+
+    .submission-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
     }
 
     .scoreline {
@@ -1075,7 +1098,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
       .battle-assignment-list,
       .battle-status-grid,
       .battle-round-grid,
-      .battle-deck-lists {
+      .battle-side-grid {
         grid-template-columns: 1fr;
       }
     }
@@ -1144,6 +1167,11 @@ PS_SIMULATOR_HTML = """<!doctype html>
             </div>
             <div class="panel-body">
               <div class="role-grid" id="role-grid"></div>
+              <div class="submission-actions">
+                <button class="primary" id="set-self-submission" type="button">現在の提出案を自分側にセット</button>
+                <button id="set-opponent-submission" type="button">現在の提出案を相手側にセット</button>
+                <button id="set-both-submission" type="button">現在の提出案を両側にセット</button>
+              </div>
             </div>
           </section>
         </div>
@@ -1205,28 +1233,26 @@ PS_SIMULATOR_HTML = """<!doctype html>
       <section class="panel battle-panel" aria-labelledby="battle-title">
         <div class="panel-head">
           <div>
-            <h2 id="battle-title">バトル進行シミュレータ</h2>
+            <h2 id="battle-title">ラウンド進行シミュレータ</h2>
           </div>
-          <span class="badge" id="battle-state-badge">未開始</span>
         </div>
         <div class="panel-body stack">
-          <div class="battle-controls">
-            <button class="primary" id="set-self-submission" type="button">現在の提出案を自分側にセット</button>
-            <button id="set-opponent-submission" type="button">現在の提出案を相手側にセット</button>
-            <button id="reset-battle-sample" type="button">サンプルで両側リセット</button>
-            <button id="reset-battle-progress" type="button">バトルをやり直す</button>
-          </div>
           <div class="battle-submissions" id="battle-submissions"></div>
           <div class="battle-main-grid">
             <div class="battle-main-column">
+              <div id="battle-self-deck-list"></div>
+            </div>
+            <div class="battle-main-column">
               <div class="battle-status-grid" id="battle-status-grid"></div>
               <div class="battle-round" id="battle-current-round"></div>
-            </div>
-            <div class="battle-main-column">
               <div class="battle-progress" id="battle-progress"></div>
+              <div class="battle-controls">
+                <button id="reset-battle-sample" type="button">サンプル提出でラウンドをリセット</button>
+                <button id="reset-battle-progress" type="button">ラウンドをやり直す</button>
+              </div>
             </div>
             <div class="battle-main-column">
-              <div class="battle-deck-lists" id="battle-deck-lists"></div>
+              <div id="battle-opponent-deck-list"></div>
             </div>
           </div>
         </div>
@@ -1720,6 +1746,13 @@ PS_SIMULATOR_HTML = """<!doctype html>
       resetBattleProgress();
     }
 
+    function setBattleSubmissionForBothSides(submission) {
+      if (!state.battle) initializeBattleState();
+      state.battle.selfSubmission = normalizeSubmissionForSide(submission, "self");
+      state.battle.opponentSubmission = normalizeSubmissionForSide(submission, "opponent");
+      resetBattleProgress();
+    }
+
     function canUseBattleSubmission(submission) {
       return validateSubmission(submission).canStartBattle;
     }
@@ -1789,10 +1822,8 @@ PS_SIMULATOR_HTML = """<!doctype html>
       return `${Math.round(Number(value) * 100)}%`;
     }
 
-    function resultLabel(result) {
-      if (result === "self_win") return "自分側勝ち";
-      if (result === "opponent_win") return "相手側勝ち";
-      return "未決定";
+    function battleLabel(roundNumber) {
+      return `バトル${roundNumber}`;
     }
 
     function sideLabel(side) {
@@ -1801,62 +1832,115 @@ PS_SIMULATOR_HTML = """<!doctype html>
       return "未定";
     }
 
-    function deckOwnerHtml(player) {
-      if (!player) return "";
-      const titleParts = [player.team, player.playerName].filter(Boolean);
+    function playerSideText(player, fallbackSide) {
+      return player ? `${player.playerName}側` : sideLabel(fallbackSide);
+    }
+
+    function playerSideHtml(player, fallbackSide) {
+      if (!player) {
+        return `<span class="side-label">${escapeHtml(sideLabel(fallbackSide))}</span>`;
+      }
       return `
-        <span class="deck-owner" title="${escapeHtml(titleParts.join(" / "))}">
+        <span class="side-label">
           ${playerAvatarHtml(player, "small")}
-          <span>${escapeHtml(player.playerName)}</span>
+          <span>${escapeHtml(player.playerName)}側</span>
         </span>
       `;
     }
 
-    function deckTokenHtml(deckId, options = {}) {
+    function resultLabel(result, selfPlayer = null, opponentPlayer = null) {
+      if (result === "self_win") return `${playerSideText(selfPlayer, "self")}勝ち`;
+      if (result === "opponent_win") return `${playerSideText(opponentPlayer, "opponent")}勝ち`;
+      return "";
+    }
+
+    function groupedDeckIdsByPlayer(submission, deckIds) {
+      const remaining = new Set(deckIds || []);
+      const groups = (submission?.assignments || []).map(assignment => {
+        const groupDeckIds = (assignment.deckIds || []).filter(deckId => remaining.has(deckId));
+        groupDeckIds.forEach(deckId => remaining.delete(deckId));
+        return {
+          player: playerById(assignment.playerId),
+          deckIds: groupDeckIds
+        };
+      }).filter(group => group.deckIds.length > 0);
+      if (remaining.size > 0) {
+        groups.push({ player: null, deckIds: Array.from(remaining).sort(byDeckOrder) });
+      }
+      return groups;
+    }
+
+    function deckTokenHtml(deckId) {
       const deck = deckById(deckId);
       if (!deck) {
         return `<span class="deck-token"><strong class="deck-token-name">${escapeHtml(deckId || "未選択")}</strong></span>`;
       }
       const definition = classDefinition(deck.className);
       const classCode = definition?.className || deck.className || "?";
-      const owner = options.showOwner ? deckOwnerHtml(options.player) : "";
       return `
         <span class="deck-token ${escapeHtml(classCssClass(deck.className))}" title="${escapeHtml(classLabel(deck.className))} / deckId: ${escapeHtml(deck.deckId)}">
           <span class="deck-token-code" aria-hidden="true">${escapeHtml(classCode)}</span>
           <strong class="deck-token-name">${escapeHtml(deck.deckName)}</strong>
-          ${owner}
         </span>
       `;
     }
 
-    function deckTokenListHtml(deckIds, options = {}) {
+    function deckTokenListHtml(deckIds) {
       if (!deckIds.length) {
         return `<span class="source-note">なし</span>`;
       }
-      const submission = options.submission || null;
-      const showOwner = Boolean(options.showOwner);
       return `
         <div class="deck-token-row">
-          ${deckIds.map(deckId => deckTokenHtml(deckId, {
-            showOwner,
-            player: submission ? playerForDeckInSubmission(submission, deckId) : null
-          })).join("")}
+          ${deckIds.map(deckTokenHtml).join("")}
         </div>
       `;
     }
 
+    function deckGroupListHtml(submission, deckIds, side) {
+      if (!deckIds.length) {
+        return `<span class="source-note">なし</span>`;
+      }
+      return groupedDeckIdsByPlayer(submission, deckIds).map(group => `
+        <div class="deck-owner-group">
+          <div class="deck-owner-head">
+            ${playerSideHtml(group.player, side)}
+          </div>
+          ${deckTokenListHtml(group.deckIds)}
+        </div>
+      `).join("");
+    }
+
+    function selectedDeckWithPlayerHtml(submission, deckId, side) {
+      if (!deckId) {
+        return `<span class="source-note">未選択</span>`;
+      }
+      const player = playerForDeckInSubmission(submission, deckId);
+      return `
+        ${playerSideHtml(player, side)}
+        ${deckTokenHtml(deckId)}
+      `;
+    }
+
+    function representativePlayerForCandidates(submission, deckIds) {
+      const groups = groupedDeckIdsByPlayer(submission, deckIds);
+      return groups.length === 1 ? groups[0].player : null;
+    }
+
+    function selectedOrRepresentativePlayer(submission, deckId, deckIds) {
+      return playerForDeckInSubmission(submission, deckId) || representativePlayerForCandidates(submission, deckIds);
+    }
+
     function submissionSummaryHtml(label, submission) {
-      const validation = validateSubmission(submission);
       const assignments = roles.map(roleDef => {
         const assignment = assignmentByRole(submission, roleDef.role) || {};
         const player = playerById(assignment.playerId);
         const deckIds = assignment.deckIds || [];
         return `
           <div class="battle-assignment">
-            ${playerAvatarHtml(player)}
             <div class="battle-assignment-main">
               <div class="battle-assignment-head">
                 <span class="badge">${escapeHtml(roleDef.role)}</span>
+                ${playerAvatarHtml(player, "small")}
                 <strong>${escapeHtml(player?.playerName || assignment.playerId || "未選択")}</strong>
               </div>
               ${deckTokenListHtml(deckIds)}
@@ -1868,9 +1952,6 @@ PS_SIMULATOR_HTML = """<!doctype html>
         <section class="battle-submission">
           <div class="deck-class-group-head">
             <h3>${escapeHtml(label)}</h3>
-            <span class="badge ${validation.canStartBattle ? "ok" : "warn"}">
-              ${validation.canStartBattle ? "使用可能" : "提出案未成立"}
-            </span>
           </div>
           <div class="battle-assignment-list">${assignments}</div>
         </section>
@@ -1887,25 +1968,32 @@ PS_SIMULATOR_HTML = """<!doctype html>
       }
       return `
         <div class="choice-list">
-          ${candidates.map(deckId => {
-            const usedDeck = used.has(deckId);
-            const selected = selectedDeckId === deckId;
-            const disabled = usedDeck || Boolean(round.result) || state.battle.isComplete;
-            const deck = deckById(deckId);
-            const player = playerForDeckInSubmission(submission, deckId);
-            return `
-              <button
-                class="choice-button ${deck ? escapeHtml(classCssClass(deck.className)) : ""} ${selected ? "selected" : ""}"
-                type="button"
-                data-battle-side="${escapeHtml(side)}"
-                data-battle-deck-id="${escapeHtml(deckId)}"
-                ${disabled ? "disabled" : ""}
-              >
-                ${deckTokenHtml(deckId, { showOwner: true, player })}
-                ${usedDeck ? `<span class="badge warn">使用済み</span>` : ""}
-              </button>
-            `;
-          }).join("")}
+          ${groupedDeckIdsByPlayer(submission, candidates).map(group => `
+            <div class="choice-group">
+              <div class="choice-group-head">
+                ${playerSideHtml(group.player, side)}
+                <span>候補</span>
+              </div>
+              ${group.deckIds.map(deckId => {
+                const usedDeck = used.has(deckId);
+                const selected = selectedDeckId === deckId;
+                const disabled = usedDeck || Boolean(round.result) || state.battle.isComplete;
+                const deck = deckById(deckId);
+                return `
+                  <button
+                    class="choice-button ${deck ? escapeHtml(classCssClass(deck.className)) : ""} ${selected ? "selected" : ""}"
+                    type="button"
+                    data-battle-side="${escapeHtml(side)}"
+                    data-battle-deck-id="${escapeHtml(deckId)}"
+                    ${disabled ? "disabled" : ""}
+                  >
+                    ${deckTokenHtml(deckId)}
+                    ${usedDeck ? `<span class="badge warn">使用済み</span>` : ""}
+                  </button>
+                `;
+              }).join("")}
+            </div>
+          `).join("")}
         </div>
       `;
     }
@@ -1918,13 +2006,13 @@ PS_SIMULATOR_HTML = """<!doctype html>
             <div class="deck-class-group-head">
               <strong>使用済みデッキ</strong>
             </div>
-            ${deckTokenListHtml(usedDeckIds, { submission, showOwner: true })}
+            ${deckGroupListHtml(submission, usedDeckIds, side)}
           </div>
           <div class="deck-list-group">
             <div class="deck-class-group-head">
               <strong>残りデッキ</strong>
             </div>
-            ${deckTokenListHtml(remainingDeckIds, { submission, showOwner: true })}
+            ${deckGroupListHtml(submission, remainingDeckIds, side)}
           </div>
         </section>
       `;
@@ -1933,25 +2021,20 @@ PS_SIMULATOR_HTML = """<!doctype html>
     function renderBattleStatus() {
       const battle = state.battle;
       const active = activeBattleRound();
-      const currentRoundLabel = battle.isComplete ? "終了済み" : `R${active?.roundNumber || 1}`;
-      const resultText = battle.isComplete
-        ? `最終結果: ${sideLabel(battle.winner)}勝利`
-        : "進行中";
-      document.getElementById("battle-state-badge").className = `badge ${battle.isComplete ? "ok" : "warn"}`;
-      document.getElementById("battle-state-badge").textContent = battle.isComplete ? "マッチ終了" : "進行中";
+      const currentBattleLabel = battle.isComplete ? "終了済み" : battleLabel(active?.roundNumber || 1);
       document.getElementById("battle-status-grid").innerHTML = [
         `
           <section class="battle-card ${battle.isComplete ? "ended" : ""}">
-            <h3>現在スコア</h3>
+            <h3>ラウンドスコア</h3>
             <div class="scoreline">自分側 ${battle.score.self} - ${battle.score.opponent} 相手側</div>
-            <div class="source-note">現在ラウンド: ${escapeHtml(currentRoundLabel)}</div>
+            <div class="source-note">現在バトル: ${escapeHtml(currentBattleLabel)}</div>
           </section>
         `,
         `
           <section class="battle-card ${battle.isComplete ? "ended" : ""}">
-            <h3>マッチ状態</h3>
-            <div><strong>${escapeHtml(resultText)}</strong></div>
-            <div class="source-note">3勝先取で終了します。</div>
+            <h3>ラウンド条件</h3>
+            <div><strong>3勝先取</strong></div>
+            <div class="source-note">最大5バトルで終了します。</div>
           </section>
         `
       ].join("");
@@ -1963,39 +2046,34 @@ PS_SIMULATOR_HTML = """<!doctype html>
       if (!active) {
         document.getElementById("battle-current-round").innerHTML = `
           <div class="battle-card ended">
-            <h3>マッチ終了</h3>
+            <h3>ラウンド終了</h3>
             <div class="scoreline">最終結果: ${sideLabel(battle.winner)}勝利</div>
           </div>
         `;
         return;
       }
       const canDecide = active.selfSelectedDeckId && active.opponentSelectedDeckId && !active.result;
+      const selfPlayer = selectedOrRepresentativePlayer(state.battle.selfSubmission, active.selfSelectedDeckId, active.selfCandidateDeckIds);
+      const opponentPlayer = selectedOrRepresentativePlayer(state.battle.opponentSubmission, active.opponentSelectedDeckId, active.opponentCandidateDeckIds);
       document.getElementById("battle-current-round").innerHTML = `
         <div class="deck-class-group-head">
           <div>
-            <h3>R${active.roundNumber} 選出</h3>
+            <h3>${escapeHtml(battleLabel(active.roundNumber))} 選出</h3>
             <div class="source-note">暫定勝率: ${formatWinRate(active.selfWinRate)} / ${escapeHtml(active.winRateNote)}</div>
           </div>
-          <span class="badge">${escapeHtml(resultLabel(active.result))}</span>
         </div>
         <div class="battle-round-grid">
           <section class="battle-card">
-            <div class="deck-class-group-head">
-              <h3>自分側候補</h3>
-            </div>
             ${renderChoiceList("self", active)}
           </section>
           <section class="battle-card">
-            <div class="deck-class-group-head">
-              <h3>相手側候補</h3>
-            </div>
             ${renderChoiceList("opponent", active)}
           </section>
         </div>
         <div class="battle-controls">
           <button class="primary" id="roll-round" type="button" ${canDecide ? "" : "disabled"}>抽選</button>
-          <button id="manual-self-win" type="button" ${canDecide ? "" : "disabled"}>手動: 自分側勝ち</button>
-          <button id="manual-opponent-win" type="button" ${canDecide ? "" : "disabled"}>手動: 相手側勝ち</button>
+          <button id="manual-self-win" type="button" ${canDecide ? "" : "disabled"}>手動: ${escapeHtml(playerSideText(selfPlayer, "self"))}勝ち</button>
+          <button id="manual-opponent-win" type="button" ${canDecide ? "" : "disabled"}>手動: ${escapeHtml(playerSideText(opponentPlayer, "opponent"))}勝ち</button>
         </div>
       `;
     }
@@ -2005,10 +2083,10 @@ PS_SIMULATOR_HTML = """<!doctype html>
       const opponentUsed = usedDeckIdsForSide("opponent");
       const selfRemaining = submissionDeckIds(state.battle.selfSubmission).filter(deckId => !selfUsed.includes(deckId));
       const opponentRemaining = submissionDeckIds(state.battle.opponentSubmission).filter(deckId => !opponentUsed.includes(deckId));
-      document.getElementById("battle-deck-lists").innerHTML = [
-        renderSideDeckStatus("self", state.battle.selfSubmission, selfUsed, selfRemaining),
-        renderSideDeckStatus("opponent", state.battle.opponentSubmission, opponentUsed, opponentRemaining)
-      ].join("");
+      document.getElementById("battle-self-deck-list").innerHTML =
+        renderSideDeckStatus("self", state.battle.selfSubmission, selfUsed, selfRemaining);
+      document.getElementById("battle-opponent-deck-list").innerHTML =
+        renderSideDeckStatus("opponent", state.battle.opponentSubmission, opponentUsed, opponentRemaining);
     }
 
     function renderBattleProgress() {
@@ -2019,8 +2097,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
           return `
             <div class="progress-item">
               <div class="progress-head">
-                <strong>R${roundNumber}</strong>
-                <span class="badge">未進行</span>
+                <strong>${escapeHtml(battleLabel(roundNumber))}</strong>
               </div>
             </div>
           `;
@@ -2031,15 +2108,13 @@ PS_SIMULATOR_HTML = """<!doctype html>
         return `
           <div class="${className}">
             <div class="progress-head">
-              <strong>R${roundNumber}</strong>
-              <span class="badge">${escapeHtml(resultLabel(round.result))}</span>
+              <strong>${escapeHtml(battleLabel(roundNumber))}</strong>
+              ${round.result ? `<span class="badge">${escapeHtml(resultLabel(round.result, selfPlayer, opponentPlayer))}</span>` : ""}
             </div>
             <div class="progress-match">
-              <span class="side-label">自分側</span>
-              ${deckTokenHtml(round.selfSelectedDeckId, { showOwner: true, player: selfPlayer })}
+              ${selectedDeckWithPlayerHtml(state.battle.selfSubmission, round.selfSelectedDeckId, "self")}
               <span class="side-label">vs</span>
-              <span class="side-label">相手側</span>
-              ${deckTokenHtml(round.opponentSelectedDeckId, { showOwner: true, player: opponentPlayer })}
+              ${selectedDeckWithPlayerHtml(state.battle.opponentSubmission, round.opponentSelectedDeckId, "opponent")}
             </div>
           </div>
         `;
@@ -2079,6 +2154,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
       const currentSubmissionReady = validation.canStartBattle;
       document.getElementById("set-self-submission").disabled = !currentSubmissionReady;
       document.getElementById("set-opponent-submission").disabled = !currentSubmissionReady;
+      document.getElementById("set-both-submission").disabled = !currentSubmissionReady;
       document.getElementById("battle-seed").value = battle.seed;
       document.getElementById("battle-submissions").innerHTML = [
         submissionSummaryHtml("自分側提出案", battle.selfSubmission),
@@ -2088,16 +2164,15 @@ PS_SIMULATOR_HTML = """<!doctype html>
       const selfReady = canUseBattleSubmission(battle.selfSubmission);
       const opponentReady = canUseBattleSubmission(battle.opponentSubmission);
       if (!selfReady || !opponentReady) {
-        document.getElementById("battle-state-badge").className = "badge warn";
-        document.getElementById("battle-state-badge").textContent = "提出案未成立";
         document.getElementById("battle-status-grid").innerHTML = `
           <section class="battle-card blocked">
-            <h3>バトル開始不可</h3>
+            <h3>ラウンド開始不可</h3>
             <div>自分側・相手側の提出案を3/2/2、7クラスで成立させてください。</div>
           </section>
         `;
         document.getElementById("battle-current-round").innerHTML = "";
-        document.getElementById("battle-deck-lists").innerHTML = "";
+        document.getElementById("battle-self-deck-list").innerHTML = "";
+        document.getElementById("battle-opponent-deck-list").innerHTML = "";
         document.getElementById("battle-progress").innerHTML = "";
         return;
       }
@@ -2488,6 +2563,10 @@ PS_SIMULATOR_HTML = """<!doctype html>
 
     document.getElementById("set-opponent-submission").addEventListener("click", () => {
       setBattleSubmission("opponent", currentSubmission());
+    });
+
+    document.getElementById("set-both-submission").addEventListener("click", () => {
+      setBattleSubmissionForBothSides(currentSubmission());
     });
 
     document.getElementById("reset-battle-sample").addEventListener("click", resetBattleToSamples);
