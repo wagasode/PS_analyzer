@@ -531,10 +531,14 @@ PS_SIMULATOR_HTML = """<!doctype html>
       color: var(--bad);
     }
 
-    .status-badge.confident,
-    .status-badge.available {
+    .status-badge.confident {
       background: var(--accent-soft);
       color: var(--accent);
+    }
+
+    .status-badge.available {
+      background: #dbeafe;
+      color: #1d4ed8;
     }
 
     .class-badge {
@@ -938,6 +942,16 @@ PS_SIMULATOR_HTML = """<!doctype html>
     .status-mini.ok {
       background: var(--accent-soft);
       color: var(--accent);
+    }
+
+    .status-mini.confident {
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    .status-mini.available {
+      background: #dbeafe;
+      color: #1d4ed8;
     }
 
     .status-mini.warn {
@@ -1407,7 +1421,11 @@ PS_SIMULATOR_HTML = """<!doctype html>
           </span>
         `;
       }
-      const badgeKind = status.status === "hard" ? "bad" : status.status === "trainable" ? "warn" : "ok";
+      const badgeKind = status.status === "hard"
+        ? "bad"
+        : status.status === "trainable"
+          ? "warn"
+          : status.status;
       const label = statusLabels[status.status] || status.status;
       return `
         <span class="status-summary">

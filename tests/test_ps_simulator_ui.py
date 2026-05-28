@@ -45,6 +45,8 @@ class PsSimulatorUiTest(unittest.TestCase):
         self.assertIn("function compactClassBadgeHtml(className)", html)
         self.assertIn("function statusSummaryHtml(playerId, deckId)", html)
         self.assertIn("class-coverage-badge", html)
+        self.assertIn("status-mini.confident", html)
+        self.assertIn("status-mini.available", html)
         self.assertIn("頑張れば可", html)
         self.assertIn("きつそう", html)
         self.assertNotIn("自信あり 1", html)
