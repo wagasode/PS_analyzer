@@ -39,7 +39,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>PS 7デッキ提出案</title>
+  <title>PSルール戦略シミュレータ</title>
   <style>
     :root {
       color-scheme: light;
@@ -347,18 +347,18 @@ PS_SIMULATOR_HTML = """<!doctype html>
       gap: 7px;
       flex-wrap: wrap;
       overflow-wrap: anywhere;
-      }
+    }
 
-      .deck-note,
-      .role-class-summary,
-      .status-note,
-      .source-note {
+    .deck-note,
+    .role-class-summary,
+    .status-note,
+    .source-note {
       color: var(--muted);
       font-size: 12px;
       overflow-wrap: anywhere;
-      }
+    }
 
-      .badge-row,
+    .badge-row,
     .class-coverage,
     .data-summary {
       display: flex;
@@ -477,6 +477,14 @@ PS_SIMULATOR_HTML = """<!doctype html>
       gap: 8px;
     }
 
+    .battle-panel .panel-body {
+      gap: 12px;
+    }
+
+    .battle-panel {
+      margin-top: 16px;
+    }
+
     .battle-submissions,
     .battle-status-grid,
     .battle-round-grid,
@@ -484,6 +492,19 @@ PS_SIMULATOR_HTML = """<!doctype html>
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 12px;
+    }
+
+    .battle-main-grid {
+      display: grid;
+      grid-template-columns: minmax(420px, 1.15fr) minmax(230px, 0.55fr) minmax(330px, 0.8fr);
+      gap: 12px;
+      align-items: start;
+    }
+
+    .battle-main-column {
+      display: grid;
+      gap: 12px;
+      min-width: 0;
     }
 
     .battle-card,
@@ -497,6 +518,42 @@ PS_SIMULATOR_HTML = """<!doctype html>
       border-radius: 8px;
       padding: 12px;
       background: #f8fafc;
+    }
+
+    .battle-submission {
+      align-content: start;
+    }
+
+    .battle-assignment-list {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .battle-assignment {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 8px;
+      align-items: center;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px;
+      background: #fff;
+      min-width: 0;
+    }
+
+    .battle-assignment-main {
+      display: grid;
+      gap: 5px;
+      min-width: 0;
+    }
+
+    .battle-assignment-head {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      flex-wrap: wrap;
+      min-width: 0;
     }
 
     .battle-card.ended {
@@ -522,19 +579,77 @@ PS_SIMULATOR_HTML = """<!doctype html>
       gap: 8px;
     }
 
+    .deck-token-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .deck-token {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      max-width: 100%;
+      min-height: 26px;
+      border: 1px solid var(--deck-class-border, var(--border));
+      border-radius: 7px;
+      padding: 3px 7px;
+      background: var(--deck-class-soft, #fff);
+      color: var(--deck-class-color, var(--text));
+      font-size: 12px;
+      line-height: 1.25;
+      white-space: nowrap;
+      overflow-wrap: anywhere;
+    }
+
+    .deck-token strong {
+      color: var(--text);
+    }
+
+    .deck-token-code {
+      display: inline-grid;
+      place-items: center;
+      min-width: 20px;
+      min-height: 18px;
+      border-radius: 999px;
+      background: var(--deck-class-color, var(--none));
+      color: #fff;
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .deck-token-class {
+      color: var(--deck-class-color, var(--muted));
+      font-weight: 700;
+    }
+
+    .deck-list-group {
+      display: grid;
+      gap: 6px;
+    }
+
+    .deck-list-group + .deck-list-group {
+      padding-top: 8px;
+      border-top: 1px solid var(--border);
+    }
+
     .choice-button {
       justify-content: flex-start;
       min-height: 0;
       width: 100%;
       padding: 10px;
+      border-color: var(--deck-class-border, var(--border));
+      background: linear-gradient(90deg, var(--deck-class-border, var(--border)) 0 5px, #fff 5px);
       text-align: left;
       white-space: normal;
     }
 
     .choice-button.selected {
-      border-color: var(--accent);
-      background: var(--accent-soft);
-      color: var(--accent);
+      border-color: var(--deck-class-color, var(--accent));
+      background: linear-gradient(90deg, var(--deck-class-color, var(--accent)) 0 5px, var(--deck-class-row, var(--accent-soft)) 5px);
+      color: var(--text);
       font-weight: 700;
     }
 
@@ -558,6 +673,14 @@ PS_SIMULATOR_HTML = """<!doctype html>
 
     .progress-item.done {
       border-color: #cbd5e1;
+    }
+
+    .progress-match {
+      display: flex;
+      gap: 7px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-top: 6px;
     }
 
     .scoreline {
@@ -631,6 +754,10 @@ PS_SIMULATOR_HTML = """<!doctype html>
       padding: 12px;
     }
 
+    .debug-field {
+      width: min(100%, 260px);
+    }
+
     pre {
       margin: 0;
       max-height: 520px;
@@ -674,10 +801,17 @@ PS_SIMULATOR_HTML = """<!doctype html>
       border-bottom: 0;
     }
 
+    @media (max-width: 1120px) {
+      .battle-main-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
     @media (max-width: 980px) {
       .layout,
       .role-grid,
       .battle-submissions,
+      .battle-assignment-list,
       .battle-status-grid,
       .battle-round-grid,
       .battle-deck-lists {
@@ -712,7 +846,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
   <header>
     <div class="shell topbar">
         <div>
-          <h1>PS 7デッキ提出案</h1>
+          <h1>PSルール戦略シミュレータ</h1>
           <div class="meta" id="dataset-meta">読み込み中...</div>
         </div>
       <a class="button" href="index.html">配信レポートへ戻る</a>
@@ -732,7 +866,6 @@ PS_SIMULATOR_HTML = """<!doctype html>
           <button class="primary" id="reset-sample" type="button">サンプル提出案に戻す</button>
           <button id="clear-decks" type="button">デッキ選択をクリア</button>
         </div>
-        <div class="data-summary" id="data-summary"></div>
       </div>
 
       <div class="layout">
@@ -748,35 +881,6 @@ PS_SIMULATOR_HTML = """<!doctype html>
               <div class="role-grid" id="role-grid"></div>
             </div>
           </section>
-
-          <section class="panel" aria-labelledby="battle-title">
-            <div class="panel-head">
-              <div>
-                <h2 id="battle-title">バトル進行MVP</h2>
-                <div class="hint">提出案を自分側・相手側にセットして、R1〜R5を手動選出で進めます。</div>
-              </div>
-              <span class="badge" id="battle-state-badge">未開始</span>
-            </div>
-            <div class="panel-body stack">
-              <div class="control-row">
-                <div class="battle-controls">
-                  <button class="primary" id="set-self-submission" type="button">現在の提出案を自分側にセット</button>
-                  <button id="set-opponent-submission" type="button">現在の提出案を相手側にセット</button>
-                  <button id="reset-battle-sample" type="button">サンプルで両側リセット</button>
-                  <button id="reset-battle-progress" type="button">バトルをやり直す</button>
-                </div>
-                <label class="field">抽選seed
-                  <input id="battle-seed" type="text" value="sample-seed-001">
-                </label>
-              </div>
-              <div class="battle-submissions" id="battle-submissions"></div>
-              <div class="battle-status-grid" id="battle-status-grid"></div>
-              <div class="battle-round" id="battle-current-round"></div>
-              <div class="battle-deck-lists" id="battle-deck-lists"></div>
-              <div class="battle-progress" id="battle-progress"></div>
-            </div>
-          </section>
-
         </div>
 
         <aside class="stack">
@@ -799,6 +903,15 @@ PS_SIMULATOR_HTML = """<!doctype html>
                 </div>
             </div>
             <div class="panel-body stack">
+              <details>
+                <summary>開発者向け設定</summary>
+                <div class="details-body stack">
+                  <div class="data-summary" id="data-summary"></div>
+                  <label class="field debug-field">抽選seed
+                    <input id="battle-seed" type="text" value="sample-seed-001">
+                  </label>
+                </div>
+              </details>
               <details>
                 <summary>JSONプレビュー</summary>
                 <div class="details-body">
@@ -823,6 +936,36 @@ PS_SIMULATOR_HTML = """<!doctype html>
           </section>
         </aside>
       </div>
+
+      <section class="panel battle-panel" aria-labelledby="battle-title">
+        <div class="panel-head">
+          <div>
+            <h2 id="battle-title">バトル進行シミュレータ</h2>
+          </div>
+          <span class="badge" id="battle-state-badge">未開始</span>
+        </div>
+        <div class="panel-body stack">
+          <div class="battle-controls">
+            <button class="primary" id="set-self-submission" type="button">現在の提出案を自分側にセット</button>
+            <button id="set-opponent-submission" type="button">現在の提出案を相手側にセット</button>
+            <button id="reset-battle-sample" type="button">サンプルで両側リセット</button>
+            <button id="reset-battle-progress" type="button">バトルをやり直す</button>
+          </div>
+          <div class="battle-submissions" id="battle-submissions"></div>
+          <div class="battle-main-grid">
+            <div class="battle-main-column">
+              <div class="battle-status-grid" id="battle-status-grid"></div>
+              <div class="battle-round" id="battle-current-round"></div>
+            </div>
+            <div class="battle-main-column">
+              <div class="battle-progress" id="battle-progress"></div>
+            </div>
+            <div class="battle-main-column">
+              <div class="battle-deck-lists" id="battle-deck-lists"></div>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   </main>
 
@@ -1292,10 +1435,28 @@ PS_SIMULATOR_HTML = """<!doctype html>
       return deck ? deck.deckName : deckId || "未選択";
     }
 
-    function deckSummaryHtml(deckId) {
+    function deckTokenHtml(deckId) {
       const deck = deckById(deckId);
-      if (!deck) return `<span class="badge">${escapeHtml(deckId || "未選択")}</span>`;
-      return `<span>${classBadgeHtml(deck.className)} <strong>${escapeHtml(deck.deckName)}</strong></span>`;
+      if (!deck) {
+        return `<span class="deck-token"><strong>${escapeHtml(deckId || "未選択")}</strong></span>`;
+      }
+      const definition = classDefinition(deck.className);
+      const className = definition?.displayName || deck.className || "不明";
+      const classCode = definition?.className || deck.className || "?";
+      return `
+        <span class="deck-token ${escapeHtml(classCssClass(deck.className))}" title="deckId: ${escapeHtml(deck.deckId)}">
+          <span class="deck-token-code" aria-hidden="true">${escapeHtml(classCode)}</span>
+          <strong>${escapeHtml(deck.deckName)}</strong>
+          <span class="deck-token-class">${escapeHtml(className)}</span>
+        </span>
+      `;
+    }
+
+    function deckTokenListHtml(deckIds) {
+      if (!deckIds.length) {
+        return `<span class="source-note">なし</span>`;
+      }
+      return `<div class="deck-token-row">${deckIds.map(deckTokenHtml).join("")}</div>`;
     }
 
     function submissionSummaryHtml(label, submission) {
@@ -1303,12 +1464,17 @@ PS_SIMULATOR_HTML = """<!doctype html>
       const assignments = roles.map(roleDef => {
         const assignment = assignmentByRole(submission, roleDef.role) || {};
         const player = playerById(assignment.playerId);
-        const deckNames = (assignment.deckIds || []).map(deckId => deckLabel(deckId)).join("、") || "未選択";
+        const deckIds = assignment.deckIds || [];
         return `
-          <div>
-            <strong>${escapeHtml(roleDef.role)}</strong>
-            ${escapeHtml(player?.playerName || assignment.playerId || "未選択")}
-            <div class="source-note">${escapeHtml(deckNames)}</div>
+          <div class="battle-assignment">
+            ${playerAvatarHtml(player)}
+            <div class="battle-assignment-main">
+              <div class="battle-assignment-head">
+                <span class="badge">${escapeHtml(roleDef.role)}</span>
+                <strong>${escapeHtml(player?.playerName || assignment.playerId || "未選択")}</strong>
+              </div>
+              ${deckTokenListHtml(deckIds)}
+            </div>
           </div>
         `;
       }).join("");
@@ -1320,7 +1486,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
               ${validation.canStartBattle ? "使用可能" : "提出案未成立"}
             </span>
           </div>
-          ${assignments}
+          <div class="battle-assignment-list">${assignments}</div>
         </section>
       `;
     }
@@ -1338,15 +1504,16 @@ PS_SIMULATOR_HTML = """<!doctype html>
             const usedDeck = used.has(deckId);
             const selected = selectedDeckId === deckId;
             const disabled = usedDeck || Boolean(round.result) || state.battle.isComplete;
+            const deck = deckById(deckId);
             return `
               <button
-                class="choice-button ${selected ? "selected" : ""}"
+                class="choice-button ${deck ? escapeHtml(classCssClass(deck.className)) : ""} ${selected ? "selected" : ""}"
                 type="button"
                 data-battle-side="${escapeHtml(side)}"
                 data-battle-deck-id="${escapeHtml(deckId)}"
                 ${disabled ? "disabled" : ""}
               >
-                ${deckSummaryHtml(deckId)}
+                ${deckTokenHtml(deckId)}
                 ${usedDeck ? `<span class="badge warn">使用済み</span>` : ""}
               </button>
             `;
@@ -1355,17 +1522,23 @@ PS_SIMULATOR_HTML = """<!doctype html>
       `;
     }
 
-    function renderDeckList(title, deckIds) {
+    function renderSideDeckStatus(title, usedDeckIds, remainingDeckIds) {
       return `
         <section class="battle-list">
-          <div class="deck-class-group-head">
-            <h3>${escapeHtml(title)}</h3>
-            <span class="badge">${deckIds.length}デッキ</span>
+          <h3>${escapeHtml(title)}</h3>
+          <div class="deck-list-group">
+            <div class="deck-class-group-head">
+              <strong>使用済みデッキ</strong>
+              <span class="badge">${usedDeckIds.length}デッキ</span>
+            </div>
+            ${deckTokenListHtml(usedDeckIds)}
           </div>
-          <div class="badge-row">
-            ${deckIds.length
-              ? deckIds.map(deckId => `<span class="badge">${escapeHtml(deckLabel(deckId))}</span>`).join("")
-              : `<span class="source-note">なし</span>`}
+          <div class="deck-list-group">
+            <div class="deck-class-group-head">
+              <strong>残りデッキ</strong>
+              <span class="badge">${remainingDeckIds.length}デッキ</span>
+            </div>
+            ${deckTokenListHtml(remainingDeckIds)}
           </div>
         </section>
       `;
@@ -1449,10 +1622,8 @@ PS_SIMULATOR_HTML = """<!doctype html>
       const selfRemaining = submissionDeckIds(state.battle.selfSubmission).filter(deckId => !selfUsed.includes(deckId));
       const opponentRemaining = submissionDeckIds(state.battle.opponentSubmission).filter(deckId => !opponentUsed.includes(deckId));
       document.getElementById("battle-deck-lists").innerHTML = [
-        renderDeckList("自分側 使用済み", selfUsed),
-        renderDeckList("相手側 使用済み", opponentUsed),
-        renderDeckList("自分側 残りデッキ", selfRemaining),
-        renderDeckList("相手側 残りデッキ", opponentRemaining)
+        renderSideDeckStatus("自分側 デッキ状況", selfUsed, selfRemaining),
+        renderSideDeckStatus("相手側 デッキ状況", opponentUsed, opponentRemaining)
       ].join("");
     }
 
@@ -1463,13 +1634,17 @@ PS_SIMULATOR_HTML = """<!doctype html>
         if (!round) {
           return `<div class="progress-item"><strong>R${roundNumber}</strong>: 未選択</div>`;
         }
-        const selfDeck = round.selfSelectedDeckId ? deckLabel(round.selfSelectedDeckId) : "未選択";
-        const opponentDeck = round.opponentSelectedDeckId ? deckLabel(round.opponentSelectedDeckId) : "未選択";
         const className = round.result ? "progress-item done" : isCurrent ? "progress-item current" : "progress-item";
         return `
           <div class="${className}">
-            <strong>R${roundNumber}</strong>:
-            自分 ${escapeHtml(selfDeck)} vs 相手 ${escapeHtml(opponentDeck)} / ${escapeHtml(resultLabel(round.result))}
+            <strong>R${roundNumber}</strong>
+            <div class="progress-match">
+              <span>自分</span>
+              ${deckTokenHtml(round.selfSelectedDeckId)}
+              <span>vs 相手</span>
+              ${deckTokenHtml(round.opponentSelectedDeckId)}
+              <span class="badge">${escapeHtml(resultLabel(round.result))}</span>
+            </div>
           </div>
         `;
       }).join("");
@@ -1804,7 +1979,6 @@ PS_SIMULATOR_HTML = """<!doctype html>
           <section class="validation-section">
             <div class="validation-section-title">
               <h3>${escapeHtml(title)}</h3>
-              <span class="badge ${items.length ? "warn" : "ok"}">${items.length ? `${items.length}件` : "なし"}</span>
             </div>
             ${items.length
               ? items.map(([kind, message]) => `<div class="validation-item ${kind}">${escapeHtml(message)}</div>`).join("")
