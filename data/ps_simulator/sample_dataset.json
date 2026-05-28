@@ -323,12 +323,240 @@
       "deckIdB": "deck-b-1778743160748",
       "winRateForA": 0.58,
       "note": ""
+    },
+    {
+      "deckIdA": "deck-e-1779172826463",
+      "deckIdB": "deck-r-1778681117704",
+      "winRateForA": 0.45,
+      "note": "sampleBattleLog R1の例。"
+    },
+    {
+      "deckIdA": "ps-d-ramp",
+      "deckIdB": "deck-b-1778743160748",
+      "winRateForA": 0.56,
+      "note": "sampleBattleLog R2の例。"
+    },
+    {
+      "deckIdA": "deck-1778742968583",
+      "deckIdB": "ps-nm-destruction",
+      "winRateForA": 0.51,
+      "note": "sampleBattleLog R3の例。"
+    },
+    {
+      "deckIdA": "ps-w-earth-rite",
+      "deckIdB": "ps-d-ramp",
+      "winRateForA": 0.61,
+      "note": "sampleBattleLog R5の例。"
     }
   ],
   "sampleBattleLog": {
+    "logVersion": "ps-battle-log.v1",
+    "createdAt": "2026-05-27T00:00:00.000Z",
     "seed": "sample-seed-001",
     "selfSubmissionId": "sample-self-submission",
     "opponentSubmissionId": "sample-opponent-submission",
+    "selfSubmissionSnapshot": {
+      "submissionId": "sample-self-submission",
+      "side": "self",
+      "assignments": [
+        {
+          "role": "A",
+          "playerId": "player-maito",
+          "playerSnapshot": {
+            "playerId": "player-maito",
+            "playerName": "マイト",
+            "team": "MURASH GAMING",
+            "note": "サンプル提出A担当。"
+          },
+          "deckIds": [
+            "deck-e-1779172826463",
+            "deck-r-1778681117704",
+            "ps-w-earth-rite"
+          ],
+          "deckSnapshots": [
+            {
+              "deckId": "deck-e-1779172826463",
+              "className": "E",
+              "deckName": "進化E",
+              "source": "repo_csv",
+              "sourceDeckKey": "deck-e-1779172826463"
+            },
+            {
+              "deckId": "deck-r-1778681117704",
+              "className": "R",
+              "deckName": "連携R",
+              "source": "repo_csv",
+              "sourceDeckKey": "deck-r-1778681117704"
+            },
+            {
+              "deckId": "ps-w-earth-rite",
+              "className": "W",
+              "deckName": "秘術W",
+              "source": "repo_sample"
+            }
+          ]
+        },
+        {
+          "role": "B",
+          "playerId": "player-glory",
+          "playerSnapshot": {
+            "playerId": "player-glory",
+            "playerName": "glory",
+            "team": "MURASH GAMING",
+            "note": "サンプル提出B担当。"
+          },
+          "deckIds": [
+            "ps-d-ramp",
+            "deck-b-1778743160748"
+          ],
+          "deckSnapshots": [
+            {
+              "deckId": "ps-d-ramp",
+              "className": "D",
+              "deckName": "ランプD",
+              "source": "repo_sample"
+            },
+            {
+              "deckId": "deck-b-1778743160748",
+              "className": "B",
+              "deckName": "アミュB",
+              "source": "repo_csv",
+              "sourceDeckKey": "deck-b-1778743160748"
+            }
+          ]
+        },
+        {
+          "role": "C",
+          "playerId": "player-toby",
+          "playerSnapshot": {
+            "playerId": "player-toby",
+            "playerName": "Toby",
+            "team": "MURASH GAMING",
+            "note": "サンプル提出C担当。"
+          },
+          "deckIds": [
+            "deck-1778742968583",
+            "ps-nm-destruction"
+          ],
+          "deckSnapshots": [
+            {
+              "deckId": "deck-1778742968583",
+              "className": "Ni",
+              "deckName": "ミルティオNi",
+              "source": "repo_csv",
+              "sourceDeckKey": "deck-1778742968583"
+            },
+            {
+              "deckId": "ps-nm-destruction",
+              "className": "Nm",
+              "deckName": "破壊Nm",
+              "source": "repo_sample"
+            }
+          ]
+        }
+      ]
+    },
+    "opponentSubmissionSnapshot": {
+      "submissionId": "sample-opponent-submission",
+      "side": "opponent",
+      "assignments": [
+        {
+          "role": "A",
+          "playerId": "player-maito",
+          "playerSnapshot": {
+            "playerId": "player-maito",
+            "playerName": "マイト",
+            "team": "MURASH GAMING",
+            "note": "サンプル提出A担当。"
+          },
+          "deckIds": [
+            "deck-e-1779172826463",
+            "deck-r-1778681117704",
+            "ps-w-earth-rite"
+          ],
+          "deckSnapshots": [
+            {
+              "deckId": "deck-e-1779172826463",
+              "className": "E",
+              "deckName": "進化E",
+              "source": "repo_csv",
+              "sourceDeckKey": "deck-e-1779172826463"
+            },
+            {
+              "deckId": "deck-r-1778681117704",
+              "className": "R",
+              "deckName": "連携R",
+              "source": "repo_csv",
+              "sourceDeckKey": "deck-r-1778681117704"
+            },
+            {
+              "deckId": "ps-w-earth-rite",
+              "className": "W",
+              "deckName": "秘術W",
+              "source": "repo_sample"
+            }
+          ]
+        },
+        {
+          "role": "B",
+          "playerId": "player-glory",
+          "playerSnapshot": {
+            "playerId": "player-glory",
+            "playerName": "glory",
+            "team": "MURASH GAMING",
+            "note": "サンプル提出B担当。"
+          },
+          "deckIds": [
+            "ps-d-ramp",
+            "deck-b-1778743160748"
+          ],
+          "deckSnapshots": [
+            {
+              "deckId": "ps-d-ramp",
+              "className": "D",
+              "deckName": "ランプD",
+              "source": "repo_sample"
+            },
+            {
+              "deckId": "deck-b-1778743160748",
+              "className": "B",
+              "deckName": "アミュB",
+              "source": "repo_csv",
+              "sourceDeckKey": "deck-b-1778743160748"
+            }
+          ]
+        },
+        {
+          "role": "C",
+          "playerId": "player-toby",
+          "playerSnapshot": {
+            "playerId": "player-toby",
+            "playerName": "Toby",
+            "team": "MURASH GAMING",
+            "note": "サンプル提出C担当。"
+          },
+          "deckIds": [
+            "deck-1778742968583",
+            "ps-nm-destruction"
+          ],
+          "deckSnapshots": [
+            {
+              "deckId": "deck-1778742968583",
+              "className": "Ni",
+              "deckName": "ミルティオNi",
+              "source": "repo_csv",
+              "sourceDeckKey": "deck-1778742968583"
+            },
+            {
+              "deckId": "ps-nm-destruction",
+              "className": "Nm",
+              "deckName": "破壊Nm",
+              "source": "repo_sample"
+            }
+          ]
+        }
+      ]
+    },
     "rounds": [
       {
         "roundNumber": 1,
@@ -342,10 +570,75 @@
           "deck-r-1778681117704",
           "ps-w-earth-rite"
         ],
+        "candidateDeckIds": {
+          "self": [
+            "deck-e-1779172826463",
+            "deck-r-1778681117704",
+            "ps-w-earth-rite"
+          ],
+          "opponent": [
+            "deck-e-1779172826463",
+            "deck-r-1778681117704",
+            "ps-w-earth-rite"
+          ]
+        },
         "selfSelectedDeckId": "deck-e-1779172826463",
         "opponentSelectedDeckId": "deck-r-1778681117704",
-        "selfWinRate": 0.5,
+        "selectedDeckIds": {
+          "self": "deck-e-1779172826463",
+          "opponent": "deck-r-1778681117704"
+        },
+        "selfWinRate": 0.45,
+        "winRate": {
+          "self": 0.45,
+          "opponent": 0.55
+        },
+        "winRateSource": {
+          "type": "matchup",
+          "deckIdA": "deck-e-1779172826463",
+          "deckIdB": "deck-r-1778681117704",
+          "winRateForA": 0.45,
+          "note": "sampleBattleLog R1の例。"
+        },
+        "winRateNote": "sampleMatchupsの暫定値を使用しています。",
         "result": "opponent_win",
+        "resultDecisionMethod": "random",
+        "resultDecision": {
+          "method": "random",
+          "randomValue": 0.72,
+          "seedInput": "sample-seed-001|1|deck-e-1779172826463|deck-r-1778681117704",
+          "note": ""
+        },
+        "scoreAfterRound": {
+          "self": 0,
+          "opponent": 1
+        },
+        "score": {
+          "self": 0,
+          "opponent": 1
+        },
+        "selfUsedDeckIds": [
+          "deck-e-1779172826463"
+        ],
+        "opponentUsedDeckIds": [
+          "deck-r-1778681117704"
+        ],
+        "selfRemainingDeckIds": [
+          "deck-r-1778681117704",
+          "ps-w-earth-rite",
+          "ps-d-ramp",
+          "deck-b-1778743160748",
+          "deck-1778742968583",
+          "ps-nm-destruction"
+        ],
+        "opponentRemainingDeckIds": [
+          "deck-e-1779172826463",
+          "ps-w-earth-rite",
+          "ps-d-ramp",
+          "deck-b-1778743160748",
+          "deck-1778742968583",
+          "ps-nm-destruction"
+        ],
         "usedDeckIdsAfterRound": {
           "self": [
             "deck-e-1779172826463"
@@ -371,7 +664,8 @@
             "deck-1778742968583",
             "ps-nm-destruction"
           ]
-        }
+        },
+        "candidateWarnings": []
       },
       {
         "roundNumber": 2,
@@ -383,10 +677,73 @@
           "ps-d-ramp",
           "deck-b-1778743160748"
         ],
+        "candidateDeckIds": {
+          "self": [
+            "ps-d-ramp",
+            "deck-b-1778743160748"
+          ],
+          "opponent": [
+            "ps-d-ramp",
+            "deck-b-1778743160748"
+          ]
+        },
         "selfSelectedDeckId": "ps-d-ramp",
         "opponentSelectedDeckId": "deck-b-1778743160748",
-        "selfWinRate": 0.5,
+        "selectedDeckIds": {
+          "self": "ps-d-ramp",
+          "opponent": "deck-b-1778743160748"
+        },
+        "selfWinRate": 0.56,
+        "winRate": {
+          "self": 0.56,
+          "opponent": 0.44
+        },
+        "winRateSource": {
+          "type": "matchup",
+          "deckIdA": "ps-d-ramp",
+          "deckIdB": "deck-b-1778743160748",
+          "winRateForA": 0.56,
+          "note": "sampleBattleLog R2の例。"
+        },
+        "winRateNote": "sampleMatchupsの暫定値を使用しています。",
         "result": "self_win",
+        "resultDecisionMethod": "random",
+        "resultDecision": {
+          "method": "random",
+          "randomValue": 0.32,
+          "seedInput": "sample-seed-001|2|ps-d-ramp|deck-b-1778743160748",
+          "note": ""
+        },
+        "scoreAfterRound": {
+          "self": 1,
+          "opponent": 1
+        },
+        "score": {
+          "self": 1,
+          "opponent": 1
+        },
+        "selfUsedDeckIds": [
+          "deck-e-1779172826463",
+          "ps-d-ramp"
+        ],
+        "opponentUsedDeckIds": [
+          "deck-r-1778681117704",
+          "deck-b-1778743160748"
+        ],
+        "selfRemainingDeckIds": [
+          "deck-r-1778681117704",
+          "ps-w-earth-rite",
+          "deck-b-1778743160748",
+          "deck-1778742968583",
+          "ps-nm-destruction"
+        ],
+        "opponentRemainingDeckIds": [
+          "deck-e-1779172826463",
+          "ps-w-earth-rite",
+          "ps-d-ramp",
+          "deck-1778742968583",
+          "ps-nm-destruction"
+        ],
         "usedDeckIdsAfterRound": {
           "self": [
             "deck-e-1779172826463",
@@ -412,7 +769,8 @@
             "deck-1778742968583",
             "ps-nm-destruction"
           ]
-        }
+        },
+        "candidateWarnings": []
       },
       {
         "roundNumber": 3,
@@ -424,10 +782,73 @@
           "deck-1778742968583",
           "ps-nm-destruction"
         ],
+        "candidateDeckIds": {
+          "self": [
+            "deck-1778742968583",
+            "ps-nm-destruction"
+          ],
+          "opponent": [
+            "deck-1778742968583",
+            "ps-nm-destruction"
+          ]
+        },
         "selfSelectedDeckId": "deck-1778742968583",
         "opponentSelectedDeckId": "ps-nm-destruction",
-        "selfWinRate": 0.5,
+        "selectedDeckIds": {
+          "self": "deck-1778742968583",
+          "opponent": "ps-nm-destruction"
+        },
+        "selfWinRate": 0.51,
+        "winRate": {
+          "self": 0.51,
+          "opponent": 0.49
+        },
+        "winRateSource": {
+          "type": "matchup",
+          "deckIdA": "deck-1778742968583",
+          "deckIdB": "ps-nm-destruction",
+          "winRateForA": 0.51,
+          "note": "sampleBattleLog R3の例。"
+        },
+        "winRateNote": "sampleMatchupsの暫定値を使用しています。",
         "result": "self_win",
+        "resultDecisionMethod": "manual",
+        "resultDecision": {
+          "method": "manual",
+          "randomValue": null,
+          "seedInput": "",
+          "note": ""
+        },
+        "scoreAfterRound": {
+          "self": 2,
+          "opponent": 1
+        },
+        "score": {
+          "self": 2,
+          "opponent": 1
+        },
+        "selfUsedDeckIds": [
+          "deck-e-1779172826463",
+          "ps-d-ramp",
+          "deck-1778742968583"
+        ],
+        "opponentUsedDeckIds": [
+          "deck-r-1778681117704",
+          "deck-b-1778743160748",
+          "ps-nm-destruction"
+        ],
+        "selfRemainingDeckIds": [
+          "deck-r-1778681117704",
+          "ps-w-earth-rite",
+          "deck-b-1778743160748",
+          "ps-nm-destruction"
+        ],
+        "opponentRemainingDeckIds": [
+          "deck-e-1779172826463",
+          "ps-w-earth-rite",
+          "ps-d-ramp",
+          "deck-1778742968583"
+        ],
         "usedDeckIdsAfterRound": {
           "self": [
             "deck-e-1779172826463",
@@ -453,7 +874,8 @@
             "ps-d-ramp",
             "deck-1778742968583"
           ]
-        }
+        },
+        "candidateWarnings": []
       },
       {
         "roundNumber": 4,
@@ -469,10 +891,77 @@
           "ps-d-ramp",
           "deck-1778742968583"
         ],
+        "candidateDeckIds": {
+          "self": [
+            "deck-r-1778681117704",
+            "ps-w-earth-rite",
+            "deck-b-1778743160748",
+            "ps-nm-destruction"
+          ],
+          "opponent": [
+            "deck-e-1779172826463",
+            "ps-w-earth-rite",
+            "ps-d-ramp",
+            "deck-1778742968583"
+          ]
+        },
         "selfSelectedDeckId": "deck-r-1778681117704",
         "opponentSelectedDeckId": "deck-e-1779172826463",
-        "selfWinRate": 0.5,
+        "selectedDeckIds": {
+          "self": "deck-r-1778681117704",
+          "opponent": "deck-e-1779172826463"
+        },
+        "selfWinRate": 0.55,
+        "winRate": {
+          "self": 0.55,
+          "opponent": 0.45
+        },
+        "winRateSource": {
+          "type": "reverseMatchup",
+          "deckIdA": "deck-e-1779172826463",
+          "deckIdB": "deck-r-1778681117704",
+          "winRateForA": 0.45,
+          "note": "sampleBattleLog R1の例。"
+        },
+        "winRateNote": "sampleMatchupsの逆向き暫定値を使用しています。",
         "result": "opponent_win",
+        "resultDecisionMethod": "manual",
+        "resultDecision": {
+          "method": "manual",
+          "randomValue": null,
+          "seedInput": "",
+          "note": ""
+        },
+        "scoreAfterRound": {
+          "self": 2,
+          "opponent": 2
+        },
+        "score": {
+          "self": 2,
+          "opponent": 2
+        },
+        "selfUsedDeckIds": [
+          "deck-e-1779172826463",
+          "ps-d-ramp",
+          "deck-1778742968583",
+          "deck-r-1778681117704"
+        ],
+        "opponentUsedDeckIds": [
+          "deck-r-1778681117704",
+          "deck-b-1778743160748",
+          "ps-nm-destruction",
+          "deck-e-1779172826463"
+        ],
+        "selfRemainingDeckIds": [
+          "ps-w-earth-rite",
+          "deck-b-1778743160748",
+          "ps-nm-destruction"
+        ],
+        "opponentRemainingDeckIds": [
+          "ps-w-earth-rite",
+          "ps-d-ramp",
+          "deck-1778742968583"
+        ],
         "usedDeckIdsAfterRound": {
           "self": [
             "deck-e-1779172826463",
@@ -498,7 +987,8 @@
             "ps-d-ramp",
             "deck-1778742968583"
           ]
-        }
+        },
+        "candidateWarnings": []
       },
       {
         "roundNumber": 5,
@@ -512,10 +1002,75 @@
           "ps-d-ramp",
           "deck-1778742968583"
         ],
+        "candidateDeckIds": {
+          "self": [
+            "ps-w-earth-rite",
+            "deck-b-1778743160748",
+            "ps-nm-destruction"
+          ],
+          "opponent": [
+            "ps-w-earth-rite",
+            "ps-d-ramp",
+            "deck-1778742968583"
+          ]
+        },
         "selfSelectedDeckId": "ps-w-earth-rite",
         "opponentSelectedDeckId": "ps-d-ramp",
-        "selfWinRate": 0.5,
+        "selectedDeckIds": {
+          "self": "ps-w-earth-rite",
+          "opponent": "ps-d-ramp"
+        },
+        "selfWinRate": 0.61,
+        "winRate": {
+          "self": 0.61,
+          "opponent": 0.39
+        },
+        "winRateSource": {
+          "type": "matchup",
+          "deckIdA": "ps-w-earth-rite",
+          "deckIdB": "ps-d-ramp",
+          "winRateForA": 0.61,
+          "note": "sampleBattleLog R5の例。"
+        },
+        "winRateNote": "sampleMatchupsの暫定値を使用しています。",
         "result": "self_win",
+        "resultDecisionMethod": "random",
+        "resultDecision": {
+          "method": "random",
+          "randomValue": 0.18,
+          "seedInput": "sample-seed-001|5|ps-w-earth-rite|ps-d-ramp",
+          "note": ""
+        },
+        "scoreAfterRound": {
+          "self": 3,
+          "opponent": 2
+        },
+        "score": {
+          "self": 3,
+          "opponent": 2
+        },
+        "selfUsedDeckIds": [
+          "deck-e-1779172826463",
+          "ps-d-ramp",
+          "deck-1778742968583",
+          "deck-r-1778681117704",
+          "ps-w-earth-rite"
+        ],
+        "opponentUsedDeckIds": [
+          "deck-r-1778681117704",
+          "deck-b-1778743160748",
+          "ps-nm-destruction",
+          "deck-e-1779172826463",
+          "ps-d-ramp"
+        ],
+        "selfRemainingDeckIds": [
+          "deck-b-1778743160748",
+          "ps-nm-destruction"
+        ],
+        "opponentRemainingDeckIds": [
+          "ps-w-earth-rite",
+          "deck-1778742968583"
+        ],
         "usedDeckIdsAfterRound": {
           "self": [
             "deck-e-1779172826463",
@@ -541,13 +1096,21 @@
             "ps-w-earth-rite",
             "deck-1778742968583"
           ]
-        }
+        },
+        "candidateWarnings": []
       }
     ],
     "finalResult": {
       "winner": "self",
+      "result": "self_win",
       "selfWins": 3,
-      "opponentWins": 2
-    }
+      "opponentWins": 2,
+      "score": {
+        "self": 3,
+        "opponent": 2
+      },
+      "finishedAtRound": 5
+    },
+    "finishedAtRound": 5
   }
 }

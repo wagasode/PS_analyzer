@@ -252,9 +252,10 @@ The generated `ps-simulator.html` page uses only
 `data/ps_simulator/sample_dataset.json` for the PS simulator MVP. It lets the
 user draft a 7-class submission, assign decks to A/B/C as 3/2/2, inspect
 PlayerDeckStatus risks, run a browser-state R1-R5 battle with manual deck
-selection, and preview JSON. Google Sheets import, full matchup loading,
-persistent BattleLog storage, and replay logging are intentionally outside this
-build step.
+selection, preview BattleLog JSON, and export BattleLog as a local JSON file.
+Google Sheets import, full matchup loading, persistent BattleLog storage,
+summary-card UI, image export, and replay logging are intentionally outside
+this build step.
 
 After the `Collect streaming data` workflow completes successfully, the
 `Publish dashboard` workflow deploys the dashboard to Cloudflare Pages.

@@ -1002,6 +1002,14 @@ PS_SIMULATOR_HTML = """<!doctype html>
       padding: 0 11px;
     }
 
+    .json-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
     .scoreline {
       font-size: 20px;
       font-weight: 700;
@@ -1342,6 +1350,9 @@ PS_SIMULATOR_HTML = """<!doctype html>
               <details>
                 <summary>JSONプレビュー</summary>
                 <div class="details-body">
+                  <div class="json-actions">
+                    <button id="download-battle-log" type="button">BattleLog JSONを保存</button>
+                  </div>
                   <pre id="json-preview">{}</pre>
                 </div>
               </details>
@@ -1750,15 +1761,72 @@ PS_SIMULATOR_HTML = """<!doctype html>
       return normalizeSubmissionForSide(sample, side);
     }
 
+    function snapshotDeck(deckId) {
+      const deck = deckById(deckId);
+      if (!deck) {
+        return {
+          deckId,
+          className: "",
+          deckName: deckId || "未選択",
+          source: "missing"
+        };
+      }
+      return {
+        deckId: deck.deckId,
+        className: deck.className,
+        deckName: deck.deckName,
+        source: deck.source || "",
+        sourceDeckKey: deck.sourceDeckKey || ""
+      };
+    }
+
+    function snapshotPlayer(playerId) {
+      const player = playerById(playerId);
+      if (!player) {
+        return {
+          playerId,
+          playerName: playerId || "未選択",
+          team: "",
+          note: ""
+        };
+      }
+      return {
+        playerId: player.playerId,
+        playerName: player.playerName,
+        team: player.team || "",
+        note: player.note || ""
+      };
+    }
+
+    function snapshotSubmission(submission, side) {
+      return {
+        submissionId: submission?.submissionId || `draft-${side}-submission`,
+        side,
+        assignments: roles.map(roleDef => {
+          const source = (submission?.assignments || []).find(assignment => assignment.role === roleDef.role) || {};
+          const deckIds = [...(source.deckIds || [])].sort(byDeckOrder);
+          return {
+            role: roleDef.role,
+            playerId: source.playerId || "",
+            playerSnapshot: snapshotPlayer(source.playerId || ""),
+            deckIds,
+            deckSnapshots: deckIds.map(snapshotDeck)
+          };
+        })
+      };
+    }
+
     function initializeBattleState() {
       state.battle = {
+        createdAt: new Date().toISOString(),
         seed: "sample-seed-001",
         selfSubmission: sampleSubmissionForSide("self"),
         opponentSubmission: sampleSubmissionForSide("opponent"),
         rounds: [],
         score: { self: 0, opponent: 0 },
         isComplete: false,
-        winner: ""
+        winner: "",
+        finishedAtRound: null
       };
       resetBattleProgress(false);
     }
@@ -1879,7 +1947,13 @@ PS_SIMULATOR_HTML = """<!doctype html>
         opponentSelectedDeckId: "",
         selfWinRate: 0.5,
         winRateNote: "選択前です。",
+        winRateSource: {
+          type: "unknown",
+          note: "選択前です。"
+        },
         result: "",
+        resultDecisionMethod: "",
+        resultDecision: null,
         selfUsedDeckIds: [...selfUsed],
         opponentUsedDeckIds: [...opponentUsed],
         selfRemainingDeckIds: remainingDeckIdsForSide("self", selfUsed),
@@ -1901,6 +1975,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
       state.battle.score = scoreFromRounds(state.battle.rounds);
       state.battle.isComplete = false;
       state.battle.winner = "";
+      state.battle.finishedAtRound = null;
       state.battle.rounds.push(createBattleRound(roundNumber));
       refreshBattleUsageSnapshots();
       if (shouldRender) render();
@@ -1908,10 +1983,12 @@ PS_SIMULATOR_HTML = """<!doctype html>
 
     function resetBattleProgress(shouldRender = true) {
       if (!state.battle) return;
+      state.battle.createdAt = new Date().toISOString();
       state.battle.rounds = [];
       state.battle.score = { self: 0, opponent: 0 };
       state.battle.isComplete = false;
       state.battle.winner = "";
+      state.battle.finishedAtRound = null;
       state.battle.rounds.push(createBattleRound(1));
       if (shouldRender) render();
     }
@@ -1928,7 +2005,14 @@ PS_SIMULATOR_HTML = """<!doctype html>
       if (matchup) {
         return {
           winRate: Number(matchup.winRateForA),
-          note: "sampleMatchupsの暫定値を使用しています。"
+          note: "sampleMatchupsの暫定値を使用しています。",
+          source: {
+            type: "matchup",
+            deckIdA: matchup.deckIdA,
+            deckIdB: matchup.deckIdB,
+            winRateForA: Number(matchup.winRateForA),
+            note: matchup.note || ""
+          }
         };
       }
       const reverseMatchup = (state.dataset?.sampleMatchups || []).find(item => (
@@ -1937,12 +2021,24 @@ PS_SIMULATOR_HTML = """<!doctype html>
       if (reverseMatchup) {
         return {
           winRate: 1 - Number(reverseMatchup.winRateForA),
-          note: "sampleMatchupsの逆向き暫定値を使用しています。"
+          note: "sampleMatchupsの逆向き暫定値を使用しています。",
+          source: {
+            type: "reverseMatchup",
+            deckIdA: reverseMatchup.deckIdA,
+            deckIdB: reverseMatchup.deckIdB,
+            winRateForA: Number(reverseMatchup.winRateForA),
+            note: reverseMatchup.note || ""
+          }
         };
       }
       return {
         winRate: 0.5,
-        note: "相性表未接続のため暫定0.5を使用しています。"
+        note: "相性表未接続のため暫定0.5を使用しています。",
+        source: {
+          type: "fallback",
+          fallbackValue: 0.5,
+          note: "相性表未接続のため暫定0.5を使用しています。"
+        }
       };
     }
 
@@ -1950,11 +2046,16 @@ PS_SIMULATOR_HTML = """<!doctype html>
       if (!round.selfSelectedDeckId || !round.opponentSelectedDeckId) {
         round.selfWinRate = 0.5;
         round.winRateNote = "選択前です。";
+        round.winRateSource = {
+          type: "unknown",
+          note: "選択前です。"
+        };
         return;
       }
       const lookup = lookupSelfWinRate(round.selfSelectedDeckId, round.opponentSelectedDeckId);
       round.selfWinRate = lookup.winRate;
       round.winRateNote = lookup.note;
+      round.winRateSource = lookup.source;
     }
 
     function setBattleSubmission(side, submission) {
@@ -2009,20 +2110,32 @@ PS_SIMULATOR_HTML = """<!doctype html>
       const round = activeBattleRound();
       if (!round || !round.selfSelectedDeckId || !round.opponentSelectedDeckId) return;
       updateRoundWinRate(round);
-      const roll = deterministicUnitInterval([
+      const seedInput = [
         state.battle.seed,
         round.roundNumber,
         round.selfSelectedDeckId,
         round.opponentSelectedDeckId
-      ].join("|"));
-      decideBattleRound(roll < round.selfWinRate ? "self_win" : "opponent_win");
+      ].join("|");
+      const roll = deterministicUnitInterval(seedInput);
+      decideBattleRound(roll < round.selfWinRate ? "self_win" : "opponent_win", {
+        method: "random",
+        randomValue: roll,
+        seedInput
+      });
     }
 
-    function decideBattleRound(result) {
+    function decideBattleRound(result, decision = {}) {
       const round = activeBattleRound();
       if (!round || !round.selfSelectedDeckId || !round.opponentSelectedDeckId) return;
       updateRoundWinRate(round);
       round.result = result;
+      round.resultDecisionMethod = decision.method || "manual";
+      round.resultDecision = {
+        method: round.resultDecisionMethod,
+        randomValue: Number.isFinite(decision.randomValue) ? decision.randomValue : null,
+        seedInput: decision.seedInput || "",
+        note: decision.note || ""
+      };
       state.battle.score = scoreFromRounds(state.battle.rounds);
       refreshRoundUsageSnapshot(round);
       round.score = { ...state.battle.score };
@@ -2030,6 +2143,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
       if (state.battle.score.self >= 3 || state.battle.score.opponent >= 3 || round.roundNumber >= 5) {
         state.battle.isComplete = true;
         state.battle.winner = state.battle.score.self > state.battle.score.opponent ? "self" : "opponent";
+        state.battle.finishedAtRound = round.roundNumber;
       } else {
         state.battle.rounds.push(createBattleRound(round.roundNumber + 1));
       }
@@ -2344,41 +2458,90 @@ PS_SIMULATOR_HTML = """<!doctype html>
       document.getElementById("battle-progress").innerHTML = rows;
     }
 
-    function battlePreviewPayload() {
+    function finalResultPayload() {
+      if (!state.battle?.isComplete) return null;
+      return {
+        winner: state.battle.winner,
+        result: state.battle.winner === "self" ? "self_win" : "opponent_win",
+        selfWins: state.battle.score.self,
+        opponentWins: state.battle.score.opponent,
+        score: { ...state.battle.score },
+        finishedAtRound: state.battle.finishedAtRound
+      };
+    }
+
+    function buildBattleRoundLog(round) {
+      const scoreAfterRound = round.score || scoreFromRounds(
+        (state.battle?.rounds || []).filter(item => item.roundNumber <= round.roundNumber)
+      );
+      return {
+        roundNumber: round.roundNumber,
+        selfCandidateDeckIds: [...(round.selfCandidateDeckIds || [])],
+        opponentCandidateDeckIds: [...(round.opponentCandidateDeckIds || [])],
+        candidateDeckIds: {
+          self: [...(round.selfCandidateDeckIds || [])],
+          opponent: [...(round.opponentCandidateDeckIds || [])]
+        },
+        selfSelectedDeckId: round.selfSelectedDeckId || "",
+        opponentSelectedDeckId: round.opponentSelectedDeckId || "",
+        selectedDeckIds: {
+          self: round.selfSelectedDeckId || "",
+          opponent: round.opponentSelectedDeckId || ""
+        },
+        selfWinRate: Number(round.selfWinRate),
+        winRate: {
+          self: Number(round.selfWinRate),
+          opponent: 1 - Number(round.selfWinRate)
+        },
+        winRateSource: cloneJson(round.winRateSource || {
+          type: "unknown",
+          note: round.winRateNote || ""
+        }),
+        winRateNote: round.winRateNote || "",
+        result: round.result || null,
+        resultDecisionMethod: round.result ? (round.resultDecisionMethod || "manual") : null,
+        resultDecision: round.result ? cloneJson(round.resultDecision || {
+          method: round.resultDecisionMethod || "manual",
+          randomValue: null,
+          seedInput: "",
+          note: ""
+        }) : null,
+        scoreAfterRound,
+        score: scoreAfterRound,
+        selfUsedDeckIds: [...(round.selfUsedDeckIds || [])],
+        opponentUsedDeckIds: [...(round.opponentUsedDeckIds || [])],
+        selfRemainingDeckIds: [...(round.selfRemainingDeckIds || [])],
+        opponentRemainingDeckIds: [...(round.opponentRemainingDeckIds || [])],
+        usedDeckIdsAfterRound: {
+          self: [...(round.selfUsedDeckIds || [])],
+          opponent: [...(round.opponentUsedDeckIds || [])]
+        },
+        remainingDeckIdsAfterRound: {
+          self: [...(round.selfRemainingDeckIds || [])],
+          opponent: [...(round.opponentRemainingDeckIds || [])]
+        },
+        candidateWarnings: [...(round.candidateWarnings || [])]
+      };
+    }
+
+    function buildBattleLog() {
       if (!state.battle) return null;
       return {
+        logVersion: "ps-battle-log.v1",
+        createdAt: state.battle.createdAt,
         seed: state.battle.seed,
         selfSubmissionId: state.battle.selfSubmission.submissionId,
         opponentSubmissionId: state.battle.opponentSubmission.submissionId,
-        rounds: state.battle.rounds.map(round => ({
-          roundNumber: round.roundNumber,
-          selfCandidateDeckIds: round.selfCandidateDeckIds,
-          opponentCandidateDeckIds: round.opponentCandidateDeckIds,
-          selfSelectedDeckId: round.selfSelectedDeckId,
-          opponentSelectedDeckId: round.opponentSelectedDeckId,
-          selfWinRate: round.selfWinRate,
-          result: round.result,
-          selfUsedDeckIds: round.selfUsedDeckIds,
-          opponentUsedDeckIds: round.opponentUsedDeckIds,
-          selfRemainingDeckIds: round.selfRemainingDeckIds,
-          opponentRemainingDeckIds: round.opponentRemainingDeckIds,
-          usedDeckIdsAfterRound: {
-            self: round.selfUsedDeckIds,
-            opponent: round.opponentUsedDeckIds
-          },
-          remainingDeckIdsAfterRound: {
-            self: round.selfRemainingDeckIds,
-            opponent: round.opponentRemainingDeckIds
-          },
-          candidateWarnings: round.candidateWarnings,
-          score: round.score
-        })),
-        finalResult: state.battle.isComplete ? {
-          winner: state.battle.winner,
-          selfWins: state.battle.score.self,
-          opponentWins: state.battle.score.opponent
-        } : null
+        selfSubmissionSnapshot: snapshotSubmission(state.battle.selfSubmission, "self"),
+        opponentSubmissionSnapshot: snapshotSubmission(state.battle.opponentSubmission, "opponent"),
+        rounds: state.battle.rounds.map(buildBattleRoundLog),
+        finalResult: finalResultPayload(),
+        finishedAtRound: state.battle.finishedAtRound
       };
+    }
+
+    function battlePreviewPayload() {
+      return buildBattleLog();
     }
 
     function renderBattle(validation) {
@@ -2533,6 +2696,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
       return {
         submission,
         battle: battlePreviewPayload(),
+        battleLog: buildBattleLog(),
         validation: {
           canStartBattle: validation.canStartBattle,
           errors: validation.errors,
@@ -2546,6 +2710,28 @@ PS_SIMULATOR_HTML = """<!doctype html>
           sourceDataset: datasetUrl
         }
       };
+    }
+
+    function safeFilenamePart(value) {
+      return String(value || "no-seed").replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/^-+|-+$/g, "") || "no-seed";
+    }
+
+    function downloadJson(filename, payload) {
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function downloadBattleLogJson() {
+      const battleLog = buildBattleLog();
+      if (!battleLog) return;
+      downloadJson(`battle-log-${safeFilenamePart(battleLog.seed)}.json`, battleLog);
     }
 
     function renderDataSummary() {
@@ -2805,6 +2991,8 @@ PS_SIMULATOR_HTML = """<!doctype html>
     document.getElementById("reset-battle-progress").addEventListener("click", () => {
       resetBattleProgress();
     });
+
+    document.getElementById("download-battle-log").addEventListener("click", downloadBattleLogJson);
 
     document.getElementById("battle-seed").addEventListener("input", event => {
       if (!state.battle) return;
