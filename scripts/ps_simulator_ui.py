@@ -226,6 +226,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
     .role-panel {
       display: grid;
       gap: 12px;
+      align-content: start;
       min-width: 0;
       border: 1px solid var(--border);
       border-radius: 8px;
@@ -314,12 +315,11 @@ PS_SIMULATOR_HTML = """<!doctype html>
 
     .deck-option {
       display: grid;
-      grid-template-columns: auto minmax(0, 1fr);
-      gap: 9px;
+      gap: 6px;
       align-items: start;
       border: 1px solid var(--border);
       border-radius: 8px;
-      padding: 9px;
+      padding: 7px 8px;
       background: var(--panel);
     }
 
@@ -328,16 +328,27 @@ PS_SIMULATOR_HTML = """<!doctype html>
       background: linear-gradient(90deg, var(--deck-class-border, var(--accent)) 0 5px, var(--deck-class-row, var(--accent-soft)) 5px);
     }
 
+    .deck-option-pick {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 8px;
+      align-items: center;
+      cursor: pointer;
+    }
+
     .deck-option input {
       width: 16px;
       height: 16px;
-      margin-top: 3px;
+      margin: 0;
       accent-color: var(--accent);
     }
 
     .deck-main {
-      display: grid;
-      gap: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 7px;
+      flex-wrap: wrap;
       min-width: 0;
     }
 
@@ -347,6 +358,23 @@ PS_SIMULATOR_HTML = """<!doctype html>
       gap: 7px;
       flex-wrap: wrap;
       overflow-wrap: anywhere;
+    }
+
+    .class-code-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 24px;
+      min-height: 22px;
+      border: 1px solid var(--deck-class-border, var(--border));
+      border-radius: 999px;
+      padding: 0 7px;
+      background: var(--deck-class-soft, var(--none-soft));
+      color: var(--deck-class-color, var(--none));
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1;
+      white-space: nowrap;
     }
 
     .deck-note,
@@ -365,6 +393,105 @@ PS_SIMULATOR_HTML = """<!doctype html>
       gap: 7px;
       flex-wrap: wrap;
       align-items: center;
+    }
+
+    .role-selection-summary {
+      display: grid;
+      gap: 7px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px;
+      background: #fff;
+    }
+
+    .role-selection-summary.invalid {
+      border-color: #fdba74;
+      background: #fff7ed;
+    }
+
+    .role-summary-head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      flex-wrap: wrap;
+    }
+
+    .role-summary-head strong {
+      overflow-wrap: anywhere;
+    }
+
+    .summary-deck-chips {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .summary-deck-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 26px;
+      max-width: 100%;
+      border: 1px solid var(--deck-class-border, var(--border));
+      border-radius: 999px;
+      padding: 0 8px 0 4px;
+      background: var(--deck-class-soft, var(--none-soft));
+      color: var(--deck-class-color, var(--none));
+      font-size: 12px;
+      font-weight: 700;
+      overflow-wrap: anywhere;
+    }
+
+    .summary-deck-chip.empty {
+      border-style: dashed;
+      background: #f8fafc;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .summary-deck-chip-code {
+      display: inline-grid;
+      place-items: center;
+      min-width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      background: var(--deck-class-color, var(--none));
+      color: #fff;
+      font-size: 11px;
+      line-height: 1;
+    }
+
+    .class-coverage-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 26px;
+      min-height: 26px;
+      border: 2px solid var(--border);
+      border-radius: 999px;
+      padding: 0 7px;
+      background: var(--deck-class-soft, var(--none-soft));
+      color: var(--deck-class-color, var(--none));
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .class-coverage-badge.selected {
+      border-color: var(--deck-class-color, var(--none));
+    }
+
+    .class-coverage-badge.missing {
+      border-color: var(--border);
+      border-style: dashed;
+    }
+
+    .class-coverage-badge.duplicate {
+      border-color: var(--bad);
+      box-shadow: 0 0 0 2px var(--bad-soft);
     }
 
     .badge,
@@ -404,10 +531,14 @@ PS_SIMULATOR_HTML = """<!doctype html>
       color: var(--bad);
     }
 
-    .status-badge.confident,
-    .status-badge.available {
+    .status-badge.confident {
       background: var(--accent-soft);
       color: var(--accent);
+    }
+
+    .status-badge.available {
+      background: #dbeafe;
+      color: #1d4ed8;
     }
 
     .class-badge {
@@ -761,6 +892,100 @@ PS_SIMULATOR_HTML = """<!doctype html>
       padding: 12px;
     }
 
+    .deck-status-details {
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+    }
+
+    .deck-status-details summary {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      padding: 2px 0 0 24px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .deck-status-details[open] summary {
+      border-bottom: 0;
+      padding-bottom: 6px;
+    }
+
+    .status-summary {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .status-summary-label {
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .status-mini {
+      display: inline-flex;
+      align-items: center;
+      min-height: 20px;
+      border-radius: 999px;
+      padding: 0 7px;
+      background: var(--none-soft);
+      color: var(--none);
+      font-size: 11px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .status-mini.ok {
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    .status-mini.confident {
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    .status-mini.available {
+      background: #dbeafe;
+      color: #1d4ed8;
+    }
+
+    .status-mini.warn {
+      background: var(--warn-soft);
+      color: var(--warn);
+    }
+
+    .status-mini.bad {
+      background: var(--bad-soft);
+      color: var(--bad);
+    }
+
+    .status-details-body {
+      display: grid;
+      gap: 6px;
+      padding: 0 0 2px 24px;
+    }
+
+    .player-status-row {
+      display: grid;
+      grid-template-columns: minmax(80px, 0.9fr) auto minmax(120px, 1fr);
+      gap: 8px;
+      align-items: center;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px;
+      background: #fff;
+    }
+
+    .player-status-row.current {
+      border-color: var(--deck-class-border, var(--border));
+      background: var(--deck-class-row, #f8fafc);
+    }
+
     .debug-field {
       width: min(100%, 260px);
     }
@@ -845,6 +1070,10 @@ PS_SIMULATOR_HTML = """<!doctype html>
 
       .field {
         width: 100%;
+      }
+
+      .player-status-row {
+        grid-template-columns: 1fr;
       }
     }
   </style>
@@ -1070,6 +1299,12 @@ PS_SIMULATOR_HTML = """<!doctype html>
       `;
     }
 
+    function compactClassBadgeHtml(className) {
+      const definition = classDefinition(className);
+      const code = definition ? definition.className : className || "?";
+      return `<span class="class-code-pill ${escapeHtml(classCssClass(className))}" title="${escapeHtml(classLabel(className))}">${escapeHtml(code)}</span>`;
+    }
+
     function decksByClass(className) {
       return (state.dataset?.decks || []).filter(deck => deck.className === className);
     }
@@ -1096,16 +1331,39 @@ PS_SIMULATOR_HTML = """<!doctype html>
       return selectedRoles.length === 0 || selectedRoles.includes(role);
     }
 
-    function roleClassSummaryHtml(role) {
-      const selectedDecks = (assignmentForRole(role).deckIds || []).map(deckById).filter(Boolean);
-      if (selectedDecks.length === 0) {
-        return `<div class="role-class-summary">選択クラスなし</div>`;
+    function deckSummaryChipHtml(deck) {
+      if (!deck) {
+        return `<span class="summary-deck-chip empty">未選択</span>`;
       }
+      const definition = classDefinition(deck.className);
+      const classCode = definition?.className || deck.className || "?";
       return `
-          <div class="role-class-summary">
-            選択中:
-            ${selectedDecks.map(deck => `${escapeHtml(deck.deckName)} ${classBadgeHtml(deck.className)}`).join(" ")}
+        <span class="summary-deck-chip ${escapeHtml(classCssClass(deck.className))}" title="${escapeHtml(classLabel(deck.className))} / deckId: ${escapeHtml(deck.deckId)}">
+          <span class="summary-deck-chip-code" aria-hidden="true">${escapeHtml(classCode)}</span>
+          <span>${escapeHtml(deck.deckName)}</span>
+        </span>
+      `;
+    }
+
+    function roleClassSummaryHtml(roleDef) {
+      const assignment = assignmentForRole(roleDef.role);
+      const selectedDecks = (assignment.deckIds || []).map(deckById).filter(Boolean);
+      const selectedPlayer = playerById(assignment.playerId);
+      const missingSlotCount = Math.max(roleDef.expectedDeckCount - selectedDecks.length, 0);
+      const chips = [
+        ...selectedDecks.map(deckSummaryChipHtml),
+        ...Array.from({ length: missingSlotCount }, () => deckSummaryChipHtml(null))
+      ].join("");
+      const invalid = selectedDecks.length !== roleDef.expectedDeckCount;
+      return `
+        <div class="role-selection-summary ${invalid ? "invalid" : ""}">
+          <div class="role-summary-head">
+            <span class="badge">${escapeHtml(roleDef.role)}</span>
+            <strong>${escapeHtml(selectedPlayer?.playerName || "担当未選択")}</strong>
+            <span class="count">${selectedDecks.length}/${roleDef.expectedDeckCount}デッキ</span>
           </div>
+          <div class="summary-deck-chips">${chips}</div>
+        </div>
       `;
     }
 
@@ -1115,10 +1373,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
       if (selectedHere && selectedRoles.length > 1) {
         return ["bad", `重複: ${selectedRoles.join("/")}`];
       }
-      if (selectedHere) {
-        return ["ok", "この担当で選択中"];
-      }
-      return ["", "未選択"];
+      return ["", ""];
     }
 
     function statusKey(playerId, deckId) {
@@ -1146,13 +1401,78 @@ PS_SIMULATOR_HTML = """<!doctype html>
       return `<span class="status-badge ${escapeHtml(status.status)}">${escapeHtml(label)}</span>`;
     }
 
+    function statusSummaryHtml(playerId, deckId) {
+      const player = playerById(playerId);
+      if (!player) {
+        return `
+          <span class="status-summary">
+            <span class="status-summary-label">使用可能度:</span>
+            <span class="status-mini warn">担当未選択</span>
+          </span>
+        `;
+      }
+      const status = statusFor(playerId, deckId);
+      if (!status) {
+        return `
+          <span class="status-summary">
+            <span class="status-summary-label">使用可能度:</span>
+            <span class="status-mini warn">データなし</span>
+            <span class="status-mini warn">要確認</span>
+          </span>
+        `;
+      }
+      const badgeKind = status.status === "hard"
+        ? "bad"
+        : status.status === "trainable"
+          ? "warn"
+          : status.status;
+      const label = statusLabels[status.status] || status.status;
+      return `
+        <span class="status-summary">
+          <span class="status-summary-label">使用可能度:</span>
+          <span class="status-mini ${badgeKind}">${escapeHtml(label)}</span>
+        </span>
+      `;
+    }
+
     function statusNoteHtml(status) {
       if (!status) {
-        return `<div class="status-note">PlayerDeckStatus 行なし。データなし / 要確認として扱います。</div>`;
+        return "PlayerDeckStatus 行なし。データなし / 要確認として扱います。";
       }
       const parts = [`練習負荷 ${Number(status.practiceCost || 0)}`];
       if (status.note) parts.push(status.note);
-      return `<div class="status-note">${escapeHtml(parts.join(" / "))}</div>`;
+      return parts.join(" / ");
+    }
+
+    function playerStatusRowForDeckHtml(deckId, currentPlayerId) {
+      const player = playerById(currentPlayerId);
+      if (!player) {
+        return `<div class="status-note">担当選手を選ぶと使用可能度を確認できます。</div>`;
+      }
+      const status = statusFor(player.playerId, deckId);
+      return `
+        <div class="player-status-row current">
+          <div class="badge-row">
+            <strong>${escapeHtml(player.playerName)}</strong>
+            <span class="badge ok">担当</span>
+          </div>
+          <div class="badge-row">${statusBadgeHtml(status)}</div>
+          <div class="status-note">${escapeHtml(statusNoteHtml(status))}</div>
+        </div>
+      `;
+    }
+
+    function deckStatusDetailsHtml(deckId, currentPlayerId) {
+      return `
+        <details class="deck-status-details">
+          <summary>
+            ${statusSummaryHtml(currentPlayerId, deckId)}
+          </summary>
+          <div class="status-details-body">
+            ${playerStatusRowForDeckHtml(deckId, currentPlayerId)}
+          </div>
+        </details>
+      `;
     }
 
     function defaultAssignmentForRole(role, roleIndex, sampleSubmission) {
@@ -1805,16 +2125,16 @@ PS_SIMULATOR_HTML = """<!doctype html>
         }
         if (status.status === "hard") {
           hardCount += 1;
-          hardWarnings.push(`${entry.role}: ${playerName} / ${deckName} はhardです。強い警告として扱います。`);
+          hardWarnings.push(`${entry.role}: ${playerName} / ${deckName} はきつそうです。`);
         }
         if (status.status === "trainable") {
           trainableCount += 1;
-          warnings.push(`${entry.role}: ${playerName} / ${deckName} はtrainableです。練習負荷を確認してください。`);
+          warnings.push(`${entry.role}: ${playerName} / ${deckName} は頑張れば可です。`);
         }
       });
 
       if (trainableCount + missingStatusCount >= 3) {
-        warnings.push(`trainable / データなし が合計${trainableCount + missingStatusCount}件あります。練習負荷・確認負荷が高い提出案です。`);
+        warnings.push(`頑張れば可 / データなし が合計${trainableCount + missingStatusCount}件あります。練習負荷・確認負荷が高い提出案です。`);
       }
 
       return {
@@ -1868,9 +2188,9 @@ PS_SIMULATOR_HTML = """<!doctype html>
       const classCounts = countBy(selectedEntries(currentSubmission()).map(entry => entry.deck?.className).filter(Boolean));
       document.getElementById("class-coverage").innerHTML = (state.dataset?.classDefinitions || []).map(definition => {
         const count = classCounts.get(definition.className) || 0;
-        const badgeClass = count === 1 ? "badge ok" : count === 0 ? "badge warn" : "badge bad";
+        const stateClass = count === 1 ? "selected" : count === 0 ? "missing" : "duplicate";
         const stateLabel = count === 1 ? "選択済み" : count === 0 ? "未選択" : `重複 ${count}`;
-        return `<span class="${badgeClass}">${escapeHtml(definition.displayName)} ${stateLabel}</span>`;
+        return `<span class="class-coverage-badge ${escapeHtml(classCssClass(definition.className))} ${stateClass}" title="${escapeHtml(definition.displayName)}: ${escapeHtml(stateLabel)}">${escapeHtml(definition.className)}</span>`;
       }).join("");
     }
 
@@ -1894,28 +2214,26 @@ PS_SIMULATOR_HTML = """<!doctype html>
           const [stateKind, stateLabel] = classGroupState(roleDef.role, definition.className);
           const deckRows = classDecks.map(deck => {
             const checked = assignment.deckIds.includes(deck.deckId);
-            const status = statusFor(assignment.playerId, deck.deckId);
             return `
-              <label class="deck-option ${checked ? "selected" : ""} ${escapeHtml(classCssClass(deck.className))}">
-                <input type="checkbox" data-role-deck="${escapeHtml(roleDef.role)}" data-deck-id="${escapeHtml(deck.deckId)}"${checked ? " checked" : ""}>
-                <span class="deck-main">
-                  <span class="deck-name">
-                    <strong>${escapeHtml(deck.deckName)}</strong>
-                    ${statusBadgeHtml(status)}
+              <div class="deck-option ${checked ? "selected" : ""} ${escapeHtml(classCssClass(deck.className))}">
+                <label class="deck-option-pick">
+                  <input type="checkbox" data-role-deck="${escapeHtml(roleDef.role)}" data-deck-id="${escapeHtml(deck.deckId)}"${checked ? " checked" : ""}>
+                  <span class="deck-main">
+                    <span class="deck-name"><strong>${escapeHtml(deck.deckName)}</strong></span>
                   </span>
-                  ${statusNoteHtml(status)}
-                </span>
-              </label>
+                </label>
+                ${deckStatusDetailsHtml(deck.deckId, assignment.playerId)}
+              </div>
             `;
           }).join("") || `<div class="empty">このクラスの候補はありません。</div>`;
           return `
             <div class="deck-class-group ${selectedHere ? "selected-class" : ""} ${escapeHtml(classCssClass(definition.className))}">
               <div class="deck-class-group-head">
                 <div class="badge-row">
-                  ${classBadgeHtml(definition.className)}
+                  ${compactClassBadgeHtml(definition.className)}
                   <span class="count">候補 ${classDecks.length}</span>
                 </div>
-                <span class="badge ${stateKind}">${escapeHtml(stateLabel)}</span>
+                ${stateLabel ? `<span class="badge ${stateKind}">${escapeHtml(stateLabel)}</span>` : ""}
               </div>
               <div class="deck-options">${deckRows}</div>
             </div>
@@ -1936,7 +2254,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
               </select>
             </span>
           </label>
-          ${roleClassSummaryHtml(roleDef.role)}
+          ${roleClassSummaryHtml(roleDef)}
           <div class="deck-options">${deckOptions}</div>
         </section>
       `;
@@ -2002,7 +2320,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
           sectionHtml(
             "運用上の注意",
             operationItems,
-            "hard / trainable / データなし の確認対象はありません。"
+            "きつそう / 頑張れば可 / データなし の確認対象はありません。"
           )
       ].join("");
     }
@@ -2037,8 +2355,8 @@ PS_SIMULATOR_HTML = """<!doctype html>
             <td>${escapeHtml(player.team || "")}</td>
             <td>
               <div class="badge-row">
-                <span class="badge bad">hard ${hardCount}</span>
-                <span class="badge warn">trainable ${trainableCount}</span>
+                <span class="badge bad">きつそう ${hardCount}</span>
+                <span class="badge warn">頑張れば可 ${trainableCount}</span>
                 <span class="badge ${missingCount ? "warn" : "ok"}">データなし ${missingCount}</span>
               </div>
             </td>
