@@ -28,6 +28,8 @@ class PsSimulatorUiTest(unittest.TestCase):
         self.assertIn("function validateSubmission(submission)", html)
         self.assertIn("function candidateDeckIdsForRound(submission, roundNumber, usedDeckIds)", html)
         self.assertIn("PSルール戦略シミュレータ", html)
+        self.assertIn('<a class="button" href="index.html">トップへ戻る</a>', html)
+        self.assertNotIn("配信レポートへ戻る", html)
         self.assertIn("ラウンド進行シミュレータ", html)
         self.assertNotIn("バトル進行MVP", html)
         self.assertNotIn("提出案を自分側・相手側にセットして、R1〜R5を手動選出で進めます。", html)

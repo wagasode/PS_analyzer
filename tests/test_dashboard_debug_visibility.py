@@ -8,10 +8,21 @@ from pathlib import Path
 ROOT_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT_DIR / "scripts"))
 
-from build_streaming_dashboard import render_html  # noqa: E402
+from build_streaming_dashboard import render_html, render_index_html  # noqa: E402
 
 
 class DashboardDebugVisibilityTest(unittest.TestCase):
+    def test_index_is_feature_hub(self) -> None:
+        html = render_index_html()
+
+        self.assertIn("<title>PS_analyzer</title>", html)
+        self.assertIn('<div class="meta">機能一覧</div>', html)
+        self.assertIn('<a class="feature-card" href="streaming-report.html">', html)
+        self.assertIn("<h2>配信レポート</h2>", html)
+        self.assertIn('<a class="feature-card" href="ps-simulator.html">', html)
+        self.assertIn("<h2>PSルール戦略シミュレータ</h2>", html)
+        self.assertNotIn('href="data/streaming_by_team.json"', html)
+
     def test_operational_links_are_collapsed_outside_normal_header(self) -> None:
         html = render_html()
 
@@ -23,6 +34,7 @@ class DashboardDebugVisibilityTest(unittest.TestCase):
     def test_toolbar_links_to_ps_simulator_by_current_page_name(self) -> None:
         html = render_html()
 
+        self.assertIn('<a class="button" href="index.html">トップへ戻る</a>', html)
         self.assertIn('<a class="button" href="ps-simulator.html">PSルール戦略シミュレータ</a>', html)
         self.assertNotIn('<a class="button" href="ps-simulator.html">提出案作成</a>', html)
 

@@ -1168,7 +1168,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
           <h1>PSルール戦略シミュレータ</h1>
           <div class="meta" id="dataset-meta">読み込み中...</div>
         </div>
-      <a class="button" href="index.html">配信レポートへ戻る</a>
+      <a class="button" href="index.html">トップへ戻る</a>
     </div>
   </header>
 
