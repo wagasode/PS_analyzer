@@ -11,11 +11,16 @@ ROOT_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT_DIR / "scripts"))
 
 from ps_simulator_ui import (  # noqa: E402
+    EXPECTED_ROUND_CANDIDATE_COUNTS,
     PS_SIMULATOR_PUBLIC_DATASET_PATH,
+    battle_remaining_deck_ids_for_side,
     read_ps_simulator_sample_dataset,
     render_ps_simulator_html,
+    reset_battle_rounds_from,
     write_ps_simulator_assets,
     battle_candidate_deck_ids_for_round,
+    battle_used_deck_ids_for_side,
+    validate_round_candidate_count,
 )
 
 
@@ -27,6 +32,12 @@ class PsSimulatorUiTest(unittest.TestCase):
         self.assertIn("fetch(datasetUrl)", html)
         self.assertIn("function validateSubmission(submission)", html)
         self.assertIn("function candidateDeckIdsForRound(submission, roundNumber, usedDeckIds)", html)
+        self.assertIn("function usedDeckIdsForSideFromRounds(rounds, side, options = {})", html)
+        self.assertIn("function resetRoundsFrom(roundNumber, shouldRender = true)", html)
+        self.assertIn("function validateRoundCandidates(roundNumber, candidateDeckIds)", html)
+        self.assertIn("usedDeckIdsAfterRound", html)
+        self.assertIn("remainingDeckIdsAfterRound", html)
+        self.assertIn("将来編集可能にする場合", html)
         self.assertIn("PSルール戦略シミュレータ", html)
         self.assertIn('<nav class="site-nav" aria-label="主要ページ">', html)
         self.assertIn('<a class="nav-link" href="index.html">トップ</a>', html)
@@ -147,19 +158,104 @@ class PsSimulatorUiTest(unittest.TestCase):
         r2_candidates = battle_candidate_deck_ids_for_round(submission, 2, set())
         r3_candidates = battle_candidate_deck_ids_for_round(submission, 3, set())
 
-        self.assertEqual(len(r1_candidates), 3)
-        self.assertEqual(len(r2_candidates), 2)
-        self.assertEqual(len(r3_candidates), 2)
+        self.assertEqual(len(r1_candidates), EXPECTED_ROUND_CANDIDATE_COUNTS[1])
+        self.assertEqual(len(r2_candidates), EXPECTED_ROUND_CANDIDATE_COUNTS[2])
+        self.assertEqual(len(r3_candidates), EXPECTED_ROUND_CANDIDATE_COUNTS[3])
 
         used_after_r3 = {r1_candidates[0], r2_candidates[0], r3_candidates[0]}
         r4_candidates = battle_candidate_deck_ids_for_round(submission, 4, used_after_r3)
-        self.assertEqual(len(r4_candidates), 4)
+        self.assertEqual(len(r4_candidates), EXPECTED_ROUND_CANDIDATE_COUNTS[4])
         self.assertTrue(used_after_r3.isdisjoint(r4_candidates))
 
         used_after_r4 = used_after_r3 | {r4_candidates[0]}
         r5_candidates = battle_candidate_deck_ids_for_round(submission, 5, used_after_r4)
-        self.assertEqual(len(r5_candidates), 3)
+        self.assertEqual(len(r5_candidates), EXPECTED_ROUND_CANDIDATE_COUNTS[5])
         self.assertTrue(used_after_r4.isdisjoint(r5_candidates))
+
+    def test_used_deck_management_is_independent_by_side(self) -> None:
+        submission = read_ps_simulator_sample_dataset()["sampleSubmission"]
+        r1_candidates = battle_candidate_deck_ids_for_round(submission, 1, set())
+        r2_candidates = battle_candidate_deck_ids_for_round(submission, 2, set())
+        r3_candidates = battle_candidate_deck_ids_for_round(submission, 3, set())
+        rounds = [
+            {
+                "roundNumber": 1,
+                "selfSelectedDeckId": r1_candidates[0],
+                "opponentSelectedDeckId": r1_candidates[1],
+                "result": "self_win",
+            },
+            {
+                "roundNumber": 2,
+                "selfSelectedDeckId": r2_candidates[0],
+                "opponentSelectedDeckId": r2_candidates[1],
+                "result": "opponent_win",
+            },
+            {
+                "roundNumber": 3,
+                "selfSelectedDeckId": r3_candidates[0],
+                "opponentSelectedDeckId": r3_candidates[1],
+                "result": "self_win",
+            },
+        ]
+
+        self_used = battle_used_deck_ids_for_side(rounds, "self")
+        opponent_used = battle_used_deck_ids_for_side(rounds, "opponent")
+        self.assertEqual(self_used, [r1_candidates[0], r2_candidates[0], r3_candidates[0]])
+        self.assertEqual(opponent_used, [r1_candidates[1], r2_candidates[1], r3_candidates[1]])
+
+        self_r4_candidates = battle_candidate_deck_ids_for_round(submission, 4, set(self_used))
+        opponent_r4_candidates = battle_candidate_deck_ids_for_round(submission, 4, set(opponent_used))
+
+        self.assertNotIn(r1_candidates[0], self_r4_candidates)
+        self.assertIn(r1_candidates[1], self_r4_candidates)
+        self.assertNotIn(r1_candidates[1], opponent_r4_candidates)
+        self.assertIn(r1_candidates[0], opponent_r4_candidates)
+
+    def test_remaining_decks_and_reset_from_round_follow_used_constraints(self) -> None:
+        submission = read_ps_simulator_sample_dataset()["sampleSubmission"]
+        r1_candidates = battle_candidate_deck_ids_for_round(submission, 1, set())
+        r2_candidates = battle_candidate_deck_ids_for_round(submission, 2, set())
+        rounds = [
+            {"roundNumber": 1, "selfSelectedDeckId": r1_candidates[0], "opponentSelectedDeckId": r1_candidates[1]},
+            {"roundNumber": 2, "selfSelectedDeckId": r2_candidates[0], "opponentSelectedDeckId": r2_candidates[1]},
+        ]
+
+        self.assertEqual(
+            battle_used_deck_ids_for_side(rounds, "self", through_round_number=1),
+            [r1_candidates[0]],
+        )
+        remaining_after_r2 = battle_remaining_deck_ids_for_side(
+            submission,
+            battle_used_deck_ids_for_side(rounds, "self"),
+        )
+        self.assertEqual(len(remaining_after_r2), 5)
+        self.assertNotIn(r1_candidates[0], remaining_after_r2)
+        self.assertNotIn(r2_candidates[0], remaining_after_r2)
+
+        self.assertEqual(reset_battle_rounds_from(rounds, 2), [rounds[0]])
+        self.assertEqual(reset_battle_rounds_from(rounds, 1), [])
+
+    def test_invalid_submission_candidate_generation_does_not_crash(self) -> None:
+        invalid_submission = {
+            "assignments": [
+                {"role": "A", "deckIds": ["missing-deck", "missing-deck", ""]},
+                {"role": "B", "deckIds": []},
+            ]
+        }
+
+        self.assertEqual(
+            battle_candidate_deck_ids_for_round(invalid_submission, 1, set()),
+            ["missing-deck"],
+        )
+        self.assertEqual(battle_candidate_deck_ids_for_round(invalid_submission, 2, set()), [])
+        self.assertEqual(
+            battle_candidate_deck_ids_for_round(invalid_submission, 4, set()),
+            ["missing-deck"],
+        )
+        self.assertEqual(
+            validate_round_candidate_count(1, ["missing-deck"]),
+            ["R1候補は3デッキ想定です。現在は1デッキです。"],
+        )
 
 
 if __name__ == "__main__":
