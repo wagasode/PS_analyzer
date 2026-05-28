@@ -831,6 +831,36 @@ PS_SIMULATOR_HTML = """<!doctype html>
       margin-top: 5px;
     }
 
+    .progress-side {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      min-width: 0;
+    }
+
+    .battle-result-badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 20px;
+      border-radius: 999px;
+      padding: 2px 7px;
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .battle-result-badge.win {
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    .battle-result-badge.loss {
+      background: var(--bad-soft);
+      color: var(--bad);
+    }
+
     .progress-head {
       display: flex;
       align-items: center;
@@ -1298,6 +1328,27 @@ PS_SIMULATOR_HTML = """<!doctype html>
       const decks = state.dataset?.decks || [];
       const index = decks.findIndex(deck => deck.deckId === deckId);
       return index === -1 ? Number.MAX_SAFE_INTEGER : index;
+    }
+
+    function classOrderIndex(className) {
+      const fallbackOrder = ["E", "R", "W", "D", "Ni", "B", "Nm"];
+      const fallbackIndex = fallbackOrder.indexOf(className);
+      if (fallbackIndex !== -1) return fallbackIndex;
+      const definitions = state.dataset?.classDefinitions || [];
+      const definitionIndex = definitions.findIndex(definition => definition.className === className);
+      if (definitionIndex !== -1) return definitionIndex;
+      return Number.MAX_SAFE_INTEGER;
+    }
+
+    function byDeckClassOrder(left, right) {
+      const leftDeck = deckById(left);
+      const rightDeck = deckById(right);
+      const classDiff = classOrderIndex(leftDeck?.className) - classOrderIndex(rightDeck?.className);
+      return classDiff || byDeckOrder(left, right);
+    }
+
+    function sortDeckIdsByClassOrder(deckIds) {
+      return [...(deckIds || [])].sort(byDeckClassOrder);
     }
 
     function classCssClass(className) {
@@ -1834,10 +1885,10 @@ PS_SIMULATOR_HTML = """<!doctype html>
       `;
     }
 
-    function resultLabel(result, selfPlayer = null, opponentPlayer = null) {
-      if (result === "self_win") return `${playerSideText(selfPlayer, "self")}勝ち`;
-      if (result === "opponent_win") return `${playerSideText(opponentPlayer, "opponent")}勝ち`;
-      return "";
+    function battleSideResultHtml(result, side) {
+      if (!result) return "";
+      const won = (side === "self" && result === "self_win") || (side === "opponent" && result === "opponent_win");
+      return `<span class="battle-result-badge ${won ? "win" : "loss"}">${won ? "勝ち" : "負け"}</span>`;
     }
 
     function groupedDeckIdsByPlayer(submission, deckIds) {
@@ -1888,24 +1939,22 @@ PS_SIMULATOR_HTML = """<!doctype html>
       if (!deckIds.length) {
         return `<span class="source-note">なし</span>`;
       }
+      const sortedDeckIds = sortDeckIdsByClassOrder(deckIds);
       return `
         <div class="deck-token-list">
-          ${deckIds.map(deckId => deckTokenHtml(deckId, {
+          ${sortedDeckIds.map(deckId => deckTokenHtml(deckId, {
             player: playerForDeckInSubmission(submission, deckId)
           })).join("")}
         </div>
       `;
     }
 
-    function selectedDeckWithPlayerHtml(submission, deckId, side) {
+    function selectedProgressDeckHtml(submission, deckId) {
       if (!deckId) {
         return `<span class="source-note">未選択</span>`;
       }
       const player = playerForDeckInSubmission(submission, deckId);
-      return `
-        ${playerSideHtml(player, side)}
-        ${deckTokenHtml(deckId)}
-      `;
+      return deckTokenHtml(deckId, { player });
     }
 
     function representativePlayerForCandidates(submission, deckIds) {
@@ -2089,18 +2138,21 @@ PS_SIMULATOR_HTML = """<!doctype html>
           `;
         }
         const className = round.result ? "progress-item done" : isCurrent ? "progress-item current" : "progress-item";
-        const selfPlayer = playerForDeckInSubmission(state.battle.selfSubmission, round.selfSelectedDeckId);
-        const opponentPlayer = playerForDeckInSubmission(state.battle.opponentSubmission, round.opponentSelectedDeckId);
         return `
           <div class="${className}">
             <div class="progress-head">
               <strong>${escapeHtml(battleLabel(roundNumber))}</strong>
-              ${round.result ? `<span class="badge">${escapeHtml(resultLabel(round.result, selfPlayer, opponentPlayer))}</span>` : ""}
             </div>
             <div class="progress-match">
-              ${selectedDeckWithPlayerHtml(state.battle.selfSubmission, round.selfSelectedDeckId, "self")}
+              <span class="progress-side">
+                ${selectedProgressDeckHtml(state.battle.selfSubmission, round.selfSelectedDeckId)}
+                ${battleSideResultHtml(round.result, "self")}
+              </span>
               <span class="side-label">vs</span>
-              ${selectedDeckWithPlayerHtml(state.battle.opponentSubmission, round.opponentSelectedDeckId, "opponent")}
+              <span class="progress-side">
+                ${selectedProgressDeckHtml(state.battle.opponentSubmission, round.opponentSelectedDeckId)}
+                ${battleSideResultHtml(round.result, "opponent")}
+              </span>
             </div>
           </div>
         `;
