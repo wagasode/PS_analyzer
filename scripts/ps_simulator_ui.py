@@ -715,27 +715,9 @@ PS_SIMULATOR_HTML = """<!doctype html>
       gap: 8px;
     }
 
-    .choice-group,
-    .deck-owner-group {
+    .deck-token-list {
       display: grid;
       gap: 6px;
-      min-width: 0;
-    }
-
-    .choice-group + .choice-group,
-    .deck-owner-group + .deck-owner-group {
-      padding-top: 6px;
-      border-top: 1px solid var(--border);
-    }
-
-    .choice-group-head,
-    .deck-owner-head {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      color: var(--muted);
-      font-size: 12px;
-      font-weight: 700;
       min-width: 0;
     }
 
@@ -813,7 +795,10 @@ PS_SIMULATOR_HTML = """<!doctype html>
       border-color: var(--deck-class-color, var(--accent));
       background: linear-gradient(90deg, var(--deck-class-color, var(--accent)) 0 5px, var(--deck-class-row, var(--accent-soft)) 5px);
       color: var(--text);
-      font-weight: 700;
+      font-weight: 800;
+      outline: 2px solid var(--deck-class-color, var(--accent));
+      outline-offset: 1px;
+      box-shadow: 0 0 0 3px var(--deck-class-soft, var(--accent-soft));
     }
 
     .choice-button:disabled {
@@ -866,11 +851,27 @@ PS_SIMULATOR_HTML = """<!doctype html>
 
     .submission-actions {
       display: flex;
+      align-items: center;
       justify-content: flex-end;
       gap: 8px;
       flex-wrap: wrap;
       padding-top: 12px;
       border-top: 1px solid var(--border);
+    }
+
+    .submission-actions-label {
+      display: inline-flex;
+      align-items: center;
+      min-height: 36px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .submission-actions button {
+      min-width: 72px;
+      padding: 0 11px;
     }
 
     .scoreline {
@@ -1168,9 +1169,10 @@ PS_SIMULATOR_HTML = """<!doctype html>
             <div class="panel-body">
               <div class="role-grid" id="role-grid"></div>
               <div class="submission-actions">
-                <button class="primary" id="set-self-submission" type="button">現在の提出案を自分側にセット</button>
-                <button id="set-opponent-submission" type="button">現在の提出案を相手側にセット</button>
-                <button id="set-both-submission" type="button">現在の提出案を両側にセット</button>
+                <span class="submission-actions-label">現在の提出案をセット</span>
+                <button class="primary" id="set-self-submission" type="button">自分側</button>
+                <button id="set-opponent-submission" type="button">相手側</button>
+                <button id="set-both-submission" type="button">両側</button>
               </div>
             </div>
           </section>
@@ -1247,7 +1249,6 @@ PS_SIMULATOR_HTML = """<!doctype html>
               <div class="battle-round" id="battle-current-round"></div>
               <div class="battle-progress" id="battle-progress"></div>
               <div class="battle-controls">
-                <button id="reset-battle-sample" type="button">サンプル提出でラウンドをリセット</button>
                 <button id="reset-battle-progress" type="button">ラウンドをやり直す</button>
               </div>
             </div>
@@ -1683,21 +1684,6 @@ PS_SIMULATOR_HTML = """<!doctype html>
       if (shouldRender) render();
     }
 
-    function resetBattleToSamples() {
-      if (!state.dataset) return;
-      const seed = state.battle?.seed || "sample-seed-001";
-      state.battle = {
-        seed,
-        selfSubmission: sampleSubmissionForSide("self"),
-        opponentSubmission: sampleSubmissionForSide("opponent"),
-        rounds: [],
-        score: { self: 0, opponent: 0 },
-        isComplete: false,
-        winner: ""
-      };
-      resetBattleProgress();
-    }
-
     function activeBattleRound() {
       if (state.battle?.isComplete) return null;
       return (state.battle?.rounds || []).find(round => !round.result) || null;
@@ -1870,15 +1856,17 @@ PS_SIMULATOR_HTML = """<!doctype html>
       return groups;
     }
 
-    function deckTokenHtml(deckId) {
+    function deckTokenHtml(deckId, options = {}) {
       const deck = deckById(deckId);
       if (!deck) {
         return `<span class="deck-token"><strong class="deck-token-name">${escapeHtml(deckId || "未選択")}</strong></span>`;
       }
       const definition = classDefinition(deck.className);
       const classCode = definition?.className || deck.className || "?";
+      const player = options.player || null;
       return `
         <span class="deck-token ${escapeHtml(classCssClass(deck.className))}" title="${escapeHtml(classLabel(deck.className))} / deckId: ${escapeHtml(deck.deckId)}">
+          ${player ? playerAvatarHtml(player, "small") : ""}
           <span class="deck-token-code" aria-hidden="true">${escapeHtml(classCode)}</span>
           <strong class="deck-token-name">${escapeHtml(deck.deckName)}</strong>
         </span>
@@ -1896,18 +1884,17 @@ PS_SIMULATOR_HTML = """<!doctype html>
       `;
     }
 
-    function deckGroupListHtml(submission, deckIds, side) {
+    function deckGroupListHtml(submission, deckIds) {
       if (!deckIds.length) {
         return `<span class="source-note">なし</span>`;
       }
-      return groupedDeckIdsByPlayer(submission, deckIds).map(group => `
-        <div class="deck-owner-group">
-          <div class="deck-owner-head">
-            ${playerSideHtml(group.player, side)}
-          </div>
-          ${deckTokenListHtml(group.deckIds)}
+      return `
+        <div class="deck-token-list">
+          ${deckIds.map(deckId => deckTokenHtml(deckId, {
+            player: playerForDeckInSubmission(submission, deckId)
+          })).join("")}
         </div>
-      `).join("");
+      `;
     }
 
     function selectedDeckWithPlayerHtml(submission, deckId, side) {
@@ -1968,32 +1955,25 @@ PS_SIMULATOR_HTML = """<!doctype html>
       }
       return `
         <div class="choice-list">
-          ${groupedDeckIdsByPlayer(submission, candidates).map(group => `
-            <div class="choice-group">
-              <div class="choice-group-head">
-                ${playerSideHtml(group.player, side)}
-                <span>候補</span>
-              </div>
-              ${group.deckIds.map(deckId => {
-                const usedDeck = used.has(deckId);
-                const selected = selectedDeckId === deckId;
-                const disabled = usedDeck || Boolean(round.result) || state.battle.isComplete;
-                const deck = deckById(deckId);
-                return `
-                  <button
-                    class="choice-button ${deck ? escapeHtml(classCssClass(deck.className)) : ""} ${selected ? "selected" : ""}"
-                    type="button"
-                    data-battle-side="${escapeHtml(side)}"
-                    data-battle-deck-id="${escapeHtml(deckId)}"
-                    ${disabled ? "disabled" : ""}
-                  >
-                    ${deckTokenHtml(deckId)}
-                    ${usedDeck ? `<span class="badge warn">使用済み</span>` : ""}
-                  </button>
-                `;
-              }).join("")}
-            </div>
-          `).join("")}
+          ${candidates.map(deckId => {
+            const usedDeck = used.has(deckId);
+            const selected = selectedDeckId === deckId;
+            const disabled = usedDeck || Boolean(round.result) || state.battle.isComplete;
+            const deck = deckById(deckId);
+            const player = playerForDeckInSubmission(submission, deckId);
+            return `
+              <button
+                class="choice-button ${deck ? escapeHtml(classCssClass(deck.className)) : ""} ${selected ? "selected" : ""}"
+                type="button"
+                data-battle-side="${escapeHtml(side)}"
+                data-battle-deck-id="${escapeHtml(deckId)}"
+                ${disabled ? "disabled" : ""}
+              >
+                ${deckTokenHtml(deckId, { player })}
+                ${usedDeck ? `<span class="badge warn">使用済み</span>` : ""}
+              </button>
+            `;
+          }).join("")}
         </div>
       `;
     }
@@ -2006,13 +1986,13 @@ PS_SIMULATOR_HTML = """<!doctype html>
             <div class="deck-class-group-head">
               <strong>使用済みデッキ</strong>
             </div>
-            ${deckGroupListHtml(submission, usedDeckIds, side)}
+            ${deckGroupListHtml(submission, usedDeckIds)}
           </div>
           <div class="deck-list-group">
             <div class="deck-class-group-head">
               <strong>残りデッキ</strong>
             </div>
-            ${deckGroupListHtml(submission, remainingDeckIds, side)}
+            ${deckGroupListHtml(submission, remainingDeckIds)}
           </div>
         </section>
       `;
@@ -2064,9 +2044,15 @@ PS_SIMULATOR_HTML = """<!doctype html>
         </div>
         <div class="battle-round-grid">
           <section class="battle-card">
+            <div class="deck-class-group-head">
+              <h3>自分側候補</h3>
+            </div>
             ${renderChoiceList("self", active)}
           </section>
           <section class="battle-card">
+            <div class="deck-class-group-head">
+              <h3>相手側候補</h3>
+            </div>
             ${renderChoiceList("opponent", active)}
           </section>
         </div>
@@ -2568,8 +2554,6 @@ PS_SIMULATOR_HTML = """<!doctype html>
     document.getElementById("set-both-submission").addEventListener("click", () => {
       setBattleSubmissionForBothSides(currentSubmission());
     });
-
-    document.getElementById("reset-battle-sample").addEventListener("click", resetBattleToSamples);
 
     document.getElementById("reset-battle-progress").addEventListener("click", () => {
       resetBattleProgress();
