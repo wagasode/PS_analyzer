@@ -1265,6 +1265,12 @@ PS_SIMULATOR_HTML = """<!doctype html>
       `;
     }
 
+    function compactClassBadgeHtml(className) {
+      const definition = classDefinition(className);
+      const code = definition ? definition.className : className || "?";
+      return `<span class="class-code-pill ${escapeHtml(classCssClass(className))}" title="${escapeHtml(classLabel(className))}">${escapeHtml(code)}</span>`;
+    }
+
     function decksByClass(className) {
       return (state.dataset?.decks || []).filter(deck => deck.className === className);
     }
@@ -1333,10 +1339,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
       if (selectedHere && selectedRoles.length > 1) {
         return ["bad", `重複: ${selectedRoles.join("/")}`];
       }
-      if (selectedHere) {
-        return ["ok", "この担当で選択中"];
-      }
-      return ["", "未選択"];
+      return ["", ""];
     }
 
     function statusKey(playerId, deckId) {
@@ -1364,50 +1367,40 @@ PS_SIMULATOR_HTML = """<!doctype html>
       return `<span class="status-badge ${escapeHtml(status.status)}">${escapeHtml(label)}</span>`;
     }
 
-    function statusSummaryCountHtml(label, count, kind) {
-      if (!count) return "";
-      return `<span class="status-mini ${escapeHtml(kind)}">${escapeHtml(label)} ${count}</span>`;
-    }
-
-    function statusAlertHtml(label, count, kind) {
-      if (!count) return "";
-      return `<span class="status-mini ${escapeHtml(kind)}">${escapeHtml(label)}</span>`;
-    }
-
-    function statusSummaryHtml(deckId) {
-      const counts = { confident: 0, available: 0, trainable: 0, hard: 0, missing: 0 };
-      (state.dataset?.players || []).forEach(player => {
-        const status = statusFor(player.playerId, deckId);
-        const statusKind = status?.status && counts[status.status] !== undefined ? status.status : "missing";
-        counts[statusKind] += 1;
-      });
-      const chips = [
-        statusSummaryCountHtml("自信あり", counts.confident, "ok"),
-        statusSummaryCountHtml("使用可能", counts.available, "ok"),
-        statusSummaryCountHtml("注意", counts.trainable, "warn"),
-        statusAlertHtml("きつそうあり", counts.hard, "bad"),
-        statusAlertHtml("要確認あり", counts.missing, "warn")
-      ].filter(Boolean).join("");
-      return `
-        <span class="status-summary">
-          <span class="status-summary-label">使用可能度:</span>
-          ${chips || `<span class="status-mini warn">要確認</span>`}
-        </span>
-      `;
-    }
-
-    function assignedStatusBadgeHtml(playerId, deckId) {
+    function statusSummaryHtml(playerId, deckId) {
       const player = playerById(playerId);
       if (!player) {
-        return `<span class="badge warn">担当未選択</span>`;
+        return `
+          <span class="status-summary">
+            <span class="status-summary-label">使用可能度:</span>
+            <span class="status-mini warn">担当未選択</span>
+          </span>
+        `;
       }
       const status = statusFor(playerId, deckId);
       if (!status) {
-        return `<span class="badge warn">担当: データなし</span>`;
+        return `
+          <span class="status-summary">
+            <span class="status-summary-label">使用可能度:</span>
+            <span class="status-mini warn">データなし</span>
+            <span class="status-mini warn">要確認</span>
+          </span>
+        `;
       }
       const badgeKind = status.status === "hard" ? "bad" : status.status === "trainable" ? "warn" : "ok";
       const label = statusLabels[status.status] || status.status;
-      return `<span class="badge ${badgeKind}">担当: ${escapeHtml(label)}</span>`;
+      const attention = status.status === "hard"
+        ? `<span class="status-mini bad">強い注意</span>`
+        : status.status === "trainable"
+          ? `<span class="status-mini warn">注意</span>`
+          : "";
+      return `
+        <span class="status-summary">
+          <span class="status-summary-label">使用可能度:</span>
+          <span class="status-mini ${badgeKind}">${escapeHtml(label)}</span>
+          ${attention}
+        </span>
+      `;
     }
 
     function statusNoteHtml(status) {
@@ -1419,32 +1412,32 @@ PS_SIMULATOR_HTML = """<!doctype html>
       return parts.join(" / ");
     }
 
-    function playerStatusRowsForDeckHtml(deckId, currentPlayerId) {
-      return (state.dataset?.players || []).map(player => {
-        const status = statusFor(player.playerId, deckId);
-        const current = player.playerId === currentPlayerId;
-        return `
-          <div class="player-status-row ${current ? "current" : ""}">
-            <div class="badge-row">
-              <strong>${escapeHtml(player.playerName)}</strong>
-              ${current ? `<span class="badge ok">担当</span>` : ""}
-            </div>
-            <div class="badge-row">${statusBadgeHtml(status)}</div>
-            <div class="status-note">${escapeHtml(statusNoteHtml(status))}</div>
+    function playerStatusRowForDeckHtml(deckId, currentPlayerId) {
+      const player = playerById(currentPlayerId);
+      if (!player) {
+        return `<div class="status-note">担当選手を選ぶと使用可能度を確認できます。</div>`;
+      }
+      const status = statusFor(player.playerId, deckId);
+      return `
+        <div class="player-status-row current">
+          <div class="badge-row">
+            <strong>${escapeHtml(player.playerName)}</strong>
+            <span class="badge ok">担当</span>
           </div>
-        `;
-      }).join("");
+          <div class="badge-row">${statusBadgeHtml(status)}</div>
+          <div class="status-note">${escapeHtml(statusNoteHtml(status))}</div>
+        </div>
+      `;
     }
 
     function deckStatusDetailsHtml(deckId, currentPlayerId) {
       return `
         <details class="deck-status-details">
           <summary>
-            ${assignedStatusBadgeHtml(currentPlayerId, deckId)}
-            ${statusSummaryHtml(deckId)}
+            ${statusSummaryHtml(currentPlayerId, deckId)}
           </summary>
           <div class="status-details-body">
-            ${playerStatusRowsForDeckHtml(deckId, currentPlayerId)}
+            ${playerStatusRowForDeckHtml(deckId, currentPlayerId)}
           </div>
         </details>
       `;
@@ -2165,7 +2158,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
         const count = classCounts.get(definition.className) || 0;
         const badgeClass = count === 1 ? "badge ok" : count === 0 ? "badge warn" : "badge bad";
         const stateLabel = count === 1 ? "選択済み" : count === 0 ? "未選択" : `重複 ${count}`;
-        return `<span class="${badgeClass}">${escapeHtml(definition.displayName)} ${stateLabel}</span>`;
+        return `<span class="${badgeClass}" title="${escapeHtml(definition.displayName)}: ${escapeHtml(stateLabel)}">${escapeHtml(definition.className)}</span>`;
       }).join("");
     }
 
@@ -2202,7 +2195,6 @@ PS_SIMULATOR_HTML = """<!doctype html>
                       <strong>${escapeHtml(deck.deckName)}</strong>
                     </span>
                   </span>
-                    ${checked ? `<span class="badge ok">選択中</span>` : ""}
                   </span>
                 </label>
                 ${deckStatusDetailsHtml(deck.deckId, assignment.playerId)}
@@ -2213,10 +2205,10 @@ PS_SIMULATOR_HTML = """<!doctype html>
             <div class="deck-class-group ${selectedHere ? "selected-class" : ""} ${escapeHtml(classCssClass(definition.className))}">
               <div class="deck-class-group-head">
                 <div class="badge-row">
-                  ${classBadgeHtml(definition.className)}
+                  ${compactClassBadgeHtml(definition.className)}
                   <span class="count">候補 ${classDecks.length}</span>
                 </div>
-                <span class="badge ${stateKind}">${escapeHtml(stateLabel)}</span>
+                ${stateLabel ? `<span class="badge ${stateKind}">${escapeHtml(stateLabel)}</span>` : ""}
               </div>
               <div class="deck-options">${deckRows}</div>
             </div>
