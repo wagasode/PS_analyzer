@@ -1201,8 +1201,8 @@ PS_SIMULATOR_HTML = """<!doctype html>
     const statusLabels = {
       confident: "自信あり",
       available: "使用可能",
-      trainable: "練習すれば可",
-      hard: "使用困難"
+      trainable: "頑張れば可",
+      hard: "きつそう"
     };
     const state = {
       dataset: null,
@@ -2107,16 +2107,16 @@ PS_SIMULATOR_HTML = """<!doctype html>
         }
         if (status.status === "hard") {
           hardCount += 1;
-          hardWarnings.push(`${entry.role}: ${playerName} / ${deckName} は使用困難です。`);
+          hardWarnings.push(`${entry.role}: ${playerName} / ${deckName} はきつそうです。`);
         }
         if (status.status === "trainable") {
           trainableCount += 1;
-          warnings.push(`${entry.role}: ${playerName} / ${deckName} は練習すれば可です。`);
+          warnings.push(`${entry.role}: ${playerName} / ${deckName} は頑張れば可です。`);
         }
       });
 
       if (trainableCount + missingStatusCount >= 3) {
-        warnings.push(`練習すれば可 / データなし が合計${trainableCount + missingStatusCount}件あります。練習負荷・確認負荷が高い提出案です。`);
+        warnings.push(`頑張れば可 / データなし が合計${trainableCount + missingStatusCount}件あります。練習負荷・確認負荷が高い提出案です。`);
       }
 
       return {
@@ -2302,7 +2302,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
           sectionHtml(
             "運用上の注意",
             operationItems,
-            "使用困難 / 練習すれば可 / データなし の確認対象はありません。"
+            "きつそう / 頑張れば可 / データなし の確認対象はありません。"
           )
       ].join("");
     }
@@ -2337,8 +2337,8 @@ PS_SIMULATOR_HTML = """<!doctype html>
             <td>${escapeHtml(player.team || "")}</td>
             <td>
               <div class="badge-row">
-                <span class="badge bad">使用困難 ${hardCount}</span>
-                <span class="badge warn">練習すれば可 ${trainableCount}</span>
+                <span class="badge bad">きつそう ${hardCount}</span>
+                <span class="badge warn">頑張れば可 ${trainableCount}</span>
                 <span class="badge ${missingCount ? "warn" : "ok"}">データなし ${missingCount}</span>
               </div>
             </td>
