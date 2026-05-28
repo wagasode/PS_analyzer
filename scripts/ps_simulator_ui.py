@@ -360,17 +360,6 @@ PS_SIMULATOR_HTML = """<!doctype html>
       overflow-wrap: anywhere;
     }
 
-    .deck-title-line {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      min-width: 0;
-    }
-
-    .deck-title-line strong {
-      overflow-wrap: anywhere;
-    }
-
     .class-code-pill {
       display: inline-flex;
       align-items: center;
@@ -472,6 +461,37 @@ PS_SIMULATOR_HTML = """<!doctype html>
       color: #fff;
       font-size: 11px;
       line-height: 1;
+    }
+
+    .class-coverage-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 26px;
+      min-height: 26px;
+      border: 2px solid var(--border);
+      border-radius: 999px;
+      padding: 0 7px;
+      background: var(--deck-class-soft, var(--none-soft));
+      color: var(--deck-class-color, var(--none));
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .class-coverage-badge.selected {
+      border-color: var(--deck-class-color, var(--none));
+    }
+
+    .class-coverage-badge.missing {
+      border-color: var(--border);
+      border-style: dashed;
+    }
+
+    .class-coverage-badge.duplicate {
+      border-color: var(--bad);
+      box-shadow: 0 0 0 2px var(--bad-soft);
     }
 
     .badge,
@@ -1181,8 +1201,8 @@ PS_SIMULATOR_HTML = """<!doctype html>
     const statusLabels = {
       confident: "自信あり",
       available: "使用可能",
-      trainable: "頑張れば可",
-      hard: "きつそう"
+      trainable: "練習すれば可",
+      hard: "使用困難"
     };
     const state = {
       dataset: null,
@@ -1389,16 +1409,10 @@ PS_SIMULATOR_HTML = """<!doctype html>
       }
       const badgeKind = status.status === "hard" ? "bad" : status.status === "trainable" ? "warn" : "ok";
       const label = statusLabels[status.status] || status.status;
-      const attention = status.status === "hard"
-        ? `<span class="status-mini bad">強い注意</span>`
-        : status.status === "trainable"
-          ? `<span class="status-mini warn">注意</span>`
-          : "";
       return `
         <span class="status-summary">
           <span class="status-summary-label">使用可能度:</span>
           <span class="status-mini ${badgeKind}">${escapeHtml(label)}</span>
-          ${attention}
         </span>
       `;
     }
@@ -2093,16 +2107,16 @@ PS_SIMULATOR_HTML = """<!doctype html>
         }
         if (status.status === "hard") {
           hardCount += 1;
-          hardWarnings.push(`${entry.role}: ${playerName} / ${deckName} はhardです。強い警告として扱います。`);
+          hardWarnings.push(`${entry.role}: ${playerName} / ${deckName} は使用困難です。`);
         }
         if (status.status === "trainable") {
           trainableCount += 1;
-          warnings.push(`${entry.role}: ${playerName} / ${deckName} はtrainableです。練習負荷を確認してください。`);
+          warnings.push(`${entry.role}: ${playerName} / ${deckName} は練習すれば可です。`);
         }
       });
 
       if (trainableCount + missingStatusCount >= 3) {
-        warnings.push(`trainable / データなし が合計${trainableCount + missingStatusCount}件あります。練習負荷・確認負荷が高い提出案です。`);
+        warnings.push(`練習すれば可 / データなし が合計${trainableCount + missingStatusCount}件あります。練習負荷・確認負荷が高い提出案です。`);
       }
 
       return {
@@ -2156,9 +2170,9 @@ PS_SIMULATOR_HTML = """<!doctype html>
       const classCounts = countBy(selectedEntries(currentSubmission()).map(entry => entry.deck?.className).filter(Boolean));
       document.getElementById("class-coverage").innerHTML = (state.dataset?.classDefinitions || []).map(definition => {
         const count = classCounts.get(definition.className) || 0;
-        const badgeClass = count === 1 ? "badge ok" : count === 0 ? "badge warn" : "badge bad";
+        const stateClass = count === 1 ? "selected" : count === 0 ? "missing" : "duplicate";
         const stateLabel = count === 1 ? "選択済み" : count === 0 ? "未選択" : `重複 ${count}`;
-        return `<span class="${badgeClass}" title="${escapeHtml(definition.displayName)}: ${escapeHtml(stateLabel)}">${escapeHtml(definition.className)}</span>`;
+        return `<span class="class-coverage-badge ${escapeHtml(classCssClass(definition.className))} ${stateClass}" title="${escapeHtml(definition.displayName)}: ${escapeHtml(stateLabel)}">${escapeHtml(definition.className)}</span>`;
       }).join("");
     }
 
@@ -2182,19 +2196,12 @@ PS_SIMULATOR_HTML = """<!doctype html>
           const [stateKind, stateLabel] = classGroupState(roleDef.role, definition.className);
           const deckRows = classDecks.map(deck => {
             const checked = assignment.deckIds.includes(deck.deckId);
-            const definition = classDefinition(deck.className);
-            const classCode = definition?.className || deck.className || "?";
             return `
               <div class="deck-option ${checked ? "selected" : ""} ${escapeHtml(classCssClass(deck.className))}">
                 <label class="deck-option-pick">
                   <input type="checkbox" data-role-deck="${escapeHtml(roleDef.role)}" data-deck-id="${escapeHtml(deck.deckId)}"${checked ? " checked" : ""}>
                   <span class="deck-main">
-                  <span class="deck-name">
-                    <span class="deck-title-line">
-                      <span class="class-code-pill">${escapeHtml(classCode)}</span>
-                      <strong>${escapeHtml(deck.deckName)}</strong>
-                    </span>
-                  </span>
+                    <span class="deck-name"><strong>${escapeHtml(deck.deckName)}</strong></span>
                   </span>
                 </label>
                 ${deckStatusDetailsHtml(deck.deckId, assignment.playerId)}
@@ -2295,7 +2302,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
           sectionHtml(
             "運用上の注意",
             operationItems,
-            "hard / trainable / データなし の確認対象はありません。"
+            "使用困難 / 練習すれば可 / データなし の確認対象はありません。"
           )
       ].join("");
     }
@@ -2330,8 +2337,8 @@ PS_SIMULATOR_HTML = """<!doctype html>
             <td>${escapeHtml(player.team || "")}</td>
             <td>
               <div class="badge-row">
-                <span class="badge bad">hard ${hardCount}</span>
-                <span class="badge warn">trainable ${trainableCount}</span>
+                <span class="badge bad">使用困難 ${hardCount}</span>
+                <span class="badge warn">練習すれば可 ${trainableCount}</span>
                 <span class="badge ${missingCount ? "warn" : "ok"}">データなし ${missingCount}</span>
               </div>
             </td>
