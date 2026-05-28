@@ -1685,7 +1685,7 @@ HTML = """<!doctype html>
           <button class="tab" type="button" data-view="player">選手別</button>
           <button class="tab" type="button" data-view="deck">デッキ別</button>
         </div>
-        <a class="button" href="ps-simulator.html">提出案作成</a>
+        <a class="button" href="ps-simulator.html">PSルール戦略シミュレータ</a>
         <input class="search" id="search" type="search" placeholder="チーム、選手、デッキ、ステータスで絞り込み" autocomplete="off">
       </div>
 

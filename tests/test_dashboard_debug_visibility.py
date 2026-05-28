@@ -20,6 +20,12 @@ class DashboardDebugVisibilityTest(unittest.TestCase):
         self.assertIn('<div class="debug-links" id="debug-links">', html)
         self.assertNotIn('<div class="actions">', html)
 
+    def test_toolbar_links_to_ps_simulator_by_current_page_name(self) -> None:
+        html = render_html()
+
+        self.assertIn('<a class="button" href="ps-simulator.html">PSルール戦略シミュレータ</a>', html)
+        self.assertNotIn('<a class="button" href="ps-simulator.html">提出案作成</a>', html)
+
     def test_metadata_keeps_run_number_in_operational_details(self) -> None:
         html = render_html()
 
