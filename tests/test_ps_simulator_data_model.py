@@ -13,6 +13,8 @@ EXPECTED_SUBMISSION_COUNTS = {"A": 3, "B": 2, "C": 2}
 ALLOWED_STATUSES = {"confident", "available", "trainable", "hard"}
 ALLOWED_SIDES = {"self", "opponent"}
 ALLOWED_RESULTS = {"self_win", "opponent_win"}
+ALLOWED_WIN_RATE_SOURCE_TYPES = {"matchup", "reverseMatchup", "fallback", "manual", "unknown"}
+ALLOWED_RESULT_DECISION_METHODS = {"random", "manual"}
 
 
 def load_sample_dataset() -> dict:
@@ -106,6 +108,9 @@ class PsSimulatorDataModelTest(unittest.TestCase):
         battle_log = self.dataset["sampleBattleLog"]
         used_self: set[str] = set()
         used_opponent: set[str] = set()
+        running_score = {"self": 0, "opponent": 0}
+        seen_win_rate_source_types: set[str] = set()
+        seen_result_decision_methods: set[str] = set()
         submitted_deck_ids = {
             deck_id
             for assignment in self.dataset["sampleSubmission"]["assignments"]
@@ -113,35 +118,89 @@ class PsSimulatorDataModelTest(unittest.TestCase):
         }
         expected_candidate_counts = {1: 3, 2: 2, 3: 2, 4: 4, 5: 3}
 
+        self.assertEqual(battle_log["logVersion"], "ps-battle-log.v1")
+        self.assertRegex(battle_log["createdAt"], r"^\d{4}-\d{2}-\d{2}T")
         self.assertEqual(battle_log["seed"], "sample-seed-001")
         self.assertEqual(battle_log["selfSubmissionId"], self.dataset["sampleSubmission"]["submissionId"])
+        self.assertEqual(battle_log["opponentSubmissionId"], "sample-opponent-submission")
+        self.assertEqual(battle_log["selfSubmissionSnapshot"]["side"], "self")
+        self.assertEqual(battle_log["opponentSubmissionSnapshot"]["side"], "opponent")
         self.assertEqual([round_log["roundNumber"] for round_log in battle_log["rounds"]], [1, 2, 3, 4, 5])
+
+        for snapshot_key in ["selfSubmissionSnapshot", "opponentSubmissionSnapshot"]:
+            snapshot = battle_log[snapshot_key]
+            self.assertEqual({assignment["role"] for assignment in snapshot["assignments"]}, {"A", "B", "C"})
+            for assignment in snapshot["assignments"]:
+                self.assertIn(assignment["playerId"], self.player_ids)
+                self.assertEqual(assignment["playerSnapshot"]["playerId"], assignment["playerId"])
+                self.assertTrue(assignment["playerSnapshot"]["playerName"])
+                self.assertEqual(len(assignment["deckIds"]), len(assignment["deckSnapshots"]))
+                for deck_snapshot in assignment["deckSnapshots"]:
+                    self.assertIn(deck_snapshot["deckId"], self.deck_ids)
+                    self.assertIn(deck_snapshot["className"], EXPECTED_CLASSES)
+                    self.assertTrue(deck_snapshot["deckName"])
 
         for round_log in battle_log["rounds"]:
             round_number = round_log["roundNumber"]
             self.assertTrue(set(round_log["selfCandidateDeckIds"]).issubset(self.deck_ids))
             self.assertTrue(set(round_log["opponentCandidateDeckIds"]).issubset(self.deck_ids))
+            self.assertEqual(round_log["candidateDeckIds"]["self"], round_log["selfCandidateDeckIds"])
+            self.assertEqual(round_log["candidateDeckIds"]["opponent"], round_log["opponentCandidateDeckIds"])
             self.assertEqual(len(round_log["selfCandidateDeckIds"]), expected_candidate_counts[round_number])
             self.assertEqual(len(round_log["opponentCandidateDeckIds"]), expected_candidate_counts[round_number])
             self.assertTrue(used_self.isdisjoint(round_log["selfCandidateDeckIds"]))
             self.assertTrue(used_opponent.isdisjoint(round_log["opponentCandidateDeckIds"]))
             self.assertIn(round_log["selfSelectedDeckId"], round_log["selfCandidateDeckIds"])
             self.assertIn(round_log["opponentSelectedDeckId"], round_log["opponentCandidateDeckIds"])
+            self.assertEqual(round_log["selectedDeckIds"]["self"], round_log["selfSelectedDeckId"])
+            self.assertEqual(round_log["selectedDeckIds"]["opponent"], round_log["opponentSelectedDeckId"])
             self.assertGreaterEqual(round_log["selfWinRate"], 0.0)
             self.assertLessEqual(round_log["selfWinRate"], 1.0)
+            self.assertAlmostEqual(round_log["winRate"]["self"], round_log["selfWinRate"])
+            self.assertAlmostEqual(round_log["winRate"]["self"] + round_log["winRate"]["opponent"], 1.0)
+            self.assertIn(round_log["winRateSource"]["type"], ALLOWED_WIN_RATE_SOURCE_TYPES)
+            seen_win_rate_source_types.add(round_log["winRateSource"]["type"])
+            if round_log["winRateSource"]["type"] in {"matchup", "reverseMatchup"}:
+                self.assertIn(round_log["winRateSource"]["deckIdA"], self.deck_ids)
+                self.assertIn(round_log["winRateSource"]["deckIdB"], self.deck_ids)
             self.assertIn(round_log["result"], ALLOWED_RESULTS)
+            self.assertIn(round_log["resultDecisionMethod"], ALLOWED_RESULT_DECISION_METHODS)
+            seen_result_decision_methods.add(round_log["resultDecisionMethod"])
+            self.assertEqual(round_log["resultDecision"]["method"], round_log["resultDecisionMethod"])
+            if round_log["resultDecisionMethod"] == "random":
+                self.assertIsInstance(round_log["resultDecision"]["randomValue"], float)
+                self.assertIn(battle_log["seed"], round_log["resultDecision"]["seedInput"])
+            else:
+                self.assertIsNone(round_log["resultDecision"]["randomValue"])
 
             used_self.add(round_log["selfSelectedDeckId"])
             used_opponent.add(round_log["opponentSelectedDeckId"])
+            if round_log["result"] == "self_win":
+                running_score["self"] += 1
+            if round_log["result"] == "opponent_win":
+                running_score["opponent"] += 1
             self.assertEqual(set(round_log["usedDeckIdsAfterRound"]["self"]), used_self)
             self.assertEqual(set(round_log["usedDeckIdsAfterRound"]["opponent"]), used_opponent)
+            self.assertEqual(set(round_log["selfUsedDeckIds"]), used_self)
+            self.assertEqual(set(round_log["opponentUsedDeckIds"]), used_opponent)
             self.assertEqual(set(round_log["remainingDeckIdsAfterRound"]["self"]), submitted_deck_ids - used_self)
             self.assertEqual(set(round_log["remainingDeckIdsAfterRound"]["opponent"]), submitted_deck_ids - used_opponent)
+            self.assertEqual(set(round_log["selfRemainingDeckIds"]), submitted_deck_ids - used_self)
+            self.assertEqual(set(round_log["opponentRemainingDeckIds"]), submitted_deck_ids - used_opponent)
+            self.assertEqual(round_log["scoreAfterRound"], running_score)
+            self.assertEqual(round_log["score"], running_score)
 
         final_result = battle_log["finalResult"]
         self.assertEqual(final_result["winner"], "self")
+        self.assertEqual(final_result["result"], "self_win")
         self.assertEqual(final_result["selfWins"], 3)
         self.assertEqual(final_result["opponentWins"], 2)
+        self.assertEqual(final_result["score"], {"self": 3, "opponent": 2})
+        self.assertEqual(final_result["finishedAtRound"], 5)
+        self.assertEqual(battle_log["finishedAtRound"], 5)
+        self.assertIn("matchup", seen_win_rate_source_types)
+        self.assertIn("reverseMatchup", seen_win_rate_source_types)
+        self.assertEqual(seen_result_decision_methods, {"random", "manual"})
 
 
 if __name__ == "__main__":

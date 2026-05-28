@@ -2,7 +2,7 @@
 
 この文書は、PS 7デッキ制シミュレーターのWebUI、将来のGoogle Sheets取込、相性表、バトルログで共有する正規化済みJSONのデータモデルを定義する。
 
-Issue #64 の範囲では、Google Sheets API連携、提出UI、相性表読込、バトル実行は実装しない。後続Issueが同じIDとJSON形を参照できるように、repo-localのサンプルJSONを固定する。
+Issue #64 の範囲では、Google Sheets API連携、提出UI、相性表読込、バトル実行は実装しない。後続Issueが同じIDとJSON形を参照できるように、repo-localのサンプルJSONを固定する。Issue #69 では、このデータモデルに基づくBattleLog構造とJSON preview / exportを固定する。
 
 ## 基本方針
 
@@ -125,31 +125,68 @@ Issue #64 の範囲では、Google Sheets API連携、提出UI、相性表読込
 
 ## BattleRoundLog
 
-1ラウンド分の候補、選出、勝敗、使用済みデッキを表す。再生UIと将来の分岐再シミュレーションのため、各ラウンド開始時点の候補と選出結果を両方残す。
+1ラウンド分の候補、選出、勝率、勝敗、スコア、使用済みデッキを表す。再生UI、分岐再シミュレーション、1枚スクショ向けサマリー表示の入力にするため、各ラウンド開始時点の候補とラウンド終了後の状態を両方残す。
 
 | フィールド | 必須 | 説明 |
 | --- | --- | --- |
 | `roundNumber` | yes | 1始まりのラウンド番号。 |
-| `selfCandidateDeckIds` | yes | 自分側で選出可能だったデッキID配列。 |
-| `opponentCandidateDeckIds` | yes | 相手側で選出可能だったデッキID配列。 |
+| `selfCandidateDeckIds` | yes | 自分側で選出可能だったデッキID配列。後方互換用の平坦フィールド。 |
+| `opponentCandidateDeckIds` | yes | 相手側で選出可能だったデッキID配列。後方互換用の平坦フィールド。 |
+| `candidateDeckIds` | yes | `self` / `opponent` ごとの候補デッキID配列。 |
 | `selfSelectedDeckId` | yes | 自分側の選出デッキ。 |
 | `opponentSelectedDeckId` | yes | 相手側の選出デッキ。 |
+| `selectedDeckIds` | yes | `self` / `opponent` ごとの選出デッキID。 |
 | `selfWinRate` | yes | そのラウンドの自分側勝率。0.0から1.0の数値。 |
-| `result` | yes | `self_win` または `opponent_win`。 |
-| `usedDeckIdsAfterRound` | yes | ラウンド終了後の使用済みデッキ。`self` と `opponent` の配列を持つ。 |
-| `remainingDeckIdsAfterRound` | yes | ラウンド終了後の残りデッキ。`self` と `opponent` の配列を持つ。 |
+| `winRate` | yes | `self` / `opponent` ごとの勝率。 |
+| `winRateSource` | yes | 勝率の由来。`type` は `matchup`, `reverseMatchup`, `fallback`, `manual`, `unknown` のいずれか。 |
+| `winRateNote` | yes | UI表示向けの短い由来説明。 |
+| `result` | yes | `self_win` または `opponent_win`。未決定ラウンドでは空文字。 |
+| `resultDecisionMethod` | yes | 勝敗決定方法。確定済みラウンドでは `random` または `manual`。 |
+| `resultDecision` | yes | `method`, `randomValue`, `seedInput`, `note` を持つ決定詳細。手動決定では `randomValue` は `null`。 |
+| `scoreAfterRound` | yes | ラウンド終了後のスコア。`self` / `opponent` の勝ち数を持つ。 |
+| `usedDeckIdsAfterRound` | yes | ラウンド終了後の使用済みデッキ。`self` / `opponent` の配列を持つ。 |
+| `remainingDeckIdsAfterRound` | yes | ラウンド終了後の残りデッキ。`self` / `opponent` の配列を持つ。 |
+| `candidateWarnings` | yes | 候補数不足など、ログ生成時に検知した警告。問題がなければ空配列。 |
+
+`selfUsedDeckIds`, `opponentUsedDeckIds`, `selfRemainingDeckIds`, `opponentRemainingDeckIds`, `score` は、既存プレビューや単純なUI実装から参照しやすい平坦フィールドとして残す。正規の意味は `usedDeckIdsAfterRound`, `remainingDeckIdsAfterRound`, `scoreAfterRound` と同じにする。
 
 ## BattleLog
 
-バトル全体の再現に必要な情報を表す。MVPで永続保存しない場合でも、保存可能なJSON形式として固定する。
+バトル全体の再現に必要な情報を表す。MVPで永続保存しない場合でも、保存・共有・後続UIへ渡せるJSON形式として固定する。
 
 | フィールド | 必須 | 説明 |
 | --- | --- | --- |
-| `seed` | yes | 乱数や手動選出の再現に使う文字列。 |
-| `selfSubmissionId` | no | 自分側提出案ID。 |
-| `opponentSubmissionId` | no | 相手側提出案ID。 |
-| `rounds` | yes | `BattleRoundLog` 配列。 |
-| `finalResult` | yes | 最終結果。`winner`, `selfWins`, `opponentWins` を持つ。 |
+| `logVersion` | yes | BattleLogの互換性を判断するためのバージョン。初期値は `ps-battle-log.v1`。 |
+| `createdAt` | yes | BattleLog生成時刻。ISO 8601文字列。 |
+| `seed` | yes | 抽選勝敗の再現に使う文字列。 |
+| `selfSubmissionId` | yes | 自分側提出案ID。 |
+| `opponentSubmissionId` | yes | 相手側提出案ID。 |
+| `selfSubmissionSnapshot` | yes | 自分側提出案のスナップショット。担当選手、割当デッキ、表示名を含む。 |
+| `opponentSubmissionSnapshot` | yes | 相手側提出案のスナップショット。担当選手、割当デッキ、表示名を含む。 |
+| `rounds` | yes | `BattleRoundLog` 配列。R1〜R5の進行済みラウンドを順番に持つ。 |
+| `finalResult` | yes | 最終結果。未完了なら `null`。完了時は `winner`, `result`, `selfWins`, `opponentWins`, `score`, `finishedAtRound` を持つ。 |
+| `finishedAtRound` | yes | 3勝先取またはR5到達で試合が確定したラウンド番号。未完了なら `null`。 |
+
+`selfSubmissionSnapshot` / `opponentSubmissionSnapshot` の `assignments` は、`role`, `playerId`, `playerSnapshot`, `deckIds`, `deckSnapshots` を持つ。`deckSnapshots` には `deckId`, `className`, `deckName`, `source`, `sourceDeckKey` を残す。後からデッキ名が変わっても、BattleLog単体で当時の選出と表示名を復元できるようにする。
+
+## BattleLog JSON preview / export
+
+PSシミュレーターUIのJSONプレビューでは、提出案、バリデーション結果、BattleLogを同時に確認できる。`battleLog` / `battle` には同じBattleLog payloadを出し、`BattleLog JSONを保存` ボタンはBattleLog単体を `.json` としてダウンロードする。
+
+#69ではブラウザ内stateからBattleLogを組み立て、JSONとして人間が読めることを確認できる範囲に留める。永続DB保存、再生UI、サマリーカードUI、Canvas/PNG export、Discord連携、Google Sheets連携、相性表本実装、自動選出、最適化は扱わない。
+
+## 将来の1枚スクショ向けサマリーカード設計メモ
+
+後続Issueでは、BattleLogを入力として、R1〜R5の流れを1画面に収まりやすいサマリー表示へ変換する。#69のBattleLogから、次を追加問い合わせなしで取り出せる前提にする。
+
+- 試合全体の最終結果、勝者、スコア、`finishedAtRound`。
+- R1〜R5の自分側/相手側の候補、選出、勝敗、勝率、勝率由来。
+- 各ラウンド後のスコア推移、使用済みデッキ、残りデッキ。
+- R4/R5の候補デッキ。
+- `seed` と、各ラウンドの勝敗が `random` か `manual` か。
+- 提出案snapshot内の担当選手名、デッキ名、クラス。
+
+サマリーカード側はBattleLogを表示専用入力として扱う。初期段階では、ブラウザ上で人間が手動スクショを撮れる1画面表示を作るだけでよい。PNG export、自動画像生成、Discord API連携、SNS投稿機能、分岐再シミュレーション、複雑なアニメーション、スマホ最適化は後続のさらに別Issueに分ける。
 
 ## 外部入力との境界
 
