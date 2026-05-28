@@ -140,15 +140,33 @@ Issue #64 の範囲では、Google Sheets API連携、提出UI、相性表読込
 | `winRate` | yes | `self` / `opponent` ごとの勝率。 |
 | `winRateSource` | yes | 勝率の由来。`type` は `matchup`, `reverseMatchup`, `fallback`, `manual`, `unknown` のいずれか。 |
 | `winRateNote` | yes | UI表示向けの短い由来説明。 |
-| `result` | yes | `self_win` または `opponent_win`。未決定ラウンドでは空文字。 |
-| `resultDecisionMethod` | yes | 勝敗決定方法。確定済みラウンドでは `random` または `manual`。 |
-| `resultDecision` | yes | `method`, `randomValue`, `seedInput`, `note` を持つ決定詳細。手動決定では `randomValue` は `null`。 |
+| `result` | yes | `self_win` または `opponent_win`。未確定ラウンドでは `null`。 |
+| `resultDecisionMethod` | yes | 勝敗決定方法。確定済みラウンドでは `random` または `manual`。未確定ラウンドでは `null`。 |
+| `resultDecision` | yes | `method`, `randomValue`, `seedInput`, `note` を持つ決定詳細。手動決定では `randomValue` は `null`。未確定ラウンドでは `null`。 |
 | `scoreAfterRound` | yes | ラウンド終了後のスコア。`self` / `opponent` の勝ち数を持つ。 |
 | `usedDeckIdsAfterRound` | yes | ラウンド終了後の使用済みデッキ。`self` / `opponent` の配列を持つ。 |
 | `remainingDeckIdsAfterRound` | yes | ラウンド終了後の残りデッキ。`self` / `opponent` の配列を持つ。 |
 | `candidateWarnings` | yes | 候補数不足など、ログ生成時に検知した警告。問題がなければ空配列。 |
 
-`selfUsedDeckIds`, `opponentUsedDeckIds`, `selfRemainingDeckIds`, `opponentRemainingDeckIds`, `score` は、既存プレビューや単純なUI実装から参照しやすい平坦フィールドとして残す。正規の意味は `usedDeckIdsAfterRound`, `remainingDeckIdsAfterRound`, `scoreAfterRound` と同じにする。
+`winRateSource.type = manual` は将来の手入力勝率用の予約値とする。現行UIでは生成しない。現行UIが生成する値は、選出前の `unknown`、相性表の正方向 `matchup`、逆方向 `reverseMatchup`、相性表未接続時の `fallback` である。
+
+### BattleRoundLog canonical / alias 方針
+
+BattleLog v1では、後続UIが読みやすいネストフィールドと、既存UI・簡易参照・後方互換のための平坦フィールドを両方保持する。ネストフィールドをcanonicalとし、平坦フィールドはaliasとする。canonicalとaliasは常に同値でなければならない。将来の振り返りUIや1枚スクショ向けサマリーカード実装では、原則としてcanonical側を参照する。
+
+| canonical | alias |
+| --- | --- |
+| `candidateDeckIds.self` | `selfCandidateDeckIds` |
+| `candidateDeckIds.opponent` | `opponentCandidateDeckIds` |
+| `selectedDeckIds.self` | `selfSelectedDeckId` |
+| `selectedDeckIds.opponent` | `opponentSelectedDeckId` |
+| `scoreAfterRound` | `score` |
+| `usedDeckIdsAfterRound.self` | `selfUsedDeckIds` |
+| `usedDeckIdsAfterRound.opponent` | `opponentUsedDeckIds` |
+| `remainingDeckIdsAfterRound.self` | `selfRemainingDeckIds` |
+| `remainingDeckIdsAfterRound.opponent` | `opponentRemainingDeckIds` |
+
+aliasを残す理由は、既存のJSONプレビュー、単純な検証、軽量なUI実装から直接参照しやすくするためである。新規実装ではcanonical側を優先し、aliasは表示や後方互換の補助として扱う。
 
 ## BattleLog
 
@@ -157,7 +175,7 @@ Issue #64 の範囲では、Google Sheets API連携、提出UI、相性表読込
 | フィールド | 必須 | 説明 |
 | --- | --- | --- |
 | `logVersion` | yes | BattleLogの互換性を判断するためのバージョン。初期値は `ps-battle-log.v1`。 |
-| `createdAt` | yes | BattleLog生成時刻。ISO 8601文字列。 |
+| `createdAt` | yes | 現在のBattleLog状態が生成・初期化された時刻。ISO 8601文字列。 |
 | `seed` | yes | 抽選勝敗の再現に使う文字列。 |
 | `selfSubmissionId` | yes | 自分側提出案ID。 |
 | `opponentSubmissionId` | yes | 相手側提出案ID。 |
@@ -168,6 +186,8 @@ Issue #64 の範囲では、Google Sheets API連携、提出UI、相性表読込
 | `finishedAtRound` | yes | 3勝先取またはR5到達で試合が確定したラウンド番号。未完了なら `null`。 |
 
 `selfSubmissionSnapshot` / `opponentSubmissionSnapshot` の `assignments` は、`role`, `playerId`, `playerSnapshot`, `deckIds`, `deckSnapshots` を持つ。`deckSnapshots` には `deckId`, `className`, `deckName`, `source`, `sourceDeckKey` を残す。後からデッキ名が変わっても、BattleLog単体で当時の選出と表示名を復元できるようにする。
+
+`createdAt` は、現在のBattleLog状態が生成・初期化された時刻を表す。現行UIではバトル状態の初期化時とリセット時に更新する。これは試合開始時刻やJSON export時刻とは限らない。将来的に必要になった場合は、`startedAt` や `exportedAt` を別フィールドとして追加する。
 
 ## BattleLog JSON preview / export
 

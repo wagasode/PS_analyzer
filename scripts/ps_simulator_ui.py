@@ -2498,8 +2498,8 @@ PS_SIMULATOR_HTML = """<!doctype html>
           note: round.winRateNote || ""
         }),
         winRateNote: round.winRateNote || "",
-        result: round.result || "",
-        resultDecisionMethod: round.result ? (round.resultDecisionMethod || "manual") : "",
+        result: round.result || null,
+        resultDecisionMethod: round.result ? (round.resultDecisionMethod || "manual") : null,
         resultDecision: round.result ? cloneJson(round.resultDecision || {
           method: round.resultDecisionMethod || "manual",
           randomValue: null,
