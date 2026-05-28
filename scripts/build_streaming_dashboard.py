@@ -523,6 +523,10 @@ INDEX_HTML = """<!doctype html>
     }
 
     .topbar {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 24px;
       padding: 28px 0 22px;
     }
 
@@ -537,6 +541,41 @@ INDEX_HTML = """<!doctype html>
       margin-top: 8px;
       color: var(--muted);
       font-size: 14px;
+    }
+
+    .site-nav {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .nav-link {
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 0 12px;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .nav-link:hover,
+    .nav-link:focus-visible {
+      border-color: var(--border);
+      background: var(--panel);
+      color: var(--text);
+      outline: none;
+    }
+
+    .nav-link.active {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      color: var(--accent);
     }
 
     main {
@@ -598,8 +637,15 @@ INDEX_HTML = """<!doctype html>
 <body>
   <header>
     <div class="shell topbar">
-      <h1>PS_analyzer</h1>
-      <div class="meta">機能一覧</div>
+      <div>
+        <h1>PS_analyzer</h1>
+        <div class="meta">機能一覧</div>
+      </div>
+      <nav class="site-nav" aria-label="主要ページ">
+        <a class="nav-link active" aria-current="page" href="index.html">トップ</a>
+        <a class="nav-link" href="streaming-report.html">配信レポート</a>
+        <a class="nav-link" href="ps-simulator.html">PSルール戦略シミュレータ</a>
+      </nav>
     </div>
   </header>
 
@@ -754,6 +800,41 @@ HTML = """<!doctype html>
       display: flex;
       gap: 8px;
       flex-wrap: wrap;
+    }
+
+    .site-nav {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .nav-link {
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 0 12px;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .nav-link:hover,
+    .nav-link:focus-visible {
+      border-color: var(--border);
+      background: var(--panel);
+      color: var(--text);
+      outline: none;
+    }
+
+    .nav-link.active {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      color: var(--accent);
     }
 
     main {
@@ -1817,7 +1898,11 @@ HTML = """<!doctype html>
           </div>
         </details>
       </div>
-      <a class="button" href="index.html">トップへ戻る</a>
+      <nav class="site-nav" aria-label="主要ページ">
+        <a class="nav-link" href="index.html">トップ</a>
+        <a class="nav-link active" aria-current="page" href="streaming-report.html">配信レポート</a>
+        <a class="nav-link" href="ps-simulator.html">PSルール戦略シミュレータ</a>
+      </nav>
     </div>
   </header>
 
@@ -1829,7 +1914,6 @@ HTML = """<!doctype html>
           <button class="tab" type="button" data-view="player">選手別</button>
           <button class="tab" type="button" data-view="deck">デッキ別</button>
         </div>
-        <a class="button" href="ps-simulator.html">PSルール戦略シミュレータ</a>
         <input class="search" id="search" type="search" placeholder="チーム、選手、デッキ、ステータスで絞り込み" autocomplete="off">
       </div>
 

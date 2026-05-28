@@ -17,6 +17,10 @@ class DashboardDebugVisibilityTest(unittest.TestCase):
 
         self.assertIn("<title>PS_analyzer</title>", html)
         self.assertIn('<div class="meta">機能一覧</div>', html)
+        self.assertIn('<nav class="site-nav" aria-label="主要ページ">', html)
+        self.assertIn('<a class="nav-link active" aria-current="page" href="index.html">トップ</a>', html)
+        self.assertIn('<a class="nav-link" href="streaming-report.html">配信レポート</a>', html)
+        self.assertIn('<a class="nav-link" href="ps-simulator.html">PSルール戦略シミュレータ</a>', html)
         self.assertIn('<a class="feature-card" href="streaming-report.html">', html)
         self.assertIn("<h2>配信レポート</h2>", html)
         self.assertIn('<a class="feature-card" href="ps-simulator.html">', html)
@@ -31,11 +35,15 @@ class DashboardDebugVisibilityTest(unittest.TestCase):
         self.assertIn('<div class="debug-links" id="debug-links">', html)
         self.assertNotIn('<div class="actions">', html)
 
-    def test_toolbar_links_to_ps_simulator_by_current_page_name(self) -> None:
+    def test_streaming_report_uses_header_navigation(self) -> None:
         html = render_html()
 
-        self.assertIn('<a class="button" href="index.html">トップへ戻る</a>', html)
-        self.assertIn('<a class="button" href="ps-simulator.html">PSルール戦略シミュレータ</a>', html)
+        self.assertIn('<nav class="site-nav" aria-label="主要ページ">', html)
+        self.assertIn('<a class="nav-link" href="index.html">トップ</a>', html)
+        self.assertIn('<a class="nav-link active" aria-current="page" href="streaming-report.html">配信レポート</a>', html)
+        self.assertIn('<a class="nav-link" href="ps-simulator.html">PSルール戦略シミュレータ</a>', html)
+        self.assertNotIn('<a class="button" href="index.html">トップへ戻る</a>', html)
+        self.assertNotIn('<a class="button" href="ps-simulator.html">PSルール戦略シミュレータ</a>', html)
         self.assertNotIn('<a class="button" href="ps-simulator.html">提出案作成</a>', html)
 
     def test_metadata_keeps_run_number_in_operational_details(self) -> None:
