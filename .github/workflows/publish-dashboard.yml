@@ -43,6 +43,8 @@ jobs:
           set -euo pipefail
           test -d dashboard
           test -f dashboard/index.html
+          test -f dashboard/streaming-report.html
+          test -f dashboard/ps-simulator.html
 
       - name: Prepare Cloudflare Pages deployment
         id: prepare

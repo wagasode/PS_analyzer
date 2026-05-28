@@ -481,6 +481,195 @@ def build_deck_usage(db_path: Path) -> list[dict[str, Any]]:
     return deck_usage
 
 
+INDEX_HTML = """<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PS_analyzer</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --text: #1f2937;
+      --muted: #64748b;
+      --border: #d7dde6;
+      --accent: #0f766e;
+      --accent-soft: #dff7f3;
+      --shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.5;
+    }
+
+    header {
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .shell {
+      width: min(960px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 28px 0 22px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 28px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .meta {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .site-nav {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .nav-link {
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 0 12px;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .nav-link:hover,
+    .nav-link:focus-visible {
+      border-color: var(--border);
+      background: var(--panel);
+      color: var(--text);
+      outline: none;
+    }
+
+    .nav-link.active {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    main {
+      padding: 24px 0 40px;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .feature-card {
+      display: grid;
+      gap: 10px;
+      min-height: 142px;
+      padding: 18px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--panel);
+      color: inherit;
+      text-decoration: none;
+      box-shadow: var(--shadow);
+    }
+
+    .feature-card:focus-visible,
+    .feature-card:hover {
+      border-color: var(--accent);
+      outline: none;
+    }
+
+    .feature-card h2 {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.3;
+      letter-spacing: 0;
+    }
+
+    .feature-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .feature-action {
+      align-self: end;
+      color: var(--accent);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    @media (max-width: 720px) {
+      .feature-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="shell topbar">
+      <div>
+        <h1>PS_analyzer</h1>
+        <div class="meta">機能一覧</div>
+      </div>
+      <nav class="site-nav" aria-label="主要ページ">
+        <a class="nav-link active" aria-current="page" href="index.html">トップ</a>
+        <a class="nav-link" href="streaming-report.html">配信レポート</a>
+        <a class="nav-link" href="ps-simulator.html">PSルール戦略シミュレータ</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="shell">
+      <div class="feature-grid" aria-label="機能一覧">
+        <a class="feature-card" href="streaming-report.html">
+          <h2>配信レポート</h2>
+          <p>配信、選手、デッキ別の集計とデッキ情報の確認。</p>
+          <span class="feature-action">開く</span>
+        </a>
+        <a class="feature-card" href="ps-simulator.html">
+          <h2>PSルール戦略シミュレータ</h2>
+          <p>7デッキ制の提出案とラウンド進行の確認。</p>
+          <span class="feature-action">開く</span>
+        </a>
+      </div>
+    </div>
+  </main>
+</body>
+</html>
+"""
+
+
 HTML = """<!doctype html>
 <html lang="ja">
 <head>
@@ -611,6 +800,41 @@ HTML = """<!doctype html>
       display: flex;
       gap: 8px;
       flex-wrap: wrap;
+    }
+
+    .site-nav {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .nav-link {
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 0 12px;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .nav-link:hover,
+    .nav-link:focus-visible {
+      border-color: var(--border);
+      background: var(--panel);
+      color: var(--text);
+      outline: none;
+    }
+
+    .nav-link.active {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      color: var(--accent);
     }
 
     main {
@@ -1674,6 +1898,11 @@ HTML = """<!doctype html>
           </div>
         </details>
       </div>
+      <nav class="site-nav" aria-label="主要ページ">
+        <a class="nav-link" href="index.html">トップ</a>
+        <a class="nav-link active" aria-current="page" href="streaming-report.html">配信レポート</a>
+        <a class="nav-link" href="ps-simulator.html">PSルール戦略シミュレータ</a>
+      </nav>
     </div>
   </header>
 
@@ -1685,7 +1914,6 @@ HTML = """<!doctype html>
           <button class="tab" type="button" data-view="player">選手別</button>
           <button class="tab" type="button" data-view="deck">デッキ別</button>
         </div>
-        <a class="button" href="ps-simulator.html">提出案作成</a>
         <input class="search" id="search" type="search" placeholder="チーム、選手、デッキ、ステータスで絞り込み" autocomplete="off">
       </div>
 
@@ -3605,13 +3833,17 @@ HTML = """<!doctype html>
 """
 
 
+def render_index_html() -> str:
+    return INDEX_HTML
+
+
 def render_html() -> str:
     return HTML.replace("__DECK_CLASS_DEFINITIONS__", DECK_CLASS_DEFINITIONS_JSON)
 
 
-def write_html(path: Path) -> None:
+def write_html(path: Path, html: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(render_html(), encoding="utf-8")
+    path.write_text(html, encoding="utf-8")
 
 
 def main() -> None:
@@ -3627,7 +3859,8 @@ def main() -> None:
     deck_usage = build_deck_usage(args.db)
     metadata = build_metadata(player_rows, team_rows)
 
-    write_html(args.out_dir / "index.html")
+    write_html(args.out_dir / "index.html", render_index_html())
+    write_html(args.out_dir / "streaming-report.html", render_html())
     write_json(args.out_dir / "data" / "streaming_by_player.json", player_rows)
     write_json(args.out_dir / "data" / "streaming_by_team.json", team_rows)
     write_json(args.out_dir / "data" / "streaming_timeline_by_player.json", timelines)
@@ -3636,6 +3869,7 @@ def main() -> None:
     write_ps_simulator_assets(args.out_dir)
 
     print(f"wrote {args.out_dir / 'index.html'}")
+    print(f"wrote {args.out_dir / 'streaming-report.html'}")
     print(f"wrote {args.out_dir / 'data' / 'streaming_by_player.json'}")
     print(f"wrote {args.out_dir / 'data' / 'streaming_by_team.json'}")
     print(f"wrote {args.out_dir / 'data' / 'streaming_timeline_by_player.json'}")

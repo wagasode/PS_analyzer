@@ -128,6 +128,41 @@ PS_SIMULATOR_HTML = """<!doctype html>
       margin-top: 8px;
     }
 
+    .site-nav {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .nav-link {
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 0 12px;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .nav-link:hover,
+    .nav-link:focus-visible {
+      border-color: var(--border);
+      background: var(--panel);
+      color: var(--text);
+      outline: none;
+    }
+
+    .nav-link.active {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
     main {
       padding: 22px 0 42px;
     }
@@ -1168,7 +1203,11 @@ PS_SIMULATOR_HTML = """<!doctype html>
           <h1>PSルール戦略シミュレータ</h1>
           <div class="meta" id="dataset-meta">読み込み中...</div>
         </div>
-      <a class="button" href="index.html">配信レポートへ戻る</a>
+      <nav class="site-nav" aria-label="主要ページ">
+        <a class="nav-link" href="index.html">トップ</a>
+        <a class="nav-link" href="streaming-report.html">配信レポート</a>
+        <a class="nav-link active" aria-current="page" href="ps-simulator.html">PSルール戦略シミュレータ</a>
+      </nav>
     </div>
   </header>
 
