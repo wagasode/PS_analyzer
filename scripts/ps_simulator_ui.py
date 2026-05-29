@@ -514,6 +514,26 @@ PS_SIMULATOR_HTML = """<!doctype html>
       align-items: center;
     }
 
+    .matchup-load-status {
+      display: grid;
+      gap: 6px;
+      min-width: min(100%, 360px);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px;
+      background: #fff;
+    }
+
+    .matchup-load-status.warn {
+      border-color: #fdba74;
+      background: #fff7ed;
+    }
+
+    .matchup-load-status.bad {
+      border-color: #fecaca;
+      background: #fef2f2;
+    }
+
     .role-selection-summary {
       display: grid;
       gap: 7px;
@@ -1481,6 +1501,8 @@ PS_SIMULATOR_HTML = """<!doctype html>
           </label>
           <button class="primary" id="reset-sample" type="button">サンプル提出案に戻す</button>
           <button id="clear-decks" type="button">デッキ選択をクリア</button>
+          <button id="reload-matchups" type="button">相性表を再読み込み</button>
+          <div class="matchup-load-status" id="matchup-load-status" aria-live="polite"></div>
         </div>
       </div>
 
@@ -1616,6 +1638,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
     const roundRoleByNumber = { 1: "A", 2: "B", 3: "C" };
     const expectedRoundCandidateCounts = { 1: 3, 2: 2, 3: 2, 4: 4, 5: 3 };
     const datasetUrl = "data/ps_simulator/sample_dataset.json";
+    const matchupApiUrl = "/api/ps-simulator/matchups";
     const fallbackWinRate = 0.5;
     const fallbackWinRateNote = "相性表未定義のため0.5";
     const statusLabels = {
@@ -1627,6 +1650,15 @@ PS_SIMULATOR_HTML = """<!doctype html>
     const state = {
       dataset: null,
       matchupIndex: null,
+      matchupLoad: {
+        status: "idle",
+        message: "",
+        safeError: "",
+        fetchedAt: "",
+        lastAttemptedAt: "",
+        fallback: false,
+        fallbackReason: ""
+      },
       side: "self",
       assignments: {},
       battle: null
@@ -2159,6 +2191,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
           note: "選択前です。"
         },
         matchupWarnings: [],
+        matchupSourceWarnings: [],
         winRateFallback: false,
         result: "",
         resultDecisionMethod: "",
@@ -2248,6 +2281,55 @@ PS_SIMULATOR_HTML = """<!doctype html>
       return `${sourceDeckId}\\u0000${targetDeckId}`;
     }
 
+    function matchupSourceDisplayName(source) {
+      if (source === "google_sheets") return "Google Sheets";
+      if (source === "repo-local fixture") return "repo-local fixture";
+      return source || "未読み込み";
+    }
+
+    function statusLabel(status) {
+      if (status === "loading") return "読み込み中";
+      if (status === "success") return "成功";
+      if (status === "error") return "失敗";
+      if (status === "fallback") return "fallback中";
+      return "未読み込み";
+    }
+
+    function formatFetchedAt(value) {
+      if (!value) return "未取得";
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return String(value);
+      return date.toLocaleString("ja-JP", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false
+      });
+    }
+
+    function safeMatchupFetchError(error) {
+      const message = String(error?.message || "");
+      const httpMatch = message.match(/HTTP\\s+\\d{3}/);
+      const codeMatch = message.match(/google_sheets_[a-z_]+/);
+      const parts = ["Google Sheets相性表の取得に失敗しました"];
+      if (httpMatch) parts.push(httpMatch[0]);
+      if (codeMatch) parts.push(codeMatch[0]);
+      return parts.join(" / ");
+    }
+
+    function sanitizeMatchupApiSource(source) {
+      const raw = source && typeof source === "object" ? source : {};
+      return {
+        type: raw.type === "google_sheets" ? "google_sheets" : String(raw.type || "google_sheets"),
+        spreadsheetIdSource: String(raw.spreadsheetIdSource || ""),
+        range: String(raw.range || ""),
+        fetchedAt: String(raw.fetchedAt || "")
+      };
+    }
+
     function addMatchupEntry(index, entry) {
       if (!entry.sourceDeckId) {
         index.warnings.push("行デッキをdeckIdへ解決できないためmatchupを採用しません。");
@@ -2276,22 +2358,36 @@ PS_SIMULATOR_HTML = """<!doctype html>
         targetDeckId: entry.targetDeckId,
         winRate: normalized.value,
         source: entry.source,
+        sourceLabel: entry.sourceLabel || matchupSourceDisplayName(entry.source),
         sourceCell: entry.sourceCell || "",
         perspective: entry.perspective || "rowDeck",
-        note: entry.note || ""
+        note: entry.note || "",
+        fetchedAt: entry.fetchedAt || index.fetchedAt || "",
+        apiFallback: Boolean(index.apiFallback)
       });
     }
 
-    function buildMatchupIndex(dataset) {
+    function buildMatchupIndex(dataset, options = {}) {
       const fixture = dataset?.matchupFixture || {};
       const source = fixture.source || "repo-local fixture";
       const perspective = fixture.perspective || "rowDeck";
       const lookup = deckIdLookup(dataset);
       const index = {
         source,
+        sourceLabel: matchupSourceDisplayName(source),
+        sourceMeta: {
+          type: source,
+          format: fixture.format || "",
+          perspective
+        },
+        fetchedAt: "",
         perspective,
         entries: new Map(),
-        warnings: []
+        warnings: [],
+        apiFallback: Boolean(options.apiFallback),
+        fallbackReason: options.fallbackReason || "",
+        safeError: options.safeError || "",
+        loadStatus: options.loadStatus || "success"
       };
       const matrix = fixture.matrix || {};
       (matrix.rows || []).forEach(row => {
@@ -2315,6 +2411,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
             targetDeckId,
             rawWinRate,
             source,
+            sourceLabel: matchupSourceDisplayName(source),
             sourceCell: sourceCells[targetRef] || sourceCells[targetDeckId] || "",
             perspective,
             note: row.note || ""
@@ -2327,9 +2424,46 @@ PS_SIMULATOR_HTML = """<!doctype html>
           targetDeckId: resolveDeckId(matchup.targetDeckId || matchup.deckIdB || matchup.targetDeckName, lookup),
           rawWinRate: Object.prototype.hasOwnProperty.call(matchup, "winRate") ? matchup.winRate : matchup.winRateForA,
           source,
+          sourceLabel: matchupSourceDisplayName(source),
           sourceCell: matchup.sourceCell || "",
           perspective: matchup.perspective || perspective,
           note: matchup.note || ""
+        });
+      });
+      return index;
+    }
+
+    function buildMatchupIndexFromApiPayload(dataset, payload) {
+      const sourceMeta = sanitizeMatchupApiSource(payload?.source);
+      const source = sourceMeta.type === "google_sheets" ? "google_sheets" : sourceMeta.type;
+      const lookup = deckIdLookup(dataset);
+      const apiWarnings = Array.isArray(payload?.warnings) ? payload.warnings.map(String) : [];
+      const index = {
+        source,
+        sourceLabel: matchupSourceDisplayName(source),
+        sourceMeta,
+        fetchedAt: sourceMeta.fetchedAt,
+        perspective: "rowDeck",
+        entries: new Map(),
+        warnings: [...apiWarnings],
+        apiWarnings,
+        apiFallback: false,
+        fallbackReason: "",
+        safeError: "",
+        loadStatus: "success"
+      };
+
+      (payload?.matchups || []).forEach(matchup => {
+        addMatchupEntry(index, {
+          sourceDeckId: resolveDeckId(matchup.sourceDeckId, lookup),
+          targetDeckId: resolveDeckId(matchup.targetDeckId, lookup),
+          rawWinRate: matchup.winRate,
+          source,
+          sourceLabel: matchupSourceDisplayName(source),
+          sourceCell: matchup.sourceCell || "",
+          perspective: matchup.perspective || "rowDeck",
+          note: matchup.note || "",
+          fetchedAt: sourceMeta.fetchedAt
         });
       });
       return index;
@@ -2340,16 +2474,34 @@ PS_SIMULATOR_HTML = """<!doctype html>
       if (!index) {
         return {
           source: "未読み込み",
+          sourceLabel: "未読み込み",
+          status: state.matchupLoad.status,
+          statusLabel: statusLabel(state.matchupLoad.status),
           count: 0,
           warningCount: 0,
-          warnings: []
+          warnings: [],
+          fetchedAt: "",
+          formattedFetchedAt: "未取得",
+          fallback: false,
+          fallbackReason: "",
+          safeError: state.matchupLoad.safeError || "",
+          sourceMeta: {}
         };
       }
       return {
         source: index.source,
+        sourceLabel: index.sourceLabel || matchupSourceDisplayName(index.source),
+        status: state.matchupLoad.status || index.loadStatus || "success",
+        statusLabel: statusLabel(state.matchupLoad.status || index.loadStatus || "success"),
         count: index.entries.size,
         warningCount: index.warnings.length,
-        warnings: index.warnings
+        warnings: index.warnings,
+        fetchedAt: index.fetchedAt || state.matchupLoad.fetchedAt || "",
+        formattedFetchedAt: formatFetchedAt(index.fetchedAt || state.matchupLoad.fetchedAt || ""),
+        fallback: Boolean(index.apiFallback || state.matchupLoad.fallback),
+        fallbackReason: index.fallbackReason || state.matchupLoad.fallbackReason || "",
+        safeError: index.safeError || state.matchupLoad.safeError || "",
+        sourceMeta: index.sourceMeta || {}
       };
     }
 
@@ -2358,6 +2510,12 @@ PS_SIMULATOR_HTML = """<!doctype html>
       if (source?.type === "fallback") return "fallback";
       if (source?.type === "unknown") return "unknown";
       return source?.type || "unknown";
+    }
+
+    function winRateSourceDetailLabel(source) {
+      const type = winRateSourceLabel(source);
+      const origin = source?.sourceLabel || matchupSourceDisplayName(source?.source);
+      return origin && origin !== "未読み込み" ? `${type} / ${origin}` : type;
     }
 
     function lookupSelfWinRate(selfDeckId, opponentDeckId) {
@@ -2377,9 +2535,16 @@ PS_SIMULATOR_HTML = """<!doctype html>
             deckIdB: matchup.targetDeckId,
             winRateForA: Number(matchup.winRate),
             source: matchup.source,
+            sourceLabel: matchup.sourceLabel || matchupSourceDisplayName(matchup.source),
             sourceCell: matchup.sourceCell || "",
             perspective: matchup.perspective || "rowDeck",
-            note: matchup.note || ""
+            note: matchup.note || "",
+            fetchedAt: matchup.fetchedAt || index.fetchedAt || "",
+            matchupWarningCount: index.warnings.length,
+            matchupWarnings: [...(index.warnings || [])],
+            apiFallback: Boolean(index.apiFallback),
+            fallbackReason: index.fallbackReason || "",
+            spreadsheetIdSource: index.sourceMeta?.spreadsheetIdSource || ""
           }
         };
       }
@@ -2394,8 +2559,15 @@ PS_SIMULATOR_HTML = """<!doctype html>
           selfDeckId,
           opponentDeckId,
           source: index.source,
+          sourceLabel: index.sourceLabel || matchupSourceDisplayName(index.source),
           fallbackValue: fallbackWinRate,
-          note: fallbackWinRateNote
+          note: fallbackWinRateNote,
+          fetchedAt: index.fetchedAt || "",
+          matchupWarningCount: index.warnings.length,
+          matchupWarnings: [...(index.warnings || [])],
+          apiFallback: Boolean(index.apiFallback),
+          fallbackReason: index.fallbackReason || "",
+          spreadsheetIdSource: index.sourceMeta?.spreadsheetIdSource || ""
         }
       };
     }
@@ -2409,6 +2581,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
           note: "選択前です。"
         };
         round.matchupWarnings = [];
+        round.matchupSourceWarnings = [];
         round.winRateFallback = false;
         return;
       }
@@ -2417,7 +2590,14 @@ PS_SIMULATOR_HTML = """<!doctype html>
       round.winRateNote = lookup.note;
       round.winRateSource = lookup.source;
       round.matchupWarnings = [...(lookup.warnings || [])];
+      round.matchupSourceWarnings = [...(lookup.source?.matchupWarnings || [])];
       round.winRateFallback = Boolean(lookup.isFallback);
+    }
+
+    function refreshActiveRoundWinRate() {
+      const round = activeBattleRound();
+      if (!round || round.result) return;
+      updateRoundWinRate(round);
     }
 
     function setBattleSubmission(side, submission) {
@@ -2750,7 +2930,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
         <div class="deck-class-group-head">
           <div>
             <h3>${escapeHtml(battleLabel(active.roundNumber))} 選出</h3>
-            <div class="source-note">採用勝率: ${formatWinRate(active.selfWinRate)} / ${escapeHtml(winRateSourceLabel(active.winRateSource))} / ${escapeHtml(active.winRateNote)}</div>
+            <div class="source-note">採用勝率: ${formatWinRate(active.selfWinRate)} / ${escapeHtml(winRateSourceDetailLabel(active.winRateSource))} / ${escapeHtml(active.winRateNote)}</div>
             ${activeWarnings.map(message => (
               `<div class="validation-item warn">${escapeHtml(message)}</div>`
             )).join("")}
@@ -2819,7 +2999,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
                 ${battleSideResultHtml(round.result, "opponent")}
               </span>
             </div>
-            <div class="source-note">採用勝率 ${formatWinRate(round.selfWinRate)} / ${escapeHtml(winRateSourceLabel(round.winRateSource))}</div>
+            <div class="source-note">採用勝率 ${formatWinRate(round.selfWinRate)} / ${escapeHtml(winRateSourceDetailLabel(round.winRateSource))}</div>
           </div>
         `;
       }).join("");
@@ -2842,7 +3022,11 @@ PS_SIMULATOR_HTML = """<!doctype html>
       const scoreAfterRound = round.score || scoreFromRounds(
         (state.battle?.rounds || []).filter(item => item.roundNumber <= round.roundNumber)
       );
-      const matchupWarnings = [...(round.matchupWarnings || [])];
+      const matchupSourceWarnings = [...(round.matchupSourceWarnings || [])];
+      const matchupWarnings = [
+        ...(round.matchupWarnings || []),
+        ...matchupSourceWarnings
+      ];
       const candidateWarnings = [
         ...(round.candidateWarnings || []),
         ...matchupWarnings
@@ -2873,7 +3057,11 @@ PS_SIMULATOR_HTML = """<!doctype html>
         winRateSource,
         winRateNote: round.winRateNote || "",
         matchupWarnings,
-        winRateFallback: winRateSource.type === "fallback",
+        matchupSourceWarnings,
+        matchupWarningCount: matchupWarnings.length,
+        winRateFallback: Boolean(round.winRateFallback || winRateSource.type === "fallback"),
+        matchupLoadFallback: Boolean(winRateSource.apiFallback),
+        fetchedAt: winRateSource.fetchedAt || "",
         reverseMatchup: winRateSource.type === "reverseMatchup",
         result: round.result || null,
         resultDecisionMethod: round.result ? (round.resultDecisionMethod || "manual") : null,
@@ -2901,6 +3089,27 @@ PS_SIMULATOR_HTML = """<!doctype html>
       };
     }
 
+    function battleLogMatchupStatus() {
+      const status = matchupStatus();
+      return {
+        source: status.source,
+        sourceLabel: status.sourceLabel,
+        status: status.status,
+        count: status.count,
+        warningCount: status.warningCount,
+        warnings: [...(status.warnings || [])],
+        fetchedAt: status.fetchedAt || "",
+        fallback: Boolean(status.fallback),
+        fallbackReason: status.fallbackReason || "",
+        safeError: status.safeError || "",
+        sourceMeta: {
+          type: status.sourceMeta?.type || status.source,
+          spreadsheetIdSource: status.sourceMeta?.spreadsheetIdSource || "",
+          range: status.sourceMeta?.range || ""
+        }
+      };
+    }
+
     function buildBattleLog() {
       if (!state.battle) return null;
       return {
@@ -2911,6 +3120,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
         opponentSubmissionId: state.battle.opponentSubmission.submissionId,
         selfSubmissionSnapshot: snapshotSubmission(state.battle.selfSubmission, "self"),
         opponentSubmissionSnapshot: snapshotSubmission(state.battle.opponentSubmission, "opponent"),
+        matchupStatus: battleLogMatchupStatus(),
         rounds: state.battle.rounds.map(buildBattleRoundLog),
         finalResult: finalResultPayload(),
         finishedAtRound: state.battle.finishedAtRound
@@ -3077,7 +3287,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
               ${battleSideResultHtml(round.result, "opponent")}
             </div>
           </div>
-          <div class="source-note">勝率 ${formatWinRate(round.winRate?.self ?? round.selfWinRate)} / ${escapeHtml(winRateSourceLabel(round.winRateSource))}</div>
+          <div class="source-note">勝率 ${formatWinRate(round.winRate?.self ?? round.selfWinRate)} / ${escapeHtml(winRateSourceDetailLabel(round.winRateSource))}</div>
           ${summaryRoundCandidatesHtml(battleLog, round)}
         </section>
       `;
@@ -3267,9 +3477,15 @@ PS_SIMULATOR_HTML = """<!doctype html>
         battleLog: buildBattleLog(),
         matchupStatus: {
           source: matchups.source,
+          sourceLabel: matchups.sourceLabel,
+          status: matchups.status,
           count: matchups.count,
           warningCount: matchups.warningCount,
-          warnings: matchups.warnings
+          warnings: matchups.warnings,
+          fetchedAt: matchups.fetchedAt,
+          fallback: matchups.fallback,
+          fallbackReason: matchups.fallbackReason,
+          safeError: matchups.safeError
         },
         validation: {
           canStartBattle: validation.canStartBattle,
@@ -3492,6 +3708,113 @@ PS_SIMULATOR_HTML = """<!doctype html>
       }
     }
 
+    async function fetchMatchupApiPayload() {
+      const response = await fetch(matchupApiUrl, {
+        cache: "no-store",
+        headers: {
+          "Accept": "application/json"
+        }
+      });
+      if (!response.ok) {
+        const errorPayload = await response.json().catch(() => ({}));
+        const code = errorPayload?.error?.code ? ` / ${errorPayload.error.code}` : "";
+        throw new Error(`HTTP ${response.status}${code}`);
+      }
+      return await response.json();
+    }
+
+    async function loadMatchups(options = {}) {
+      if (!state.dataset || (state.matchupLoad.status === "loading" && !options.force)) return;
+      state.matchupLoad = {
+        ...state.matchupLoad,
+        status: "loading",
+        message: "Google Sheets相性表を読み込み中です。",
+        safeError: "",
+        lastAttemptedAt: new Date().toISOString()
+      };
+      render();
+
+      try {
+        const payload = await fetchMatchupApiPayload();
+        const index = buildMatchupIndexFromApiPayload(state.dataset, payload);
+        // 再読み込み後は、以降に updateRoundWinRate() で勝率を確定するバトルから新しい相性表を使う。
+        // すでに勝敗決定済みのラウンド結果やBattleLog用スナップショットは自動で書き換えない。
+        state.matchupIndex = index;
+        refreshActiveRoundWinRate();
+        state.matchupLoad = {
+          ...state.matchupLoad,
+          status: "success",
+          message: "Google Sheets相性表を読み込みました。",
+          safeError: "",
+          fetchedAt: index.fetchedAt || "",
+          fallback: false,
+          fallbackReason: ""
+        };
+      } catch (error) {
+        const safeError = safeMatchupFetchError(error);
+        if (options.useFallbackOnError || !state.matchupIndex) {
+          const fallbackReason = "Google Sheets相性表の取得に失敗したため、repo-local fixtureを使用しています。";
+          state.matchupIndex = buildMatchupIndex(state.dataset, {
+            apiFallback: true,
+            fallbackReason,
+            safeError,
+            loadStatus: "fallback"
+          });
+          refreshActiveRoundWinRate();
+          state.matchupLoad = {
+            ...state.matchupLoad,
+            status: "fallback",
+            message: fallbackReason,
+            safeError,
+            fetchedAt: "",
+            fallback: true,
+            fallbackReason
+          };
+        } else {
+          state.matchupLoad = {
+            ...state.matchupLoad,
+            status: "error",
+            message: "既存の相性表を維持しています。",
+            safeError,
+            fetchedAt: state.matchupIndex?.fetchedAt || "",
+            fallback: Boolean(state.matchupIndex?.apiFallback),
+            fallbackReason: state.matchupIndex?.fallbackReason || ""
+          };
+        }
+      }
+      render();
+    }
+
+    function renderMatchupLoadStatus() {
+      const container = document.getElementById("matchup-load-status");
+      if (!container) return;
+      const status = matchupStatus();
+      const statusKind = status.status === "success" ? "ok" : status.status === "error" ? "bad" : "warn";
+      container.className = ["matchup-load-status", statusKind === "ok" ? "" : statusKind].filter(Boolean).join(" ");
+      const errorHtml = status.safeError
+        ? `<div class="source-note">${escapeHtml(status.safeError)}${status.status === "error" ? "。既存の相性表を維持しています。" : ""}</div>`
+        : "";
+      const fallbackHtml = status.fallbackReason
+        ? `<div class="source-note">${escapeHtml(status.fallbackReason)}</div>`
+        : "";
+      container.innerHTML = `
+        <div class="data-summary">
+          <span class="badge ${statusKind}">相性表: ${escapeHtml(status.sourceLabel)}</span>
+          <span class="badge">${escapeHtml(status.statusLabel)}</span>
+          <span class="badge">${status.count} matchups</span>
+          <span class="badge ${status.warningCount ? "warn" : "ok"}">warnings ${status.warningCount}件</span>
+          <span class="badge">取得: ${escapeHtml(status.formattedFetchedAt)}</span>
+        </div>
+        ${fallbackHtml}
+        ${errorHtml}
+      `;
+      const reloadButton = document.getElementById("reload-matchups");
+      if (reloadButton) {
+        reloadButton.disabled = status.status === "loading";
+        reloadButton.textContent = status.status === "loading" ? "相性表を読み込み中" : "相性表を再読み込み";
+      }
+    }
+
     function renderDataSummary() {
       const dataset = state.dataset;
       const statuses = dataset?.playerDeckStatuses || [];
@@ -3500,13 +3823,16 @@ PS_SIMULATOR_HTML = """<!doctype html>
         `${dataset?.decks?.length || 0}デッキ`,
         `${dataset?.players?.length || 0}選手`,
         `${statuses.length} status行`,
-        `相性表: ${matchups.source}`,
+        `相性表: ${matchups.sourceLabel}`,
+        `状態: ${matchups.statusLabel}`,
         `${matchups.count} matchup`,
-        `相性表warning ${matchups.warningCount}`
+        `相性表warning ${matchups.warningCount}`,
+        `取得: ${matchups.formattedFetchedAt}`
         ].map(label => `<span class="badge">${escapeHtml(label)}</span>`).join("");
         document.getElementById("dataset-meta").textContent = "サンプルデータ読込済み";
         document.getElementById("debug-dataset-meta").textContent =
-          `${datasetUrl} を読み込みました。schemaVersion: ${dataset?.schemaVersion || "不明"} / 相性表: ${matchups.source} / ${matchups.count}件 / warning ${matchups.warningCount}件`;
+          `${datasetUrl} を読み込みました。schemaVersion: ${dataset?.schemaVersion || "不明"} / 相性表: ${matchups.sourceLabel} / ${matchups.statusLabel} / ${matchups.count}件 / warning ${matchups.warningCount}件 / 取得: ${matchups.formattedFetchedAt}`;
+        renderMatchupLoadStatus();
     }
 
     function renderClassCoverage(validation) {
@@ -3701,13 +4027,31 @@ PS_SIMULATOR_HTML = """<!doctype html>
       const status = matchupStatus();
       const warningsHtml = status.warnings.length
         ? status.warnings.map(message => `<div class="validation-item warn">${escapeHtml(message)}</div>`).join("")
-        : `<div class="validation-item ok">相性表fixtureの読み込みwarningはありません。</div>`;
+        : `<div class="validation-item ok">相性表の読み込みwarningはありません。</div>`;
+      const sourceMeta = status.sourceMeta || {};
+      const sourceMetaHtml = [
+        sourceMeta.type ? `type: ${sourceMeta.type}` : "",
+        sourceMeta.spreadsheetIdSource ? `spreadsheetIdSource: ${sourceMeta.spreadsheetIdSource}` : "",
+        sourceMeta.range ? `range: ${sourceMeta.range}` : "",
+        status.fetchedAt ? `fetchedAt: ${status.fetchedAt}` : ""
+      ].filter(Boolean).map(label => `<span class="badge">${escapeHtml(label)}</span>`).join("");
+      const fallbackHtml = status.fallbackReason
+        ? `<div class="validation-item warn">${escapeHtml(status.fallbackReason)}</div>`
+        : "";
+      const errorHtml = status.safeError
+        ? `<div class="validation-item warn">${escapeHtml(status.safeError)}</div>`
+        : "";
       document.getElementById("matchup-reference").innerHTML = `
         <div class="data-summary">
-          <span class="badge">source: ${escapeHtml(status.source)}</span>
+          <span class="badge">source: ${escapeHtml(status.sourceLabel)}</span>
+          <span class="badge">status: ${escapeHtml(status.statusLabel)}</span>
           <span class="badge">${status.count}件</span>
           <span class="badge ${status.warningCount ? "warn" : "ok"}">warning ${status.warningCount}</span>
+          <span class="badge">取得: ${escapeHtml(status.formattedFetchedAt)}</span>
         </div>
+        <div class="data-summary">${sourceMetaHtml}</div>
+        ${fallbackHtml}
+        ${errorHtml}
         ${warningsHtml}
       `;
     }
@@ -3737,10 +4081,22 @@ PS_SIMULATOR_HTML = """<!doctype html>
         throw new Error(`sample datasetを読み込めませんでした: HTTP ${response.status}`);
       }
       state.dataset = await response.json();
-      state.matchupIndex = buildMatchupIndex(state.dataset);
+      state.matchupIndex = buildMatchupIndex(state.dataset, {
+        loadStatus: "loading"
+      });
+      state.matchupLoad = {
+        status: "loading",
+        message: "Google Sheets相性表を読み込み中です。",
+        safeError: "",
+        fetchedAt: "",
+        lastAttemptedAt: new Date().toISOString(),
+        fallback: false,
+        fallbackReason: ""
+      };
       loadSampleSubmission();
       initializeBattleState();
       render();
+      await loadMatchups({ useFallbackOnError: true, force: true });
     }
 
     document.getElementById("submission-side").addEventListener("change", event => {
@@ -3754,6 +4110,9 @@ PS_SIMULATOR_HTML = """<!doctype html>
     });
 
     document.getElementById("clear-decks").addEventListener("click", clearDeckSelections);
+    document.getElementById("reload-matchups").addEventListener("click", () => {
+      loadMatchups({ useFallbackOnError: false });
+    });
 
     document.getElementById("set-self-submission").addEventListener("click", () => {
       setBattleSubmission("self", currentSubmission());
