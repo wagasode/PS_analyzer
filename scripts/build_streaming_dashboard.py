@@ -4,6 +4,7 @@ import argparse
 import csv
 import json
 import os
+import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -14,6 +15,7 @@ from ps_simulator_ui import write_ps_simulator_assets
 
 REPORTS_DIR = ROOT_DIR / "reports"
 PUBLIC_DIR = ROOT_DIR / "public"
+FUNCTIONS_DIR = ROOT_DIR / "functions"
 
 INT_FIELDS = {"stream_count", "has_youtube_channel", "has_twitch_channel"}
 FLOAT_FIELDS = {"total_hours", "shadowverse_hours", "youtube_hours", "twitch_hours"}
@@ -3846,6 +3848,17 @@ def write_html(path: Path, html: str) -> None:
     path.write_text(html, encoding="utf-8")
 
 
+def copy_pages_functions(out_dir: Path) -> list[Path]:
+    if not FUNCTIONS_DIR.exists():
+        return []
+
+    destination = out_dir / "functions"
+    if destination.exists():
+        shutil.rmtree(destination)
+    shutil.copytree(FUNCTIONS_DIR, destination)
+    return sorted(path for path in destination.rglob("*") if path.is_file())
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Build a static dashboard for streaming reports.")
     parser.add_argument("--db", type=Path, default=DEFAULT_DB_PATH)
@@ -3867,6 +3880,7 @@ def main() -> None:
     write_json(args.out_dir / "data" / "streaming_deck_usage.json", deck_usage)
     write_json(args.out_dir / "data" / "metadata.json", metadata)
     write_ps_simulator_assets(args.out_dir)
+    copied_functions = copy_pages_functions(args.out_dir)
 
     print(f"wrote {args.out_dir / 'index.html'}")
     print(f"wrote {args.out_dir / 'streaming-report.html'}")
@@ -3877,6 +3891,8 @@ def main() -> None:
     print(f"wrote {args.out_dir / 'data' / 'metadata.json'}")
     print(f"wrote {args.out_dir / 'ps-simulator.html'}")
     print(f"wrote {args.out_dir / 'data' / 'ps_simulator' / 'sample_dataset.json'}")
+    for path in copied_functions:
+        print(f"wrote {path}")
 
 
 if __name__ == "__main__":
