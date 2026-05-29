@@ -1591,6 +1591,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
               <h3 id="battle-summary-title">スクショ共有用サマリー</h3>
               <div class="battle-summary-actions">
                 <button id="download-battle-summary-png" type="button" disabled>共有用画像を保存</button>
+                <button id="copy-battle-summary-png" type="button" disabled>画像をコピー</button>
                 <span class="source-note battle-summary-export-status" id="battle-summary-export-status" aria-live="polite"></span>
               </div>
             </div>
@@ -3116,16 +3117,27 @@ PS_SIMULATOR_HTML = """<!doctype html>
       status.className = ["source-note", "battle-summary-export-status", kind].filter(Boolean).join(" ");
     }
 
-    function canDownloadBattleSummaryPng(battleLog) {
+    function canRenderBattleSummaryPng(battleLog) {
       return Boolean(battleLog?.finalResult && battleSummaryCardElement() && typeof window.html2canvas === "function");
     }
 
+    function canCopyBattleSummaryPng(battleLog) {
+      return Boolean(
+        canRenderBattleSummaryPng(battleLog)
+        && window.isSecureContext
+        && navigator.clipboard?.write
+        && typeof window.ClipboardItem === "function"
+      );
+    }
+
     function updateBattleSummaryPngControls(message = "", kind = "") {
-      const button = document.getElementById("download-battle-summary-png");
-      if (!button) return;
+      const downloadButton = document.getElementById("download-battle-summary-png");
+      const copyButton = document.getElementById("copy-battle-summary-png");
+      if (!downloadButton || !copyButton) return;
       const battleLog = buildBattleLog();
-      const canDownload = canDownloadBattleSummaryPng(battleLog);
-      button.disabled = isBattleSummaryPngExporting || !canDownload;
+      const canRender = canRenderBattleSummaryPng(battleLog);
+      downloadButton.disabled = isBattleSummaryPngExporting || !canRender;
+      copyButton.disabled = isBattleSummaryPngExporting || !canCopyBattleSummaryPng(battleLog);
       if (isBattleSummaryPngExporting) {
         setBattleSummaryExportStatus("PNG生成中です。", "");
         return;
@@ -3146,7 +3158,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
         setBattleSummaryExportStatus("PNG保存ライブラリを読み込めません。", "error");
         return;
       }
-      setBattleSummaryExportStatus("共有カード本体だけをPNG保存できます。", "");
+      setBattleSummaryExportStatus("", "");
     }
 
     function battleSummaryPngTimestamp(date = new Date()) {
@@ -3229,6 +3241,15 @@ PS_SIMULATOR_HTML = """<!doctype html>
       downloadJson(`battle-log-${safeFilenamePart(battleLog.seed)}.json`, battleLog);
     }
 
+    async function copyPngBlobToClipboard(blob) {
+      if (!window.isSecureContext || !navigator.clipboard?.write || typeof window.ClipboardItem !== "function") {
+        throw new Error("このブラウザは画像コピーに対応していません。");
+      }
+      await navigator.clipboard.write([
+        new ClipboardItem({ "image/png": blob })
+      ]);
+    }
+
     async function downloadBattleSummaryPng() {
       const battleLog = buildBattleLog();
       const card = battleSummaryCardElement();
@@ -3255,6 +3276,35 @@ PS_SIMULATOR_HTML = """<!doctype html>
         console.error(error);
         isBattleSummaryPngExporting = false;
         updateBattleSummaryPngControls(`PNG生成に失敗しました。${error.message || "ブラウザの画像化処理を確認してください。"}`, "error");
+      }
+    }
+
+    async function copyBattleSummaryPng() {
+      const battleLog = buildBattleLog();
+      const card = battleSummaryCardElement();
+      if (!battleLog) {
+        updateBattleSummaryPngControls("BattleLogを生成できないため画像コピーできません。", "error");
+        return;
+      }
+      if (!battleLog.finalResult) {
+        updateBattleSummaryPngControls("完了済みBattleLogで画像コピーできます。", "warn");
+        return;
+      }
+      if (!card) {
+        updateBattleSummaryPngControls("コピー対象のサマリーカードが見つかりません。", "error");
+        return;
+      }
+      isBattleSummaryPngExporting = true;
+      updateBattleSummaryPngControls();
+      try {
+        const blob = await battleSummaryCardToPngBlob(card);
+        await copyPngBlobToClipboard(blob);
+        isBattleSummaryPngExporting = false;
+        updateBattleSummaryPngControls("画像をコピーしました。", "ok");
+      } catch (error) {
+        console.error(error);
+        isBattleSummaryPngExporting = false;
+        updateBattleSummaryPngControls(`画像コピーに失敗しました。${error.message || "ブラウザのクリップボード権限を確認してください。"}`, "error");
       }
     }
 
@@ -3518,6 +3568,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
 
     document.getElementById("download-battle-log").addEventListener("click", downloadBattleLogJson);
     document.getElementById("download-battle-summary-png").addEventListener("click", downloadBattleSummaryPng);
+    document.getElementById("copy-battle-summary-png").addEventListener("click", copyBattleSummaryPng);
 
     document.getElementById("battle-seed").addEventListener("input", event => {
       if (!state.battle) return;
