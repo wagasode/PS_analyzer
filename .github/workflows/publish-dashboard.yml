@@ -70,9 +70,9 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID || secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: dashboard
           command: >-
             pages deploy .
-            --cwd=dashboard
             --project-name=${{ env.CF_PAGES_PROJECT_NAME }}
             --branch=${{ steps.prepare.outputs.deploy_branch }}
             --commit-hash=${{ github.event.workflow_run.head_sha }}
