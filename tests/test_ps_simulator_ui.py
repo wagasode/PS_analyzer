@@ -90,6 +90,8 @@ class PsSimulatorUiTest(unittest.TestCase):
         self.assertNotIn("共有カード本体だけをPNG保存できます。", html)
         self.assertIn("開始時候補", html)
         self.assertIn("function summaryRoundCandidatesHtml(battleLog, round)", html)
+        self.assertIn("grid-template-columns: repeat(5, minmax(190px, 1fr));", html)
+        self.assertNotIn("round.roundNumber < 4", html)
         self.assertIn(".summary-result-badge.self-win", html)
         self.assertIn(".summary-result-badge.opponent-win", html)
         self.assertNotIn('<span class="badge">BattleLog</span>', html)

@@ -1056,7 +1056,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
 
     .battle-summary-rounds {
       display: grid;
-      grid-template-columns: repeat(3, minmax(130px, 0.8fr)) repeat(2, minmax(240px, 1.3fr));
+      grid-template-columns: repeat(5, minmax(190px, 1fr));
       gap: 8px;
       min-width: 0;
     }
@@ -2851,7 +2851,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
     }
 
     function summaryRoundCandidatesHtml(battleLog, round) {
-      if (!round || round.roundNumber < 4) return "";
+      if (!round) return "";
       const label = battleLabel(round.roundNumber);
       return `
         <div class="summary-round-candidates">
