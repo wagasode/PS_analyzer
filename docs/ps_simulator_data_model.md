@@ -23,7 +23,8 @@ Issue #64 の範囲では、Google Sheets API連携、提出UI、相性表読込
 - `players`: 提出担当候補の選手。
 - `playerDeckStatuses`: 選手ごとのデッキ使用可能度。
 - `sampleSubmission`: 後続の提出UIが初期表示とJSONプレビューに使える提出案。
-- `sampleMatchups`: 後続の相性表読込やバトル機能が参照できる最小例。
+- `sampleMatchups`: 後方互換用の最小例。#66以降のWebUI勝率取得では `matchupFixture` を正とする。
+- `matchupFixture`: repo-localの相性表fixture。使用者視点 / 行デッキ視点のmatrixを `deckId` indexへ正規化する入力。
 - `sampleBattleLog`: 後続のログ保存、再生UI、分岐再シミュレーションが参照できる最小例。
 
 ## Deck
@@ -114,7 +115,33 @@ Issue #64 の範囲では、Google Sheets API連携、提出UI、相性表読込
 
 ## Matchup
 
-デッキ同士の相性を表す。Issue #64 では読込や評価は行わず、保存可能な形だけを固定する。
+デッキ同士の相性を表す。#66以降の相性表は、客観的な対称勝率行列ではなく、使用者視点 / 行デッキ視点の入力として扱う。
+
+matrix形式の意味は「行デッキを使ったとき、列デッキに勝つ確率」である。`A -> B` と `B -> A` は人間の評価差を含みうるため、完全な補数関係であることを要求しない。WebUIのMVPでは逆向き定義から `1 - winRate` で補完しない。
+
+repo-local fixtureは `matchupFixture` に置き、将来Google Sheetsのmatrixから同じ内部indexへ正規化できる形にする。行名・列名に人間向け `deckName` が入る場合でも、WebUI内部では必ず `deckId` を主キーにする。
+
+`matchupFixture` の正規化後entryは、少なくとも次を表す。
+
+| フィールド | 必須 | 説明 |
+| --- | --- | --- |
+| `sourceDeckId` | yes | 行デッキ。使用者側のデッキID。 |
+| `targetDeckId` | yes | 列デッキ。対戦相手側のデッキID。 |
+| `winRate` | yes | `sourceDeckId` が `targetDeckId` に勝つ確率。内部では0.0から1.0の数値。 |
+| `source` | yes | `repo-local fixture`, `google_sheets` などの読み込み元。 |
+| `sourceCell` | no | `matchup_matrix!D3` のような元セル。repo-localでは任意だがGoogle Sheets連携時に有用。 |
+| `perspective` | yes | MVPでは `rowDeck`。 |
+
+validationは次を確認する。
+
+- `winRate` が `0.0 <= winRate <= 1.0` の範囲にある。
+- `0.55` と `55%` を0.55として読める。`55` は取込層が許容する場合0.55に正規化してよい。
+- 数値として読めない値、範囲外の値、未知 `deckId` / `deckName`、同一方向の重複定義をwarningにする。
+- 自己対面は原則0.5とし、0.5でない場合はwarningにする。
+- 未定義matchupはバトル停止ではなく、`0.5` fallback + warningとして扱う。
+- `A -> B + B -> A == 1.0` の厳密チェックは必須validationにしない。
+
+`sampleMatchups` は古い保存形との互換確認用に残す。
 
 | フィールド | 必須 | 説明 |
 | --- | --- | --- |
@@ -138,8 +165,10 @@ Issue #64 の範囲では、Google Sheets API連携、提出UI、相性表読込
 | `selectedDeckIds` | yes | `self` / `opponent` ごとの選出デッキID。 |
 | `selfWinRate` | yes | そのラウンドの自分側勝率。0.0から1.0の数値。 |
 | `winRate` | yes | `self` / `opponent` ごとの勝率。 |
-| `winRateSource` | yes | 勝率の由来。`type` は `matchup`, `reverseMatchup`, `fallback`, `manual`, `unknown` のいずれか。 |
+| `winRateSource` | yes | 勝率の由来。`type` は `matchup`, `reverseMatchup`, `fallback`, `manual`, `unknown` のいずれか。#66 MVPのWebUIは `reverseMatchup` を生成しない。 |
 | `winRateNote` | yes | UI表示向けの短い由来説明。 |
+| `matchupWarnings` | yes | 相性表lookup由来のwarning。問題がなければ空配列。 |
+| `winRateFallback` | yes | 採用勝率が `fallback` かどうか。 |
 | `result` | yes | `self_win` または `opponent_win`。未確定ラウンドでは `null`。 |
 | `resultDecisionMethod` | yes | 勝敗決定方法。確定済みラウンドでは `random` または `manual`。未確定ラウンドでは `null`。 |
 | `resultDecision` | yes | `method`, `randomValue`, `seedInput`, `note` を持つ決定詳細。手動決定では `randomValue` は `null`。未確定ラウンドでは `null`。 |
@@ -148,7 +177,7 @@ Issue #64 の範囲では、Google Sheets API連携、提出UI、相性表読込
 | `remainingDeckIdsAfterRound` | yes | ラウンド終了後の残りデッキ。`self` / `opponent` の配列を持つ。 |
 | `candidateWarnings` | yes | 候補数不足など、ログ生成時に検知した警告。問題がなければ空配列。 |
 
-`winRateSource.type = manual` は将来の手入力勝率用の予約値とする。現行UIでは生成しない。現行UIが生成する値は、選出前の `unknown`、相性表の正方向 `matchup`、逆方向 `reverseMatchup`、相性表未接続時の `fallback` である。
+`winRateSource.type = manual` は将来の手入力勝率用の予約値とする。現行UIでは生成しない。#66 MVPの現行UIが生成する値は、選出前の `unknown`、行デッキ視点の直接定義 `matchup`、未定義や不正値の `fallback` である。`reverseMatchup` は型互換のため予約値として残すが、MVPでは逆向き補完をしない。
 
 ### BattleRoundLog canonical / alias 方針
 

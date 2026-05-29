@@ -327,7 +327,7 @@
     {
       "deckIdA": "deck-e-1779172826463",
       "deckIdB": "deck-r-1778681117704",
-      "winRateForA": 0.45,
+      "winRateForA": 0.4,
       "note": "sampleBattleLog R1の例。"
     },
     {
@@ -349,6 +349,140 @@
       "note": "sampleBattleLog R5の例。"
     }
   ],
+  "matchupFixture": {
+    "source": "repo-local fixture",
+    "format": "rowDeckMatrix.v1",
+    "perspective": "rowDeck",
+    "note": "行デッキを使ったとき、列デッキに勝つ確率。逆向き補完はMVPでは行わない。",
+    "matrix": {
+      "sourceName": "matchup_matrix",
+      "columns": [
+        {
+          "deckName": "進化E",
+          "sourceCell": "matchup_matrix!C1"
+        },
+        {
+          "deckName": "連携R",
+          "sourceCell": "matchup_matrix!D1"
+        },
+        {
+          "deckName": "秘術W",
+          "sourceCell": "matchup_matrix!E1"
+        },
+        {
+          "deckName": "ランプD",
+          "sourceCell": "matchup_matrix!F1"
+        },
+        {
+          "deckName": "ミルティオNi",
+          "sourceCell": "matchup_matrix!G1"
+        },
+        {
+          "deckName": "アミュB",
+          "sourceCell": "matchup_matrix!H1"
+        },
+        {
+          "deckName": "破壊Nm",
+          "sourceCell": "matchup_matrix!I1"
+        }
+      ],
+      "rows": [
+        {
+          "owner": "sample",
+          "deckName": "進化E",
+          "sourceCell": "matchup_matrix!B3",
+          "values": {
+            "進化E": "0.50",
+            "連携R": "40%",
+            "ランプD": "0.47"
+          },
+          "sourceCells": {
+            "進化E": "matchup_matrix!C3",
+            "連携R": "matchup_matrix!D3",
+            "ランプD": "matchup_matrix!F3"
+          }
+        },
+        {
+          "owner": "sample",
+          "deckName": "連携R",
+          "sourceCell": "matchup_matrix!B4",
+          "values": {
+            "進化E": "62%",
+            "連携R": "0.50",
+            "ミルティオNi": "0.52"
+          },
+          "sourceCells": {
+            "進化E": "matchup_matrix!C4",
+            "連携R": "matchup_matrix!D4",
+            "ミルティオNi": "matchup_matrix!G4"
+          }
+        },
+        {
+          "owner": "sample",
+          "deckName": "秘術W",
+          "sourceCell": "matchup_matrix!B5",
+          "values": {
+            "秘術W": "0.50",
+            "ランプD": "0.61",
+            "アミュB": "0.58"
+          },
+          "sourceCells": {
+            "秘術W": "matchup_matrix!E5",
+            "ランプD": "matchup_matrix!F5",
+            "アミュB": "matchup_matrix!H5"
+          }
+        },
+        {
+          "owner": "sample",
+          "deckName": "ランプD",
+          "sourceCell": "matchup_matrix!B6",
+          "values": {
+            "ランプD": "0.50",
+            "アミュB": "0.56"
+          },
+          "sourceCells": {
+            "ランプD": "matchup_matrix!F6",
+            "アミュB": "matchup_matrix!H6"
+          }
+        },
+        {
+          "owner": "sample",
+          "deckName": "ミルティオNi",
+          "sourceCell": "matchup_matrix!B7",
+          "values": {
+            "ミルティオNi": "0.50",
+            "破壊Nm": "0.51"
+          },
+          "sourceCells": {
+            "ミルティオNi": "matchup_matrix!G7",
+            "破壊Nm": "matchup_matrix!I7"
+          }
+        },
+        {
+          "owner": "sample",
+          "deckName": "アミュB",
+          "sourceCell": "matchup_matrix!B8",
+          "values": {
+            "アミュB": "0.50"
+          },
+          "sourceCells": {
+            "アミュB": "matchup_matrix!H8"
+          }
+        },
+        {
+          "owner": "sample",
+          "deckName": "破壊Nm",
+          "sourceCell": "matchup_matrix!B9",
+          "values": {
+            "破壊Nm": "0.50"
+          },
+          "sourceCells": {
+            "破壊Nm": "matchup_matrix!I9"
+          }
+        }
+      ]
+    }
+  },
   "sampleBattleLog": {
     "logVersion": "ps-battle-log.v1",
     "createdAt": "2026-05-27T00:00:00.000Z",
@@ -588,19 +722,27 @@
           "self": "deck-e-1779172826463",
           "opponent": "deck-r-1778681117704"
         },
-        "selfWinRate": 0.45,
+        "selfWinRate": 0.4,
         "winRate": {
-          "self": 0.45,
-          "opponent": 0.55
+          "self": 0.4,
+          "opponent": 0.6
         },
         "winRateSource": {
           "type": "matchup",
+          "selfDeckId": "deck-e-1779172826463",
+          "opponentDeckId": "deck-r-1778681117704",
           "deckIdA": "deck-e-1779172826463",
           "deckIdB": "deck-r-1778681117704",
-          "winRateForA": 0.45,
+          "winRateForA": 0.4,
+          "source": "repo-local fixture",
+          "sourceCell": "matchup_matrix!D3",
+          "perspective": "rowDeck",
           "note": "sampleBattleLog R1の例。"
         },
-        "winRateNote": "sampleMatchupsの暫定値を使用しています。",
+        "winRateNote": "相性表fixtureの行デッキ視点を使用しています。",
+        "matchupWarnings": [
+        ],
+        "winRateFallback": false,
         "result": "opponent_win",
         "resultDecisionMethod": "random",
         "resultDecision": {
@@ -700,12 +842,20 @@
         },
         "winRateSource": {
           "type": "matchup",
+          "selfDeckId": "ps-d-ramp",
+          "opponentDeckId": "deck-b-1778743160748",
           "deckIdA": "ps-d-ramp",
           "deckIdB": "deck-b-1778743160748",
           "winRateForA": 0.56,
+          "source": "repo-local fixture",
+          "sourceCell": "matchup_matrix!H6",
+          "perspective": "rowDeck",
           "note": "sampleBattleLog R2の例。"
         },
-        "winRateNote": "sampleMatchupsの暫定値を使用しています。",
+        "winRateNote": "相性表fixtureの行デッキ視点を使用しています。",
+        "matchupWarnings": [
+        ],
+        "winRateFallback": false,
         "result": "self_win",
         "resultDecisionMethod": "random",
         "resultDecision": {
@@ -805,12 +955,20 @@
         },
         "winRateSource": {
           "type": "matchup",
+          "selfDeckId": "deck-1778742968583",
+          "opponentDeckId": "ps-nm-destruction",
           "deckIdA": "deck-1778742968583",
           "deckIdB": "ps-nm-destruction",
           "winRateForA": 0.51,
+          "source": "repo-local fixture",
+          "sourceCell": "matchup_matrix!I7",
+          "perspective": "rowDeck",
           "note": "sampleBattleLog R3の例。"
         },
-        "winRateNote": "sampleMatchupsの暫定値を使用しています。",
+        "winRateNote": "相性表fixtureの行デッキ視点を使用しています。",
+        "matchupWarnings": [
+        ],
+        "winRateFallback": false,
         "result": "self_win",
         "resultDecisionMethod": "manual",
         "resultDecision": {
@@ -911,19 +1069,27 @@
           "self": "deck-r-1778681117704",
           "opponent": "deck-e-1779172826463"
         },
-        "selfWinRate": 0.55,
+        "selfWinRate": 0.62,
         "winRate": {
-          "self": 0.55,
-          "opponent": 0.45
+          "self": 0.62,
+          "opponent": 0.38
         },
         "winRateSource": {
-          "type": "reverseMatchup",
-          "deckIdA": "deck-e-1779172826463",
-          "deckIdB": "deck-r-1778681117704",
-          "winRateForA": 0.45,
-          "note": "sampleBattleLog R1の例。"
+          "type": "matchup",
+          "selfDeckId": "deck-r-1778681117704",
+          "opponentDeckId": "deck-e-1779172826463",
+          "deckIdA": "deck-r-1778681117704",
+          "deckIdB": "deck-e-1779172826463",
+          "winRateForA": 0.62,
+          "source": "repo-local fixture",
+          "sourceCell": "matchup_matrix!C4",
+          "perspective": "rowDeck",
+          "note": "sampleBattleLog R4の例。"
         },
-        "winRateNote": "sampleMatchupsの逆向き暫定値を使用しています。",
+        "winRateNote": "相性表fixtureの行デッキ視点を使用しています。",
+        "matchupWarnings": [
+        ],
+        "winRateFallback": false,
         "result": "opponent_win",
         "resultDecisionMethod": "manual",
         "resultDecision": {
@@ -1027,12 +1193,20 @@
         },
         "winRateSource": {
           "type": "matchup",
+          "selfDeckId": "ps-w-earth-rite",
+          "opponentDeckId": "ps-d-ramp",
           "deckIdA": "ps-w-earth-rite",
           "deckIdB": "ps-d-ramp",
           "winRateForA": 0.61,
+          "source": "repo-local fixture",
+          "sourceCell": "matchup_matrix!F5",
+          "perspective": "rowDeck",
           "note": "sampleBattleLog R5の例。"
         },
-        "winRateNote": "sampleMatchupsの暫定値を使用しています。",
+        "winRateNote": "相性表fixtureの行デッキ視点を使用しています。",
+        "matchupWarnings": [
+        ],
+        "winRateFallback": false,
         "result": "self_win",
         "resultDecisionMethod": "random",
         "resultDecision": {
