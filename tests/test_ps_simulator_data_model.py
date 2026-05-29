@@ -1,11 +1,16 @@
 from __future__ import annotations
 
 import json
+import sys
 import unittest
 from pathlib import Path
 
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT_DIR / "scripts"))
+
+from ps_matchup_loader import build_matchup_index, get_win_rate  # noqa: E402
+
 SAMPLE_DATASET_PATH = ROOT_DIR / "data" / "ps_simulator" / "sample_dataset.json"
 
 EXPECTED_CLASSES = {"E", "R", "W", "D", "Ni", "B", "Nm"}
@@ -29,6 +34,7 @@ class PsSimulatorDataModelTest(unittest.TestCase):
         self.players = self.dataset["players"]
         self.deck_ids = {deck["deckId"] for deck in self.decks}
         self.player_ids = {player["playerId"] for player in self.players}
+        self.matchup_index = build_matchup_index(self.dataset)
 
     def test_sample_dataset_uses_expected_schema_version(self) -> None:
         self.assertEqual(self.dataset["schemaVersion"], "ps-simulator.v1")
@@ -104,6 +110,27 @@ class PsSimulatorDataModelTest(unittest.TestCase):
             self.assertGreaterEqual(matchup["winRateForA"], 0.0)
             self.assertLessEqual(matchup["winRateForA"], 1.0)
 
+    def test_matchup_fixture_normalizes_display_names_to_deck_ids(self) -> None:
+        fixture = self.dataset["matchupFixture"]
+
+        self.assertEqual(fixture["source"], "repo-local fixture")
+        self.assertEqual(fixture["perspective"], "rowDeck")
+        self.assertEqual(len(self.matchup_index.entries), 15)
+        self.assertEqual(self.matchup_index.warnings, [])
+
+        direct = get_win_rate(self.matchup_index, "deck-e-1779172826463", "deck-r-1778681117704")
+        self.assertEqual(direct["winRate"], 0.4)
+        self.assertEqual(direct["winRateSource"]["type"], "matchup")
+        self.assertEqual(direct["winRateSource"]["sourceCell"], "matchup_matrix!D3")
+
+        not_completed_from_inverse = get_win_rate(
+            self.matchup_index,
+            "deck-b-1778743160748",
+            "ps-w-earth-rite",
+        )
+        self.assertEqual(not_completed_from_inverse["winRate"], 0.5)
+        self.assertEqual(not_completed_from_inverse["winRateSource"]["type"], "fallback")
+
     def test_battle_log_rounds_are_replayable_and_reference_known_decks(self) -> None:
         battle_log = self.dataset["sampleBattleLog"]
         used_self: set[str] = set()
@@ -163,6 +190,11 @@ class PsSimulatorDataModelTest(unittest.TestCase):
             if round_log["winRateSource"]["type"] in {"matchup", "reverseMatchup"}:
                 self.assertIn(round_log["winRateSource"]["deckIdA"], self.deck_ids)
                 self.assertIn(round_log["winRateSource"]["deckIdB"], self.deck_ids)
+                self.assertIn(round_log["winRateSource"].get("selfDeckId"), self.deck_ids)
+                self.assertIn(round_log["winRateSource"].get("opponentDeckId"), self.deck_ids)
+            self.assertIsInstance(round_log.get("candidateWarnings", []), list)
+            self.assertIsInstance(round_log.get("matchupWarnings", []), list)
+            self.assertIs(round_log.get("winRateFallback", False), round_log["winRateSource"]["type"] == "fallback")
             self.assertIn(round_log["result"], ALLOWED_RESULTS)
             self.assertIn(round_log["resultDecisionMethod"], ALLOWED_RESULT_DECISION_METHODS)
             seen_result_decision_methods.add(round_log["resultDecisionMethod"])
@@ -203,7 +235,6 @@ class PsSimulatorDataModelTest(unittest.TestCase):
         self.assertEqual(final_result["finishedAtRound"], 5)
         self.assertEqual(battle_log["finishedAtRound"], 5)
         self.assertIn("matchup", seen_win_rate_source_types)
-        self.assertIn("reverseMatchup", seen_win_rate_source_types)
         self.assertEqual(seen_result_decision_methods, {"random", "manual"})
 
 
