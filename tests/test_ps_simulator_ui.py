@@ -12,6 +12,8 @@ sys.path.insert(0, str(ROOT_DIR / "scripts"))
 
 from ps_simulator_ui import (  # noqa: E402
     EXPECTED_ROUND_CANDIDATE_COUNTS,
+    HTML2CANVAS_PUBLIC_LICENSE_PATH,
+    HTML2CANVAS_PUBLIC_PATH,
     PS_SIMULATOR_PUBLIC_DATASET_PATH,
     battle_remaining_deck_ids_for_side,
     read_ps_simulator_sample_dataset,
@@ -65,6 +67,18 @@ class PsSimulatorUiTest(unittest.TestCase):
         self.assertIn("function battleSummaryCardHtml(battleLog)", html)
         self.assertIn("function renderBattleSummaryCard()", html)
         self.assertIn("roundCandidateDeckIds(round, side)", html)
+        self.assertIn('id="download-battle-summary-png"', html)
+        self.assertIn("共有用画像を保存", html)
+        self.assertIn('id="battle-summary-export-status"', html)
+        self.assertIn('<script src="vendor/html2canvas.min.js"></script>', html)
+        self.assertIn("function downloadBattleSummaryPng()", html)
+        self.assertIn("async function battleSummaryCardToPngBlob(card)", html)
+        self.assertIn('document.querySelector("#battle-summary-card .battle-summary-card")', html)
+        self.assertIn("window.html2canvas(card", html)
+        self.assertIn("onclone: clonedDocument =>", html)
+        self.assertIn("PNG生成に失敗しました。", html)
+        self.assertIn("PNG保存ライブラリを読み込めません。", html)
+        self.assertIn("完了済みBattleLogでPNG保存できます。", html)
         self.assertIn("開始時候補", html)
         self.assertIn("function summaryRoundCandidatesHtml(battleLog, round)", html)
         self.assertIn(".summary-result-badge.self-win", html)
@@ -186,6 +200,11 @@ class PsSimulatorUiTest(unittest.TestCase):
             write_ps_simulator_assets(out_dir)
 
             self.assertTrue((out_dir / "ps-simulator.html").exists())
+            self.assertTrue((out_dir / HTML2CANVAS_PUBLIC_PATH).exists())
+            self.assertTrue((out_dir / HTML2CANVAS_PUBLIC_LICENSE_PATH).exists())
+            self.assertIn("html2canvas 1.4.1", (out_dir / HTML2CANVAS_PUBLIC_PATH).read_text(encoding="utf-8"))
+            self.assertIn("MIT License", (out_dir / HTML2CANVAS_PUBLIC_PATH).read_text(encoding="utf-8"))
+            self.assertIn("Permission is hereby granted", (out_dir / HTML2CANVAS_PUBLIC_LICENSE_PATH).read_text(encoding="utf-8"))
             public_dataset_path = out_dir / PS_SIMULATOR_PUBLIC_DATASET_PATH
             self.assertTrue(public_dataset_path.exists())
             copied_dataset = json.loads(public_dataset_path.read_text(encoding="utf-8"))
