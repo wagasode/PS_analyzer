@@ -45,6 +45,7 @@ jobs:
           test -f dashboard/index.html
           test -f dashboard/streaming-report.html
           test -f dashboard/ps-simulator.html
+          test -f dashboard/functions/api/ps-simulator/matchups.js
 
       - name: Prepare Cloudflare Pages deployment
         id: prepare
@@ -70,7 +71,8 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID || secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: >-
-            pages deploy dashboard
+            pages deploy .
+            --cwd=dashboard
             --project-name=${{ env.CF_PAGES_PROJECT_NAME }}
             --branch=${{ steps.prepare.outputs.deploy_branch }}
             --commit-hash=${{ github.event.workflow_run.head_sha }}
