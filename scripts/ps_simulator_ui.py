@@ -162,7 +162,8 @@ PS_SIMULATOR_HTML = """<!doctype html>
 
     h1,
     h2,
-    h3 {
+    h3,
+    h4 {
       margin: 0;
       line-height: 1.25;
       letter-spacing: 0;
@@ -178,6 +179,10 @@ PS_SIMULATOR_HTML = """<!doctype html>
 
     h3 {
       font-size: 15px;
+    }
+
+    h4 {
+      font-size: 14px;
     }
 
     .meta,
@@ -967,6 +972,147 @@ PS_SIMULATOR_HTML = """<!doctype html>
       flex-wrap: wrap;
     }
 
+    .battle-summary-section {
+      display: grid;
+      gap: 10px;
+      min-width: 0;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      background: #fff;
+    }
+
+    .battle-summary-card {
+      display: grid;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .battle-summary-result,
+    .summary-round-card {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #f8fafc;
+    }
+
+    .battle-summary-result {
+      display: grid;
+      gap: 6px;
+      padding: 12px;
+      border-color: #99f6e4;
+      background: var(--accent-soft);
+    }
+
+    .battle-summary-result.incomplete {
+      border-color: #fdba74;
+      background: var(--warn-soft);
+    }
+
+    .battle-summary-titleline {
+      font-size: 24px;
+      font-weight: 800;
+      line-height: 1.15;
+      overflow-wrap: anywhere;
+    }
+
+    .battle-summary-rounds {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(130px, 0.8fr)) repeat(2, minmax(240px, 1.3fr));
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .summary-round-card {
+      display: grid;
+      gap: 7px;
+      align-content: start;
+      padding: 9px;
+      min-width: 0;
+    }
+
+    .summary-round-card.pending {
+      border-style: dashed;
+      color: var(--muted);
+    }
+
+    .summary-round-card.win {
+      border-color: #99f6e4;
+    }
+
+    .summary-round-card.loss {
+      border-color: #fecaca;
+    }
+
+    .summary-result-badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 22px;
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1.1;
+      white-space: nowrap;
+    }
+
+    .summary-result-badge.self-win {
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    .summary-result-badge.opponent-win {
+      background: var(--bad-soft);
+      color: var(--bad);
+    }
+
+    .summary-result-badge.pending {
+      background: var(--warn-soft);
+      color: var(--warn);
+    }
+
+    .summary-round-head,
+    .summary-side-line {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      min-width: 0;
+    }
+
+    .summary-round-head {
+      justify-content: space-between;
+    }
+
+    .summary-round-match {
+      display: grid;
+      gap: 5px;
+      min-width: 0;
+    }
+
+    .summary-side-line {
+      align-items: flex-start;
+    }
+
+    .summary-round-candidates {
+      display: grid;
+      gap: 6px;
+      padding-top: 7px;
+      border-top: 1px solid var(--border);
+    }
+
+    .summary-round-candidates h4 {
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.2;
+    }
+
+    .summary-candidate-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      min-width: 0;
+    }
+
     .side-label {
       display: inline-flex;
       align-items: center;
@@ -1235,7 +1381,9 @@ PS_SIMULATOR_HTML = """<!doctype html>
       .battle-assignment-list,
       .battle-status-grid,
       .battle-round-grid,
-      .battle-side-grid {
+      .battle-side-grid,
+      .battle-summary-rounds,
+      .summary-candidate-grid {
         grid-template-columns: 1fr;
       }
     }
@@ -1399,6 +1547,12 @@ PS_SIMULATOR_HTML = """<!doctype html>
               <div id="battle-opponent-deck-list"></div>
             </div>
           </div>
+          <section class="battle-summary-section" aria-labelledby="battle-summary-title">
+            <div class="deck-class-group-head">
+              <h3 id="battle-summary-title">スクショ共有用サマリー</h3>
+            </div>
+            <div id="battle-summary-card"></div>
+          </section>
         </div>
       </section>
     </div>
@@ -2203,15 +2357,16 @@ PS_SIMULATOR_HTML = """<!doctype html>
     }
 
     function deckTokenHtml(deckId, options = {}) {
-      const deck = deckById(deckId);
+      const deck = options.deck || deckById(deckId);
       if (!deck) {
         return `<span class="deck-token"><strong class="deck-token-name">${escapeHtml(deckId || "未選択")}</strong></span>`;
       }
       const definition = classDefinition(deck.className);
       const classCode = definition?.className || deck.className || "?";
+      const tokenDeckId = deck.deckId || deckId;
       const player = options.player || null;
       return `
-        <span class="deck-token ${escapeHtml(classCssClass(deck.className))}" title="${escapeHtml(classLabel(deck.className))} / deckId: ${escapeHtml(deck.deckId)}">
+        <span class="deck-token ${escapeHtml(classCssClass(deck.className))}" title="${escapeHtml(classLabel(deck.className))} / deckId: ${escapeHtml(tokenDeckId)}">
           ${player ? playerAvatarHtml(player, "small") : ""}
           <span class="deck-token-code" aria-hidden="true">${escapeHtml(classCode)}</span>
           <strong class="deck-token-name">${escapeHtml(deck.deckName)}</strong>
@@ -2540,6 +2695,189 @@ PS_SIMULATOR_HTML = """<!doctype html>
       };
     }
 
+    function roundCandidateDeckIds(round, side) {
+      return round?.candidateDeckIds?.[side] || (
+        side === "self" ? round?.selfCandidateDeckIds : round?.opponentCandidateDeckIds
+      ) || [];
+    }
+
+    function roundSelectedDeckId(round, side) {
+      return round?.selectedDeckIds?.[side] || (
+        side === "self" ? round?.selfSelectedDeckId : round?.opponentSelectedDeckId
+      ) || "";
+    }
+
+    function roundScoreAfter(round) {
+      return round?.scoreAfterRound || round?.score || null;
+    }
+
+    function battleScoreText(score) {
+      if (!score) return "-";
+      return `${Number(score.self || 0)}-${Number(score.opponent || 0)}`;
+    }
+
+    function summaryRoundResultText(result) {
+      if (result === "self_win") return "自分勝ち";
+      if (result === "opponent_win") return "相手勝ち";
+      return "未確定";
+    }
+
+    function summaryRoundResultClass(result) {
+      if (result === "self_win") return "self-win";
+      if (result === "opponent_win") return "opponent-win";
+      return "pending";
+    }
+
+    function summaryRoundClass(result) {
+      if (result === "self_win") return "win";
+      if (result === "opponent_win") return "loss";
+      return "";
+    }
+
+    function logSubmissionSnapshot(battleLog, side) {
+      return side === "self" ? battleLog?.selfSubmissionSnapshot : battleLog?.opponentSubmissionSnapshot;
+    }
+
+    function logAssignmentForDeck(logSubmission, deckId) {
+      return (logSubmission?.assignments || []).find(assignment => (
+        (assignment.deckIds || []).includes(deckId)
+      )) || null;
+    }
+
+    function logDeckSnapshot(logSubmission, deckId) {
+      const assignment = logAssignmentForDeck(logSubmission, deckId);
+      return (assignment?.deckSnapshots || []).find(deck => deck.deckId === deckId) || deckById(deckId);
+    }
+
+    function logPlayerForDeck(logSubmission, deckId) {
+      const assignment = logAssignmentForDeck(logSubmission, deckId);
+      return assignment?.playerSnapshot || playerById(assignment?.playerId);
+    }
+
+    function logDeckTokenHtml(battleLog, side, deckId) {
+      if (!deckId) {
+        return `<span class="deck-token"><strong class="deck-token-name">未選択</strong></span>`;
+      }
+      const submission = logSubmissionSnapshot(battleLog, side);
+      return deckTokenHtml(deckId, {
+        deck: logDeckSnapshot(submission, deckId),
+        player: logPlayerForDeck(submission, deckId)
+      });
+    }
+
+    function logDeckTokenListHtml(battleLog, side, deckIds) {
+      const ids = sortDeckIdsByClassOrder(deckIds || []);
+      if (!ids.length) {
+        return `<span class="source-note">なし</span>`;
+      }
+      return `
+        <div class="deck-token-row">
+          ${ids.map(deckId => logDeckTokenHtml(battleLog, side, deckId)).join("")}
+        </div>
+      `;
+    }
+
+    function summaryFinalScore(battleLog) {
+      const finalResult = battleLog?.finalResult;
+      if (finalResult?.score) return finalResult.score;
+      if (Number.isFinite(Number(finalResult?.selfWins)) || Number.isFinite(Number(finalResult?.opponentWins))) {
+        return {
+          self: Number(finalResult?.selfWins || 0),
+          opponent: Number(finalResult?.opponentWins || 0)
+        };
+      }
+      const latestRound = [...(battleLog?.rounds || [])].reverse().find(round => roundScoreAfter(round));
+      return roundScoreAfter(latestRound) || { self: 0, opponent: 0 };
+    }
+
+    function battleSummaryHeroHtml(battleLog) {
+      const finalResult = battleLog?.finalResult;
+      const complete = Boolean(finalResult);
+      const score = summaryFinalScore(battleLog);
+      const title = complete
+        ? `${sideLabel(finalResult.winner)} 勝利 ${battleScoreText(score)}`
+        : `未完了 ${battleScoreText(score)}`;
+      return `
+        <section class="battle-summary-result ${complete ? "" : "incomplete"}">
+          <div class="battle-summary-titleline">${escapeHtml(title)}</div>
+        </section>
+      `;
+    }
+
+    function summaryRoundCandidatesHtml(battleLog, round) {
+      if (!round || round.roundNumber < 4) return "";
+      const label = battleLabel(round.roundNumber);
+      return `
+        <div class="summary-round-candidates">
+          <h4>${escapeHtml(label)}開始時候補</h4>
+          <div class="summary-candidate-grid">
+            <div class="deck-list-group">
+              <strong>自分側</strong>
+              ${logDeckTokenListHtml(battleLog, "self", roundCandidateDeckIds(round, "self"))}
+            </div>
+            <div class="deck-list-group">
+              <strong>相手側</strong>
+              ${logDeckTokenListHtml(battleLog, "opponent", roundCandidateDeckIds(round, "opponent"))}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function summaryRoundCardHtml(battleLog, roundNumber) {
+      const round = (battleLog?.rounds || []).find(item => item.roundNumber === roundNumber);
+      if (!round) {
+        return `
+          <section class="summary-round-card pending">
+            <div class="summary-round-head">
+              <strong>${escapeHtml(battleLabel(roundNumber))}</strong>
+              <span class="summary-result-badge pending">未到達</span>
+            </div>
+          </section>
+        `;
+      }
+      const resultClass = summaryRoundClass(round.result);
+      return `
+        <section class="summary-round-card ${escapeHtml(resultClass)}">
+          <div class="summary-round-head">
+            <strong>${escapeHtml(battleLabel(round.roundNumber))}</strong>
+            <span class="summary-result-badge ${escapeHtml(summaryRoundResultClass(round.result))}">${escapeHtml(summaryRoundResultText(round.result))}</span>
+          </div>
+          <div class="summary-round-match">
+            <div class="summary-side-line">
+              <span class="side-label">自分</span>
+              ${logDeckTokenHtml(battleLog, "self", roundSelectedDeckId(round, "self"))}
+              ${battleSideResultHtml(round.result, "self")}
+            </div>
+            <div class="summary-side-line">
+              <span class="side-label">相手</span>
+              ${logDeckTokenHtml(battleLog, "opponent", roundSelectedDeckId(round, "opponent"))}
+              ${battleSideResultHtml(round.result, "opponent")}
+            </div>
+          </div>
+          ${summaryRoundCandidatesHtml(battleLog, round)}
+        </section>
+      `;
+    }
+
+    function battleSummaryCardHtml(battleLog) {
+      if (!battleLog) {
+        return `<div class="validation-item warn">BattleLogを生成できません。</div>`;
+      }
+      return `
+        <div class="battle-summary-card">
+          ${battleSummaryHeroHtml(battleLog)}
+          <div class="battle-summary-rounds" aria-label="バトル1からバトル5の試合流れ">
+            ${[1, 2, 3, 4, 5].map(roundNumber => summaryRoundCardHtml(battleLog, roundNumber)).join("")}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderBattleSummaryCard() {
+      document.getElementById("battle-summary-card").innerHTML = battleSummaryCardHtml(buildBattleLog());
+    }
+
     function battlePreviewPayload() {
       return buildBattleLog();
     }
@@ -2570,6 +2908,9 @@ PS_SIMULATOR_HTML = """<!doctype html>
         document.getElementById("battle-self-deck-list").innerHTML = "";
         document.getElementById("battle-opponent-deck-list").innerHTML = "";
         document.getElementById("battle-progress").innerHTML = "";
+        document.getElementById("battle-summary-card").innerHTML = `
+          <div class="validation-item warn">共有用サマリーは、自分側・相手側の提出案が成立すると表示されます。</div>
+        `;
         return;
       }
 
@@ -2577,6 +2918,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
       renderCurrentRound();
       renderBattleDeckLists();
       renderBattleProgress();
+      renderBattleSummaryCard();
 
       document.querySelectorAll("[data-battle-side]").forEach(button => {
         button.addEventListener("click", event => {
