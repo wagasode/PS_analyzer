@@ -8,6 +8,10 @@ from typing import Any
 ROOT_DIR = Path(__file__).resolve().parents[1]
 PS_SIMULATOR_SAMPLE_DATASET_PATH = ROOT_DIR / "data" / "ps_simulator" / "sample_dataset.json"
 PS_SIMULATOR_PUBLIC_DATASET_PATH = Path("data") / "ps_simulator" / "sample_dataset.json"
+HTML2CANVAS_VENDOR_PATH = ROOT_DIR / "scripts" / "vendor" / "html2canvas.min.js"
+HTML2CANVAS_VENDOR_LICENSE_PATH = ROOT_DIR / "scripts" / "vendor" / "html2canvas.LICENSE.txt"
+HTML2CANVAS_PUBLIC_PATH = Path("vendor") / "html2canvas.min.js"
+HTML2CANVAS_PUBLIC_LICENSE_PATH = Path("vendor") / "html2canvas.LICENSE.txt"
 ROUND_ROLE_BY_NUMBER = {1: "A", 2: "B", 3: "C"}
 EXPECTED_ROUND_CANDIDATE_COUNTS = {1: 3, 2: 2, 3: 2, 4: 4, 5: 3}
 
@@ -257,6 +261,12 @@ PS_SIMULATOR_HTML = """<!doctype html>
       border-color: var(--accent);
       background: var(--accent);
       color: #fff;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.62;
+      box-shadow: none;
     }
 
     .toolbar {
@@ -982,6 +992,35 @@ PS_SIMULATOR_HTML = """<!doctype html>
       background: #fff;
     }
 
+    .battle-summary-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-wrap: wrap;
+      min-width: 0;
+    }
+
+    .battle-summary-export-status {
+      min-height: 20px;
+      text-align: right;
+    }
+
+    .battle-summary-export-status.ok {
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .battle-summary-export-status.warn {
+      color: var(--warn);
+      font-weight: 700;
+    }
+
+    .battle-summary-export-status.error {
+      color: var(--bad);
+      font-weight: 700;
+    }
+
     .battle-summary-card {
       display: grid;
       gap: 12px;
@@ -1017,7 +1056,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
 
     .battle-summary-rounds {
       display: grid;
-      grid-template-columns: repeat(3, minmax(130px, 0.8fr)) repeat(2, minmax(240px, 1.3fr));
+      grid-template-columns: repeat(5, minmax(190px, 1fr));
       gap: 8px;
       min-width: 0;
     }
@@ -1550,6 +1589,11 @@ PS_SIMULATOR_HTML = """<!doctype html>
           <section class="battle-summary-section" aria-labelledby="battle-summary-title">
             <div class="deck-class-group-head">
               <h3 id="battle-summary-title">スクショ共有用サマリー</h3>
+              <div class="battle-summary-actions">
+                <button id="download-battle-summary-png" type="button" disabled>共有用画像を保存</button>
+                <button id="copy-battle-summary-png" type="button" disabled>画像をコピー</button>
+                <span class="source-note battle-summary-export-status" id="battle-summary-export-status" aria-live="polite"></span>
+              </div>
             </div>
             <div id="battle-summary-card"></div>
           </section>
@@ -1558,6 +1602,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
     </div>
   </main>
 
+  <script src="vendor/html2canvas.min.js"></script>
   <script>
     const roles = [
       { role: "A", expectedDeckCount: 3 },
@@ -1579,6 +1624,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
       assignments: {},
       battle: null
     };
+    let isBattleSummaryPngExporting = false;
 
     function escapeHtml(value) {
       return String(value ?? "")
@@ -2805,7 +2851,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
     }
 
     function summaryRoundCandidatesHtml(battleLog, round) {
-      if (!round || round.roundNumber < 4) return "";
+      if (!round) return "";
       const label = battleLabel(round.roundNumber);
       return `
         <div class="summary-round-candidates">
@@ -2876,6 +2922,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
 
     function renderBattleSummaryCard() {
       document.getElementById("battle-summary-card").innerHTML = battleSummaryCardHtml(buildBattleLog());
+      updateBattleSummaryPngControls();
     }
 
     function battlePreviewPayload() {
@@ -2911,6 +2958,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
         document.getElementById("battle-summary-card").innerHTML = `
           <div class="validation-item warn">共有用サマリーは、自分側・相手側の提出案が成立すると表示されます。</div>
         `;
+        updateBattleSummaryPngControls();
         return;
       }
 
@@ -3058,8 +3106,120 @@ PS_SIMULATOR_HTML = """<!doctype html>
       return String(value || "no-seed").replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/^-+|-+$/g, "") || "no-seed";
     }
 
-    function downloadJson(filename, payload) {
-      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    function battleSummaryCardElement() {
+      return document.querySelector("#battle-summary-card .battle-summary-card");
+    }
+
+    function setBattleSummaryExportStatus(message, kind = "") {
+      const status = document.getElementById("battle-summary-export-status");
+      if (!status) return;
+      status.textContent = message || "";
+      status.className = ["source-note", "battle-summary-export-status", kind].filter(Boolean).join(" ");
+    }
+
+    function canRenderBattleSummaryPng(battleLog) {
+      return Boolean(battleLog?.finalResult && battleSummaryCardElement() && typeof window.html2canvas === "function");
+    }
+
+    function canCopyBattleSummaryPng(battleLog) {
+      return Boolean(
+        canRenderBattleSummaryPng(battleLog)
+        && window.isSecureContext
+        && navigator.clipboard?.write
+        && typeof window.ClipboardItem === "function"
+      );
+    }
+
+    function updateBattleSummaryPngControls(message = "", kind = "") {
+      const downloadButton = document.getElementById("download-battle-summary-png");
+      const copyButton = document.getElementById("copy-battle-summary-png");
+      if (!downloadButton || !copyButton) return;
+      const battleLog = buildBattleLog();
+      const canRender = canRenderBattleSummaryPng(battleLog);
+      downloadButton.disabled = isBattleSummaryPngExporting || !canRender;
+      copyButton.disabled = isBattleSummaryPngExporting || !canCopyBattleSummaryPng(battleLog);
+      if (isBattleSummaryPngExporting) {
+        setBattleSummaryExportStatus("PNG生成中です。", "");
+        return;
+      }
+      if (message) {
+        setBattleSummaryExportStatus(message, kind);
+        return;
+      }
+      if (!battleLog) {
+        setBattleSummaryExportStatus("BattleLogを生成できません。", "warn");
+        return;
+      }
+      if (!battleLog.finalResult) {
+        setBattleSummaryExportStatus("完了済みBattleLogでPNG保存できます。", "warn");
+        return;
+      }
+      if (typeof window.html2canvas !== "function") {
+        setBattleSummaryExportStatus("PNG保存ライブラリを読み込めません。", "error");
+        return;
+      }
+      setBattleSummaryExportStatus("", "");
+    }
+
+    function battleSummaryPngTimestamp(date = new Date()) {
+      const pad = value => String(value).padStart(2, "0");
+      return [
+        date.getFullYear(),
+        pad(date.getMonth() + 1),
+        pad(date.getDate())
+      ].join("") + "-" + [pad(date.getHours()), pad(date.getMinutes()), pad(date.getSeconds())].join("");
+    }
+
+    function battleSummaryPngFilename() {
+      return `ps-battle-summary-${battleSummaryPngTimestamp()}.png`;
+    }
+
+    function canvasToPngBlob(canvas) {
+      return new Promise((resolve, reject) => {
+        canvas.toBlob(blob => {
+          if (blob) {
+            resolve(blob);
+            return;
+          }
+          reject(new Error("CanvasからPNGを生成できませんでした。"));
+        }, "image/png");
+      });
+    }
+
+    async function battleSummaryCardToPngBlob(card) {
+      if (typeof window.html2canvas !== "function") {
+        throw new Error("PNG保存ライブラリを読み込めません。");
+      }
+      if (!window.Blob || !window.URL || !HTMLCanvasElement.prototype.toBlob) {
+        throw new Error("このブラウザはPNG保存に必要なAPIに対応していません。");
+      }
+      const rect = card.getBoundingClientRect();
+      const width = Math.ceil(rect.width);
+      const height = Math.ceil(rect.height);
+      if (!width || !height) {
+        throw new Error("サマリーカードのサイズを取得できませんでした。");
+      }
+
+      const scale = Math.max(2, Math.ceil(window.devicePixelRatio || 1));
+      const canvas = await window.html2canvas(card, {
+        backgroundColor: "#ffffff",
+        scale,
+        useCORS: true,
+        allowTaint: false,
+        logging: false,
+        imageTimeout: 1000,
+        onclone: clonedDocument => {
+          const clonedCard = clonedDocument.querySelector("#battle-summary-card .battle-summary-card");
+          if (!clonedCard) return;
+          clonedCard.style.width = `${width}px`;
+          clonedCard.style.margin = "0";
+          clonedCard.querySelectorAll("img").forEach(image => image.remove());
+        }
+      });
+      return await canvasToPngBlob(canvas);
+    }
+
+    function downloadBlob(filename, blob) {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
@@ -3070,10 +3230,82 @@ PS_SIMULATOR_HTML = """<!doctype html>
       URL.revokeObjectURL(url);
     }
 
+    function downloadJson(filename, payload) {
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      downloadBlob(filename, blob);
+    }
+
     function downloadBattleLogJson() {
       const battleLog = buildBattleLog();
       if (!battleLog) return;
       downloadJson(`battle-log-${safeFilenamePart(battleLog.seed)}.json`, battleLog);
+    }
+
+    async function copyPngBlobToClipboard(blob) {
+      if (!window.isSecureContext || !navigator.clipboard?.write || typeof window.ClipboardItem !== "function") {
+        throw new Error("このブラウザは画像コピーに対応していません。");
+      }
+      await navigator.clipboard.write([
+        new ClipboardItem({ "image/png": blob })
+      ]);
+    }
+
+    async function downloadBattleSummaryPng() {
+      const battleLog = buildBattleLog();
+      const card = battleSummaryCardElement();
+      if (!battleLog) {
+        updateBattleSummaryPngControls("BattleLogを生成できないためPNG保存できません。", "error");
+        return;
+      }
+      if (!battleLog.finalResult) {
+        updateBattleSummaryPngControls("完了済みBattleLogでPNG保存できます。", "warn");
+        return;
+      }
+      if (!card) {
+        updateBattleSummaryPngControls("保存対象のサマリーカードが見つかりません。", "error");
+        return;
+      }
+      isBattleSummaryPngExporting = true;
+      updateBattleSummaryPngControls();
+      try {
+        const blob = await battleSummaryCardToPngBlob(card);
+        downloadBlob(battleSummaryPngFilename(), blob);
+        isBattleSummaryPngExporting = false;
+        updateBattleSummaryPngControls("PNGを保存しました。", "ok");
+      } catch (error) {
+        console.error(error);
+        isBattleSummaryPngExporting = false;
+        updateBattleSummaryPngControls(`PNG生成に失敗しました。${error.message || "ブラウザの画像化処理を確認してください。"}`, "error");
+      }
+    }
+
+    async function copyBattleSummaryPng() {
+      const battleLog = buildBattleLog();
+      const card = battleSummaryCardElement();
+      if (!battleLog) {
+        updateBattleSummaryPngControls("BattleLogを生成できないため画像コピーできません。", "error");
+        return;
+      }
+      if (!battleLog.finalResult) {
+        updateBattleSummaryPngControls("完了済みBattleLogで画像コピーできます。", "warn");
+        return;
+      }
+      if (!card) {
+        updateBattleSummaryPngControls("コピー対象のサマリーカードが見つかりません。", "error");
+        return;
+      }
+      isBattleSummaryPngExporting = true;
+      updateBattleSummaryPngControls();
+      try {
+        const blob = await battleSummaryCardToPngBlob(card);
+        await copyPngBlobToClipboard(blob);
+        isBattleSummaryPngExporting = false;
+        updateBattleSummaryPngControls("画像をコピーしました。", "ok");
+      } catch (error) {
+        console.error(error);
+        isBattleSummaryPngExporting = false;
+        updateBattleSummaryPngControls(`画像コピーに失敗しました。${error.message || "ブラウザのクリップボード権限を確認してください。"}`, "error");
+      }
     }
 
     function renderDataSummary() {
@@ -3335,6 +3567,8 @@ PS_SIMULATOR_HTML = """<!doctype html>
     });
 
     document.getElementById("download-battle-log").addEventListener("click", downloadBattleLogJson);
+    document.getElementById("download-battle-summary-png").addEventListener("click", downloadBattleSummaryPng);
+    document.getElementById("copy-battle-summary-png").addEventListener("click", copyBattleSummaryPng);
 
     document.getElementById("battle-seed").addEventListener("input", event => {
       if (!state.battle) return;
@@ -3370,6 +3604,14 @@ def write_ps_simulator_assets(
 ) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "ps-simulator.html").write_text(render_ps_simulator_html(), encoding="utf-8")
+
+    public_vendor_path = out_dir / HTML2CANVAS_PUBLIC_PATH
+    public_vendor_path.parent.mkdir(parents=True, exist_ok=True)
+    public_vendor_path.write_bytes(HTML2CANVAS_VENDOR_PATH.read_bytes())
+    (out_dir / HTML2CANVAS_PUBLIC_LICENSE_PATH).write_text(
+        HTML2CANVAS_VENDOR_LICENSE_PATH.read_text(encoding="utf-8"),
+        encoding="utf-8",
+    )
 
     dataset = read_ps_simulator_sample_dataset(dataset_path)
     public_dataset_path = out_dir / PS_SIMULATOR_PUBLIC_DATASET_PATH
