@@ -1113,8 +1113,8 @@ PS_SIMULATOR_HTML = """<!doctype html>
 
     .battle-summary-overview {
       display: grid;
-      gap: 9px;
-      padding: 10px;
+      gap: 7px;
+      padding: 9px 10px;
       background: #fff;
     }
 
@@ -1141,19 +1141,23 @@ PS_SIMULATOR_HTML = """<!doctype html>
     }
 
     .summary-overview-list {
-      display: grid;
-      gap: 4px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 4px 5px;
       min-width: 0;
     }
 
     .summary-overview-deck {
-      display: flex;
+      display: inline-flex;
       gap: 6px;
       align-items: center;
+      flex: 0 1 auto;
+      max-width: 100%;
       min-width: 0;
       border: 1px solid var(--deck-class-border, var(--border));
       border-radius: 6px;
-      padding: 3px 6px;
+      padding: 2px 7px;
       background: var(--deck-class-row, #fff);
     }
 
