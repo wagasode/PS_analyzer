@@ -365,15 +365,14 @@ function buildProvisionalDecks(candidates, officialLookup, officialAmbiguous, of
   const usedDeckIds = new Set((officialDecks || []).map(deck => cleanCell(deck?.deckId)).filter(Boolean));
   return Array.from(candidates.values())
     .filter(candidate => !officialLookup.has(candidate.normalizedName) && !officialAmbiguous.has(candidate.normalizedName))
-    .map(candidate => {
+    .flatMap(candidate => {
+      const className = inferClassName(candidate.normalizedName);
+      if (!className) {
+        return [];
+      }
       const deckId = provisionalDeckId(candidate.normalizedName, usedDeckIds);
       usedDeckIds.add(deckId);
-      const className = inferClassName(candidate.normalizedName);
-      const warnings = [];
-      if (!className) {
-        warnings.push("classNameを推定できないため、提出案ではクラス不明として扱います。");
-      }
-      return {
+      return [{
         deckId,
         deckName: candidate.deckName,
         displayName: candidate.deckName,
@@ -388,8 +387,8 @@ function buildProvisionalDecks(candidates, officialLookup, officialAmbiguous, of
         provisional: true,
         temporary: true,
         deckKind: "provisional",
-        warnings
-      };
+        warnings: []
+      }];
     });
 }
 

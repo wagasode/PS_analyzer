@@ -119,14 +119,15 @@ class PsMatchupApiFunctionTest(unittest.TestCase):
         result = run_matchup_module(
             """
             const values = [
-              ["担当者", "使用デッキ", "進化E", "連携R", "ランプD", "未知列", ""],
-              ["memo", "memo", "", "", "", "", ""],
-              ["alice", "進化E", "0.5", "55%", "", "0.4", "0.3"],
-              ["bob", "連携R", "62%", "0.5", "", "", ""],
-              ["carol", "ランプD", "", "", "0.7", "", ""],
-              ["dave", "未知デッキ", "0.5", "", "", "", ""],
-              ["erin", "", "0.4", "", "", "", ""],
-              ["frank", "進化E", "50", "", "", "", ""]
+              ["担当者", "使用デッキ", "進化E", "連携R", "ランプD", "未知W", "対戦デッキ", ""],
+              ["memo", "memo", "", "", "", "", "", ""],
+              ["alice", "進化E", "0.5", "55%", "", "0.4", "0.3", "0.2"],
+              ["bob", "連携R", "62%", "0.5", "", "", "", ""],
+              ["carol", "ランプD", "", "", "0.7", "", "", ""],
+              ["dave", "未知Nm", "0.5", "", "", "", "", ""],
+              ["owner", "我袖", "0.6", "", "", "", "", ""],
+              ["erin", "", "0.4", "", "", "", "", ""],
+              ["frank", "進化E", "50", "", "", "", "", ""]
             ];
             return mod.__test.parseMatchupMatrix(values, {
               range: "'相性表'!A1:Z100",
@@ -148,22 +149,24 @@ class PsMatchupApiFunctionTest(unittest.TestCase):
             deck["deckName"]: deck
             for deck in result["provisionalDecks"]
         }
-        self.assertEqual(set(provisional_by_name), {"未知列", "未知デッキ"})
+        self.assertEqual(set(provisional_by_name), {"未知W", "未知Nm"})
         self.assertEqual(result["deckCandidates"], result["provisionalDecks"])
         self.assertEqual(result["unresolvedDecks"], result["provisionalDecks"])
 
-        unknown_column_deck = provisional_by_name["未知列"]
-        unknown_row_deck = provisional_by_name["未知デッキ"]
+        unknown_column_deck = provisional_by_name["未知W"]
+        unknown_row_deck = provisional_by_name["未知Nm"]
         self.assertTrue(unknown_column_deck["provisional"])
         self.assertTrue(unknown_row_deck["temporary"])
         self.assertEqual(unknown_column_deck["source"], "matchup_matrix")
         self.assertEqual(unknown_column_deck["sourceType"], "google_sheets_matchup")
-        self.assertEqual(unknown_column_deck["className"], "")
+        self.assertEqual(unknown_column_deck["className"], "W")
+        self.assertEqual(unknown_row_deck["className"], "Nm")
         self.assertEqual(unknown_column_deck["sourceCells"], ["'相性表'!F1"])
         self.assertEqual(unknown_row_deck["sourceCells"], ["'相性表'!B6"])
         self.assertTrue(unknown_column_deck["deckId"].startswith("sheet-deck-"))
         self.assertTrue(unknown_row_deck["deckId"].startswith("sheet-deck-"))
-        self.assertIn("classNameを推定できない", "\n".join(unknown_column_deck["warnings"]))
+        self.assertNotIn("対戦デッキ", provisional_by_name)
+        self.assertNotIn("我袖", provisional_by_name)
 
         self.assertEqual(
             matchups[("deck-e-1779172826463", "deck-r-1778681117704")]["winRate"],
@@ -189,10 +192,10 @@ class PsMatchupApiFunctionTest(unittest.TestCase):
         self.assertNotIn(("deck-r-1778681117704", "ps-d-ramp"), matchups)
 
         warnings = "\n".join(result["warnings"])
-        self.assertIn("仮デッキ候補 未知列", warnings)
-        self.assertIn("仮デッキ候補 未知デッキ", warnings)
-        self.assertNotIn("列デッキをdeckIdへ解決できません", warnings)
-        self.assertNotIn("行デッキをdeckIdへ解決できません", warnings)
+        self.assertIn("列デッキをdeckIdへ解決できません: 対戦デッキ", warnings)
+        self.assertIn("行デッキをdeckIdへ解決できません: 我袖", warnings)
+        self.assertNotIn("仮デッキ候補 対戦デッキ", warnings)
+        self.assertNotIn("仮デッキ候補 我袖", warnings)
         self.assertIn("列デッキ名が空", warnings)
         self.assertIn("自己対面は0.5が原則", warnings)
         self.assertIn("行デッキ名が空", warnings)

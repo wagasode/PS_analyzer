@@ -2632,6 +2632,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
       if (!normalizedDeckName) return null;
       const deckName = rawName || normalizedDeckName;
       const className = String(candidate.className || inferClassNameFromDeckName(normalizedDeckName) || "").trim();
+      if (!className) return null;
       return {
         deckId: String(candidate.deckId || candidate.temporaryDeckId || provisionalDeckId(normalizedDeckName)).trim(),
         className,
