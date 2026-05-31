@@ -1084,6 +1084,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
     }
 
     .battle-summary-result,
+    .battle-summary-overview,
     .summary-round-card {
       border: 1px solid var(--border);
       border-radius: 8px;
@@ -1108,6 +1109,70 @@ PS_SIMULATOR_HTML = """<!doctype html>
       font-weight: 800;
       line-height: 1.15;
       overflow-wrap: anywhere;
+    }
+
+    .battle-summary-overview {
+      display: grid;
+      gap: 7px;
+      padding: 9px 10px;
+      background: #fff;
+    }
+
+    .summary-overview-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+      min-width: 0;
+    }
+
+    .summary-overview-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .summary-overview-side {
+      display: grid;
+      gap: 5px;
+      min-width: 0;
+    }
+
+    .summary-overview-list {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 4px 5px;
+      min-width: 0;
+    }
+
+    .summary-overview-deck {
+      display: inline-flex;
+      gap: 6px;
+      align-items: center;
+      flex: 0 1 auto;
+      max-width: 100%;
+      min-width: 0;
+      border: 1px solid var(--deck-class-border, var(--border));
+      border-radius: 6px;
+      padding: 2px 7px;
+      background: var(--deck-class-row, #fff);
+    }
+
+    .summary-overview-deck-name {
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1.25;
+      overflow-wrap: anywhere;
+    }
+
+    .summary-provisional-label {
+      color: var(--warn);
+      font-weight: 900;
+      white-space: nowrap;
     }
 
     .battle-summary-rounds {
@@ -1467,6 +1532,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
       .battle-status-grid,
       .battle-round-grid,
       .battle-side-grid,
+      .summary-overview-grid,
       .battle-summary-rounds,
       .summary-candidate-grid {
         grid-template-columns: 1fr;
@@ -3551,6 +3617,66 @@ PS_SIMULATOR_HTML = """<!doctype html>
       return assignment?.playerSnapshot || playerById(assignment?.playerId);
     }
 
+    function summarySubmissionDeckItems(logSubmission) {
+      const items = [];
+      (logSubmission?.assignments || []).forEach(assignment => {
+        const deckSnapshots = assignment.deckSnapshots || [];
+        (assignment.deckIds || []).forEach(deckId => {
+          const deck = deckSnapshots.find(snapshot => snapshot.deckId === deckId)
+            || deckById(deckId)
+            || { deckId, deckName: deckId || "未選択", source: "missing" };
+          items.push({
+            role: assignment.role || "",
+            player: assignment.playerSnapshot || null,
+            deckId,
+            deck
+          });
+        });
+      });
+      return items;
+    }
+
+    function summaryDeckProvisionalLabelHtml(deck) {
+      return deckIsProvisional(deck) ? `<span class="summary-provisional-label">（仮）</span>` : "";
+    }
+
+    function summaryOverviewDeckRowHtml(item) {
+      const className = item.deck?.className || "";
+      const deckName = deckDisplayName(item.deck) || item.deckId || "未選択";
+      return `
+        <div class="summary-overview-deck ${escapeHtml(classCssClass(className))}">
+          <span class="summary-overview-deck-name">${escapeHtml(deckName)}${summaryDeckProvisionalLabelHtml(item.deck)}</span>
+        </div>
+      `;
+    }
+
+    function summaryOverviewSideHtml(battleLog, side) {
+      const logSubmission = logSubmissionSnapshot(battleLog, side);
+      const deckItems = summarySubmissionDeckItems(logSubmission);
+      const deckRows = deckItems.length
+        ? deckItems.map(summaryOverviewDeckRowHtml).join("")
+        : `<div class="validation-item warn">デッキ未選択</div>`;
+      return `
+        <section class="summary-overview-side" aria-label="${escapeHtml(sideLabel(side))}の7デッキ一覧">
+          <div class="summary-overview-list">${deckRows}</div>
+        </section>
+      `;
+    }
+
+    function battleSummaryOverviewHtml(battleLog) {
+      return `
+        <section class="battle-summary-overview" aria-labelledby="battle-summary-overview-title">
+          <div class="summary-overview-head">
+            <h3 id="battle-summary-overview-title">7デッキ概観</h3>
+          </div>
+          <div class="summary-overview-grid">
+            ${summaryOverviewSideHtml(battleLog, "self")}
+            ${summaryOverviewSideHtml(battleLog, "opponent")}
+          </div>
+        </section>
+      `;
+    }
+
     function logDeckTokenHtml(battleLog, side, deckId) {
       if (!deckId) {
         return `<span class="deck-token"><strong class="deck-token-name">未選択</strong></span>`;
@@ -3664,6 +3790,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
       }
       return `
         <div class="battle-summary-card">
+          ${battleSummaryOverviewHtml(battleLog)}
           ${battleSummaryHeroHtml(battleLog)}
           <div class="battle-summary-rounds" aria-label="バトル1からバトル5の試合流れ">
             ${[1, 2, 3, 4, 5].map(roundNumber => summaryRoundCardHtml(battleLog, roundNumber)).join("")}
