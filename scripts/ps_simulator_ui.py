@@ -1663,6 +1663,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
     const allPlayersTeamValue = "";
     const unassignedTeamValue = "__unassigned__";
     const unassignedTeamLabel = "未設定";
+    const unknownClassGroupName = "__unknown__";
     const statusLabels = {
       confident: "自信あり",
       available: "使用可能",
@@ -1762,6 +1763,44 @@ PS_SIMULATOR_HTML = """<!doctype html>
         unique.push(normalized);
       });
       return unique;
+    }
+
+    function normalizeDeckName(value) {
+      return String(value ?? "").normalize("NFKC").replace(/\s+/g, " ").trim();
+    }
+
+    function hashDeckName(value) {
+      let hash = 2166136261;
+      for (const char of normalizeDeckName(value)) {
+        hash ^= char.charCodeAt(0);
+        hash = Math.imul(hash, 16777619);
+      }
+      return (hash >>> 0).toString(16).padStart(8, "0");
+    }
+
+    function provisionalDeckId(normalizedDeckName) {
+      return `sheet-deck-${hashDeckName(normalizedDeckName)}`;
+    }
+
+    function inferClassNameFromDeckName(deckName) {
+      const normalized = normalizeDeckName(deckName);
+      return ["Nm", "Ni", "E", "R", "W", "D", "B"].find(suffix => normalized.endsWith(suffix)) || "";
+    }
+
+    function deckIsProvisional(deck) {
+      return Boolean(deck?.provisional || deck?.temporary || deck?.deckKind === "provisional");
+    }
+
+    function deckDisplayName(deck) {
+      return deck?.displayName || deck?.deckName || deck?.deckId || "";
+    }
+
+    function deckGroupClassName(deck) {
+      return deck?.className || unknownClassGroupName;
+    }
+
+    function provisionalDeckBadgeHtml(deck) {
+      return deckIsProvisional(deck) ? `<span class="badge warn">仮</span>` : "";
     }
 
     function playerDisplayName(player) {
@@ -1941,6 +1980,9 @@ PS_SIMULATOR_HTML = """<!doctype html>
     }
 
     function classDefinition(className) {
+      if (className === unknownClassGroupName) {
+        return { className: "?", displayName: "クラス不明" };
+      }
       return (state.dataset?.classDefinitions || []).find(definition => definition.className === className) || null;
     }
 
@@ -1968,7 +2010,19 @@ PS_SIMULATOR_HTML = """<!doctype html>
       return `<span class="class-code-pill ${escapeHtml(classCssClass(className))}" title="${escapeHtml(classLabel(className))}">${escapeHtml(code)}</span>`;
     }
 
+    function deckClassGroupDefinitions() {
+      const definitions = [...(state.dataset?.classDefinitions || [])];
+      const hasUnknownClassDeck = (state.dataset?.decks || []).some(deck => !deck.className);
+      if (hasUnknownClassDeck) {
+        definitions.push({ className: unknownClassGroupName, displayName: "クラス不明" });
+      }
+      return definitions;
+    }
+
     function decksByClass(className) {
+      if (className === unknownClassGroupName) {
+        return (state.dataset?.decks || []).filter(deck => !deck.className);
+      }
       return (state.dataset?.decks || []).filter(deck => deck.className === className);
     }
 
@@ -1980,7 +2034,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
       return (assignmentForRole(role).deckIds || [])
         .map(deckById)
         .filter(Boolean)
-        .map(deck => deck.className);
+        .map(deckGroupClassName);
     }
 
     function selectedRolesForClass(className) {
@@ -2003,7 +2057,8 @@ PS_SIMULATOR_HTML = """<!doctype html>
       return `
         <span class="summary-deck-chip ${escapeHtml(classCssClass(deck.className))}" title="${escapeHtml(classLabel(deck.className))} / deckId: ${escapeHtml(deck.deckId)}">
           <span class="summary-deck-chip-code" aria-hidden="true">${escapeHtml(classCode)}</span>
-          <span>${escapeHtml(deck.deckName)}</span>
+          <span>${escapeHtml(deckDisplayName(deck))}</span>
+          ${provisionalDeckBadgeHtml(deck)}
         </span>
       `;
     }
@@ -2230,8 +2285,10 @@ PS_SIMULATOR_HTML = """<!doctype html>
         deckId: deck.deckId,
         className: deck.className,
         deckName: deck.deckName,
+        displayName: deckDisplayName(deck),
         source: deck.source || "",
-        sourceDeckKey: deck.sourceDeckKey || ""
+        sourceDeckKey: deck.sourceDeckKey || "",
+        provisional: deckIsProvisional(deck)
       };
     }
 
@@ -2468,8 +2525,8 @@ PS_SIMULATOR_HTML = """<!doctype html>
     function deckIdLookup(dataset = state.dataset) {
       const lookup = new Map();
       (dataset?.decks || []).forEach(deck => {
-        [deck.deckId, deck.deckName, deck.sourceDeckKey].forEach(value => {
-          const key = String(value || "").trim();
+        [deck.deckId, deck.deckName, deck.displayName, deck.sourceDeckKey, deck.normalizedDeckName].forEach(value => {
+          const key = normalizeDeckName(value);
           if (key) lookup.set(key, deck.deckId);
         });
       });
@@ -2477,7 +2534,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
     }
 
     function resolveDeckId(value, lookup) {
-      const key = String(value || "").trim();
+      const key = normalizeDeckName(value);
       return key ? lookup.get(key) || "" : "";
     }
 
@@ -2552,6 +2609,78 @@ PS_SIMULATOR_HTML = """<!doctype html>
         spreadsheetIdSource: String(raw.spreadsheetIdSource || ""),
         range: String(raw.range || ""),
         fetchedAt: String(raw.fetchedAt || "")
+      };
+    }
+
+    function provisionalDeckCandidatesFromPayload(payload) {
+      const byId = new Map();
+      [
+        ...(Array.isArray(payload?.provisionalDecks) ? payload.provisionalDecks : []),
+        ...(Array.isArray(payload?.deckCandidates) ? payload.deckCandidates : []),
+        ...(Array.isArray(payload?.unresolvedDecks) ? payload.unresolvedDecks : [])
+      ].forEach(candidate => {
+        const deck = normalizeProvisionalDeckCandidate(candidate);
+        if (deck) byId.set(deck.deckId, deck);
+      });
+      return Array.from(byId.values());
+    }
+
+    function normalizeProvisionalDeckCandidate(candidate) {
+      if (!candidate || typeof candidate !== "object") return null;
+      const rawName = String(candidate.deckName || candidate.displayName || candidate.name || "").trim();
+      const normalizedDeckName = normalizeDeckName(candidate.normalizedDeckName || rawName);
+      if (!normalizedDeckName) return null;
+      const deckName = rawName || normalizedDeckName;
+      const className = String(candidate.className || inferClassNameFromDeckName(normalizedDeckName) || "").trim();
+      if (!className) return null;
+      return {
+        deckId: String(candidate.deckId || candidate.temporaryDeckId || provisionalDeckId(normalizedDeckName)).trim(),
+        className,
+        deckName,
+        displayName: String(candidate.displayName || deckName).trim(),
+        normalizedDeckName,
+        weaknessTags: Array.isArray(candidate.weaknessTags) ? candidate.weaknessTags : [],
+        note: String(candidate.note || "相性表由来の仮デッキ候補。正式deck定義には未登録。"),
+        source: String(candidate.source || "matchup_matrix"),
+        sourceType: String(candidate.sourceType || "google_sheets_matchup"),
+        sourceCells: Array.isArray(candidate.sourceCells) ? candidate.sourceCells.map(String) : [],
+        candidateRoles: Array.isArray(candidate.candidateRoles) ? candidate.candidateRoles.map(String) : [],
+        warnings: Array.isArray(candidate.warnings) ? candidate.warnings.map(String) : [],
+        provisional: true,
+        temporary: true,
+        deckKind: "provisional"
+      };
+    }
+
+    function mergeProvisionalDecksFromMatchupPayload(payload) {
+      if (!state.dataset) return [];
+      const lookup = deckIdLookup(state.dataset);
+      const existingDeckIds = new Set((state.dataset.decks || []).map(deck => deck.deckId));
+      const additions = provisionalDeckCandidatesFromPayload(payload).filter(deck => {
+        if (!deck.deckId || existingDeckIds.has(deck.deckId)) return false;
+        const nameKeys = [deck.deckName, deck.displayName, deck.normalizedDeckName]
+          .map(normalizeDeckName)
+          .filter(Boolean);
+        return !nameKeys.some(key => lookup.has(key));
+      });
+      if (additions.length === 0) return [];
+      state.dataset = {
+        ...state.dataset,
+        decks: [...(state.dataset.decks || []), ...additions]
+      };
+      return additions;
+    }
+
+    function datasetWithPayloadProvisionalDecks(dataset, payload) {
+      const candidates = provisionalDeckCandidatesFromPayload(payload);
+      if (!candidates.length) return dataset;
+      const existingDeckIds = new Set((dataset?.decks || []).map(deck => deck.deckId));
+      return {
+        ...dataset,
+        decks: [
+          ...(dataset?.decks || []),
+          ...candidates.filter(deck => deck.deckId && !existingDeckIds.has(deck.deckId))
+        ]
       };
     }
 
@@ -2661,7 +2790,8 @@ PS_SIMULATOR_HTML = """<!doctype html>
     function buildMatchupIndexFromApiPayload(dataset, payload) {
       const sourceMeta = sanitizeMatchupApiSource(payload?.source);
       const source = sourceMeta.type === "google_sheets" ? "google_sheets" : sourceMeta.type;
-      const lookup = deckIdLookup(dataset);
+      const candidateDataset = datasetWithPayloadProvisionalDecks(dataset, payload);
+      const lookup = deckIdLookup(candidateDataset);
       const apiWarnings = Array.isArray(payload?.warnings) ? payload.warnings.map(String) : [];
       const index = {
         source,
@@ -2675,7 +2805,8 @@ PS_SIMULATOR_HTML = """<!doctype html>
         apiFallback: false,
         fallbackReason: "",
         safeError: "",
-        loadStatus: "success"
+        loadStatus: "success",
+        provisionalDecks: provisionalDeckCandidatesFromPayload(payload)
       };
 
       (payload?.matchups || []).forEach(matchup => {
@@ -2710,7 +2841,8 @@ PS_SIMULATOR_HTML = """<!doctype html>
           fallback: false,
           fallbackReason: "",
           safeError: state.matchupLoad.safeError || "",
-          sourceMeta: {}
+          sourceMeta: {},
+          provisionalDeckCount: 0
         };
       }
       return {
@@ -2726,7 +2858,8 @@ PS_SIMULATOR_HTML = """<!doctype html>
         fallback: Boolean(index.apiFallback || state.matchupLoad.fallback),
         fallbackReason: index.fallbackReason || state.matchupLoad.fallbackReason || "",
         safeError: index.safeError || state.matchupLoad.safeError || "",
-        sourceMeta: index.sourceMeta || {}
+        sourceMeta: index.sourceMeta || {},
+        provisionalDeckCount: (index.provisionalDecks || []).length
       };
     }
 
@@ -2988,7 +3121,8 @@ PS_SIMULATOR_HTML = """<!doctype html>
         <span class="deck-token ${escapeHtml(classCssClass(deck.className))}" title="${escapeHtml(classLabel(deck.className))} / deckId: ${escapeHtml(tokenDeckId)}">
           ${player ? playerAvatarHtml(player, "small") : ""}
           <span class="deck-token-code" aria-hidden="true">${escapeHtml(classCode)}</span>
-          <strong class="deck-token-name">${escapeHtml(deck.deckName)}</strong>
+          <strong class="deck-token-name">${escapeHtml(deckDisplayName(deck))}</strong>
+          ${provisionalDeckBadgeHtml(deck)}
         </span>
       `;
     }
@@ -3657,7 +3791,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
 
       entries.forEach(entry => {
         const playerName = playerDisplayName(entry.player) || entry.playerId || "未選択選手";
-        const deckName = entry.deck?.deckName || entry.deckId || "未選択デッキ";
+        const deckName = deckDisplayName(entry.deck) || entry.deckId || "未選択デッキ";
         if (!entry.deck) {
           errors.push(`デッキが見つかりません: ${entry.deckId}`);
           return;
@@ -3968,6 +4102,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
 
       try {
         const payload = await fetchMatchupApiPayload();
+        mergeProvisionalDecksFromMatchupPayload(payload);
         const index = buildMatchupIndexFromApiPayload(state.dataset, payload);
         // 再読み込み後は、以降に updateRoundWinRate() で勝率を確定するバトルから新しい相性表を使う。
         // すでに勝敗決定済みのラウンド結果やBattleLog用スナップショットは自動で書き換えない。
@@ -4034,6 +4169,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
           <span class="badge ${statusKind}">相性表: ${escapeHtml(status.sourceLabel)}</span>
           <span class="badge">${escapeHtml(status.statusLabel)}</span>
           <span class="badge">${status.count} matchups</span>
+          ${status.provisionalDeckCount ? `<span class="badge warn">仮デッキ ${status.provisionalDeckCount}</span>` : ""}
           <span class="badge ${status.warningCount ? "warn" : "ok"}">warnings ${status.warningCount}件</span>
           <span class="badge">取得: ${escapeHtml(status.formattedFetchedAt)}</span>
         </div>
@@ -4052,11 +4188,13 @@ PS_SIMULATOR_HTML = """<!doctype html>
       const statuses = dataset?.playerDeckStatuses || [];
       const matchups = matchupStatus();
       const profileMeta = dataset?.playerProfileMeta || {};
+      const provisionalDeckCount = (dataset?.decks || []).filter(deckIsProvisional).length;
       const profileStatus = state.profileLoad.status === "success"
         ? `共通プロフィール ${profileMeta.count || 0}件`
         : state.profileLoad.message || "共通プロフィール未使用";
       document.getElementById("data-summary").innerHTML = [
         `${dataset?.decks?.length || 0}デッキ`,
+        provisionalDeckCount ? `仮デッキ ${provisionalDeckCount}` : "",
         `${dataset?.players?.length || 0}選手`,
         `${availableTeamOptions().length}チーム`,
         profileStatus,
@@ -4066,7 +4204,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
         `${matchups.count} matchup`,
         `相性表warning ${matchups.warningCount}`,
         `取得: ${matchups.formattedFetchedAt}`
-        ].map(label => `<span class="badge">${escapeHtml(label)}</span>`).join("");
+        ].filter(Boolean).map(label => `<span class="badge">${escapeHtml(label)}</span>`).join("");
         document.getElementById("dataset-meta").textContent = `サンプルデータ読込済み / ${profileStatus}`;
         document.getElementById("debug-dataset-meta").textContent =
           `${datasetUrl} を読み込みました。schemaVersion: ${dataset?.schemaVersion || "不明"} / playerProfiles: ${state.profileLoad.status} / ${playerProfilesUrl} / source: ${profileMeta.source || "なし"} / generatedAt: ${profileMeta.generatedAt || "なし"} / 相性表: ${matchups.sourceLabel} / ${matchups.statusLabel} / ${matchups.count}件 / warning ${matchups.warningCount}件 / 取得: ${matchups.formattedFetchedAt}`;
@@ -4170,7 +4308,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
         `;
         })
       ].join("");
-      const deckOptions = (state.dataset?.classDefinitions || [])
+      const deckOptions = deckClassGroupDefinitions()
         .filter(definition => shouldShowClassForRole(roleDef.role, definition.className))
         .map(definition => {
           const classDecks = decksByClass(definition.className);
@@ -4183,7 +4321,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
                 <label class="deck-option-pick">
                   <input type="checkbox" data-role-deck="${escapeHtml(roleDef.role)}" data-deck-id="${escapeHtml(deck.deckId)}"${checked ? " checked" : ""}>
                   <span class="deck-main">
-                    <span class="deck-name"><strong>${escapeHtml(deck.deckName)}</strong></span>
+                    <span class="deck-name"><strong>${escapeHtml(deckDisplayName(deck))}</strong>${provisionalDeckBadgeHtml(deck)}</span>
                   </span>
                 </label>
                 ${deckStatusDetailsHtml(deck.deckId, assignment.playerId)}
@@ -4293,9 +4431,12 @@ PS_SIMULATOR_HTML = """<!doctype html>
       const rows = (state.dataset?.decks || []).map(deck => `
           <tr>
             <td>${classBadgeHtml(deck.className)}</td>
-            <td><strong>${escapeHtml(deck.deckName)}</strong><div class="source-note">className: ${escapeHtml(deck.className)} / deckId: ${escapeHtml(deck.deckId)}</div></td>
+            <td><strong>${escapeHtml(deckDisplayName(deck))}</strong>${provisionalDeckBadgeHtml(deck)}<div class="source-note">className: ${escapeHtml(deck.className || "不明")} / deckId: ${escapeHtml(deck.deckId)}</div></td>
           <td>${escapeHtml(deck.source || "")}</td>
-          <td>${escapeHtml(deck.note || "")}</td>
+          <td>${escapeHtml([
+            deck.note || "",
+            deckIsProvisional(deck) && deck.sourceCells?.length ? `sourceCells: ${deck.sourceCells.join(", ")}` : ""
+          ].filter(Boolean).join(" / "))}</td>
         </tr>
       `).join("");
       document.getElementById("deck-reference").innerHTML = `
@@ -4365,6 +4506,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
           <span class="badge">source: ${escapeHtml(status.sourceLabel)}</span>
           <span class="badge">status: ${escapeHtml(status.statusLabel)}</span>
           <span class="badge">${status.count}件</span>
+          ${status.provisionalDeckCount ? `<span class="badge warn">仮デッキ ${status.provisionalDeckCount}</span>` : ""}
           <span class="badge ${status.warningCount ? "warn" : "ok"}">warning ${status.warningCount}</span>
           <span class="badge">取得: ${escapeHtml(status.formattedFetchedAt)}</span>
         </div>

@@ -3,6 +3,8 @@ const GOOGLE_TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token";
 const GOOGLE_SHEETS_SCOPE = "https://www.googleapis.com/auth/spreadsheets.readonly";
 const GOOGLE_SHEETS_VALUES_BASE = "https://sheets.googleapis.com/v4/spreadsheets";
 const FALLBACK_WIN_RATE = 0.5;
+const PROVISIONAL_DECK_ID_PREFIX = "sheet-deck-";
+const CLASS_SUFFIXES = ["Nm", "Ni", "E", "R", "W", "D", "B"];
 
 const DEFAULT_DECKS = [
   {
@@ -198,12 +200,22 @@ function pemToArrayBuffer(privateKey) {
 function parseMatchupMatrix(values, options = {}) {
   const range = normalizeRange(options.range);
   const fetchedAt = options.fetchedAt || new Date().toISOString();
-  const { lookup, ambiguous } = buildDeckLookup(options.decks || DEFAULT_DECKS);
   const rangeInfo = parseA1Range(range);
-  const warnings = [];
+  const rows = Array.isArray(values) ? values : [];
+  const baseDecks = options.decks || DEFAULT_DECKS;
+  const { lookup: officialLookup, ambiguous: officialAmbiguous } = buildDeckLookup(baseDecks);
+  const provisionalDecks = buildProvisionalDecks(
+    collectMatchupDeckCandidates(rows, rangeInfo),
+    officialLookup,
+    officialAmbiguous,
+    baseDecks
+  );
+  const { lookup, ambiguous } = buildDeckLookup([...baseDecks, ...provisionalDecks]);
+  const warnings = provisionalDecks.flatMap(deck => (
+    (deck.warnings || []).map(warning => `仮デッキ候補 ${deck.deckName}: ${warning}`)
+  ));
   const matchups = [];
   const seen = new Set();
-  const rows = Array.isArray(values) ? values : [];
   const headerRow = Array.isArray(rows[0]) ? rows[0] : [];
   const targetColumns = [];
   const maxColumnCount = rows.reduce(
@@ -292,9 +304,109 @@ function parseMatchupMatrix(values, options = {}) {
       range,
       fetchedAt
     },
+    provisionalDecks,
+    deckCandidates: provisionalDecks,
+    unresolvedDecks: provisionalDecks,
     matchups,
     warnings
   };
+}
+
+function collectMatchupDeckCandidates(rows, rangeInfo) {
+  const candidates = new Map();
+  const headerRow = Array.isArray(rows[0]) ? rows[0] : [];
+  const maxColumnCount = rows.reduce(
+    (max, row) => Math.max(max, Array.isArray(row) ? row.length : 0),
+    headerRow.length
+  );
+
+  for (let columnIndex = 2; columnIndex < maxColumnCount; columnIndex += 1) {
+    addMatchupDeckCandidate(
+      candidates,
+      headerRow[columnIndex],
+      sourceCell(rangeInfo, 0, columnIndex),
+      "column"
+    );
+  }
+
+  for (let rowIndex = 2; rowIndex < rows.length; rowIndex += 1) {
+    const row = Array.isArray(rows[rowIndex]) ? rows[rowIndex] : [];
+    addMatchupDeckCandidate(
+      candidates,
+      row[1],
+      sourceCell(rangeInfo, rowIndex, 1),
+      "row"
+    );
+  }
+
+  return candidates;
+}
+
+function addMatchupDeckCandidate(candidates, value, sourceCellValue, role) {
+  const deckName = cleanCell(value);
+  const normalizedName = normalizeDeckName(deckName);
+  if (!normalizedName) {
+    return;
+  }
+  const existing = candidates.get(normalizedName) || {
+    deckName,
+    normalizedName,
+    sourceCells: [],
+    roles: new Set()
+  };
+  if (!existing.sourceCells.includes(sourceCellValue)) {
+    existing.sourceCells.push(sourceCellValue);
+  }
+  existing.roles.add(role);
+  candidates.set(normalizedName, existing);
+}
+
+function buildProvisionalDecks(candidates, officialLookup, officialAmbiguous, officialDecks) {
+  const usedDeckIds = new Set((officialDecks || []).map(deck => cleanCell(deck?.deckId)).filter(Boolean));
+  return Array.from(candidates.values())
+    .filter(candidate => !officialLookup.has(candidate.normalizedName) && !officialAmbiguous.has(candidate.normalizedName))
+    .flatMap(candidate => {
+      const className = inferClassName(candidate.normalizedName);
+      if (!className) {
+        return [];
+      }
+      const deckId = provisionalDeckId(candidate.normalizedName, usedDeckIds);
+      usedDeckIds.add(deckId);
+      return [{
+        deckId,
+        deckName: candidate.deckName,
+        displayName: candidate.deckName,
+        normalizedDeckName: candidate.normalizedName,
+        className,
+        weaknessTags: [],
+        note: "相性表由来の仮デッキ候補。正式deck定義には未登録。",
+        source: "matchup_matrix",
+        sourceType: "google_sheets_matchup",
+        sourceCells: candidate.sourceCells,
+        candidateRoles: Array.from(candidate.roles),
+        provisional: true,
+        temporary: true,
+        deckKind: "provisional",
+        warnings: []
+      }];
+    });
+}
+
+function provisionalDeckId(normalizedName, usedDeckIds = new Set()) {
+  const baseId = `${PROVISIONAL_DECK_ID_PREFIX}${hashDeckName(normalizedName)}`;
+  if (!usedDeckIds.has(baseId)) {
+    return baseId;
+  }
+  let suffix = 2;
+  while (usedDeckIds.has(`${baseId}-${suffix}`)) {
+    suffix += 1;
+  }
+  return `${baseId}-${suffix}`;
+}
+
+function inferClassName(deckName) {
+  const normalized = normalizeDeckName(deckName);
+  return CLASS_SUFFIXES.find(suffix => normalized.endsWith(suffix)) || "";
 }
 
 function buildDeckLookup(decks) {
@@ -305,8 +417,8 @@ function buildDeckLookup(decks) {
     if (!deckId) {
       continue;
     }
-    for (const value of [deckId, deck?.deckName, deck?.sourceDeckKey]) {
-      const key = cleanCell(value);
+    for (const value of [deckId, deck?.deckName, deck?.displayName, deck?.sourceDeckKey, deck?.normalizedDeckName]) {
+      const key = normalizeDeckName(value);
       if (!key) {
         continue;
       }
@@ -322,7 +434,7 @@ function buildDeckLookup(decks) {
 }
 
 function resolveDeckId(value, lookup, ambiguous) {
-  const key = cleanCell(value);
+  const key = normalizeDeckName(value);
   if (!key || ambiguous.has(key)) {
     return null;
   }
@@ -415,6 +527,19 @@ function cleanCell(value) {
   return String(value ?? "").trim();
 }
 
+function normalizeDeckName(value) {
+  return String(value ?? "").normalize("NFKC").replace(/\s+/g, " ").trim();
+}
+
+function hashDeckName(value) {
+  let hash = 2166136261;
+  for (const char of normalizeDeckName(value)) {
+    hash ^= char.charCodeAt(0);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(16).padStart(8, "0");
+}
+
 function jsonResponse(payload, status) {
   return new Response(JSON.stringify(payload) + "\n", {
     status,
@@ -448,6 +573,7 @@ export const __test = {
   DEFAULT_DECKS,
   DEFAULT_SHEET_RANGE,
   buildDeckLookup,
+  buildProvisionalDecks,
   handleRequest,
   normalizeWinRate,
   parseMatchupMatrix
