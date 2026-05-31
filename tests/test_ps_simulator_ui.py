@@ -97,7 +97,6 @@ class PsSimulatorUiTest(unittest.TestCase):
         self.assertIn('id="battle-summary-card"', html)
         self.assertIn("function battleSummaryCardHtml(battleLog)", html)
         self.assertIn("7デッキ概観", html)
-        self.assertIn("自分側7デッキ vs 相手側7デッキ", html)
         self.assertIn("function battleSummaryOverviewHtml(battleLog)", html)
         self.assertIn("function summarySubmissionDeckItems(logSubmission)", html)
         self.assertIn("function summaryDeckProvisionalLabelHtml(deck)", html)
@@ -106,6 +105,11 @@ class PsSimulatorUiTest(unittest.TestCase):
         self.assertIn("summary-overview-deck", html)
         self.assertIn("summary-provisional-label", html)
         self.assertIn("（仮）", html)
+        self.assertNotIn("summary-overview-index", html)
+        self.assertNotIn("summary-overview-deck-meta", html)
+        self.assertNotIn("summarySubmissionMetaText", html)
+        self.assertNotIn("${deckItems.length}/7デッキ", html)
+        self.assertNotIn("${item.role ? `${item.role}担当` : \"\"}", html)
         self.assertIn("${battleSummaryOverviewHtml(battleLog)}", html)
         self.assertLess(
             html.index("${battleSummaryOverviewHtml(battleLog)}"),
