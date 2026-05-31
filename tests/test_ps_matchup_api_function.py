@@ -144,6 +144,27 @@ class PsMatchupApiFunctionTest(unittest.TestCase):
             (entry["sourceDeckId"], entry["targetDeckId"]): entry
             for entry in result["matchups"]
         }
+        provisional_by_name = {
+            deck["deckName"]: deck
+            for deck in result["provisionalDecks"]
+        }
+        self.assertEqual(set(provisional_by_name), {"未知列", "未知デッキ"})
+        self.assertEqual(result["deckCandidates"], result["provisionalDecks"])
+        self.assertEqual(result["unresolvedDecks"], result["provisionalDecks"])
+
+        unknown_column_deck = provisional_by_name["未知列"]
+        unknown_row_deck = provisional_by_name["未知デッキ"]
+        self.assertTrue(unknown_column_deck["provisional"])
+        self.assertTrue(unknown_row_deck["temporary"])
+        self.assertEqual(unknown_column_deck["source"], "matchup_matrix")
+        self.assertEqual(unknown_column_deck["sourceType"], "google_sheets_matchup")
+        self.assertEqual(unknown_column_deck["className"], "")
+        self.assertEqual(unknown_column_deck["sourceCells"], ["'相性表'!F1"])
+        self.assertEqual(unknown_row_deck["sourceCells"], ["'相性表'!B6"])
+        self.assertTrue(unknown_column_deck["deckId"].startswith("sheet-deck-"))
+        self.assertTrue(unknown_row_deck["deckId"].startswith("sheet-deck-"))
+        self.assertIn("classNameを推定できない", "\n".join(unknown_column_deck["warnings"]))
+
         self.assertEqual(
             matchups[("deck-e-1779172826463", "deck-r-1778681117704")]["winRate"],
             0.55,
@@ -157,13 +178,23 @@ class PsMatchupApiFunctionTest(unittest.TestCase):
             0.62,
         )
         self.assertEqual(matchups[("ps-d-ramp", "ps-d-ramp")]["winRate"], 0.7)
+        self.assertEqual(
+            matchups[("deck-e-1779172826463", unknown_column_deck["deckId"])]["winRate"],
+            0.4,
+        )
+        self.assertEqual(
+            matchups[(unknown_row_deck["deckId"], "deck-e-1779172826463")]["winRate"],
+            0.5,
+        )
         self.assertNotIn(("deck-r-1778681117704", "ps-d-ramp"), matchups)
 
         warnings = "\n".join(result["warnings"])
-        self.assertIn("列デッキをdeckIdへ解決できません", warnings)
+        self.assertIn("仮デッキ候補 未知列", warnings)
+        self.assertIn("仮デッキ候補 未知デッキ", warnings)
+        self.assertNotIn("列デッキをdeckIdへ解決できません", warnings)
+        self.assertNotIn("行デッキをdeckIdへ解決できません", warnings)
         self.assertIn("列デッキ名が空", warnings)
         self.assertIn("自己対面は0.5が原則", warnings)
-        self.assertIn("行デッキをdeckIdへ解決できません", warnings)
         self.assertIn("行デッキ名が空", warnings)
         self.assertIn("重複matchup", warnings)
 
