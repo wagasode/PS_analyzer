@@ -96,6 +96,21 @@ class PsSimulatorUiTest(unittest.TestCase):
         self.assertIn("スクショ共有用サマリー", html)
         self.assertIn('id="battle-summary-card"', html)
         self.assertIn("function battleSummaryCardHtml(battleLog)", html)
+        self.assertIn("7デッキ概観", html)
+        self.assertIn("自分側7デッキ vs 相手側7デッキ", html)
+        self.assertIn("function battleSummaryOverviewHtml(battleLog)", html)
+        self.assertIn("function summarySubmissionDeckItems(logSubmission)", html)
+        self.assertIn("function summaryDeckProvisionalLabelHtml(deck)", html)
+        self.assertIn('class="battle-summary-overview"', html)
+        self.assertIn("summary-overview-grid", html)
+        self.assertIn("summary-overview-deck", html)
+        self.assertIn("summary-provisional-label", html)
+        self.assertIn("（仮）", html)
+        self.assertIn("${battleSummaryOverviewHtml(battleLog)}", html)
+        self.assertLess(
+            html.index("${battleSummaryOverviewHtml(battleLog)}"),
+            html.index("${battleSummaryHeroHtml(battleLog)}"),
+        )
         self.assertIn("function renderBattleSummaryCard()", html)
         self.assertIn("roundCandidateDeckIds(round, side)", html)
         self.assertIn('id="download-battle-summary-png"', html)

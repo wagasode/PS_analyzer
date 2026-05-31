@@ -1084,6 +1084,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
     }
 
     .battle-summary-result,
+    .battle-summary-overview,
     .summary-round-card {
       border: 1px solid var(--border);
       border-radius: 8px;
@@ -1108,6 +1109,119 @@ PS_SIMULATOR_HTML = """<!doctype html>
       font-weight: 800;
       line-height: 1.15;
       overflow-wrap: anywhere;
+    }
+
+    .battle-summary-overview {
+      display: grid;
+      gap: 9px;
+      padding: 10px;
+      background: #fff;
+    }
+
+    .summary-overview-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+      min-width: 0;
+    }
+
+    .summary-overview-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .summary-overview-side {
+      display: grid;
+      gap: 7px;
+      min-width: 0;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px;
+      background: #f8fafc;
+    }
+
+    .summary-overview-side-head {
+      display: grid;
+      gap: 3px;
+      min-width: 0;
+    }
+
+    .summary-overview-side-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      min-width: 0;
+    }
+
+    .summary-overview-side-meta {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1.3;
+      overflow-wrap: anywhere;
+    }
+
+    .summary-overview-list {
+      display: grid;
+      gap: 5px;
+      min-width: 0;
+    }
+
+    .summary-overview-deck {
+      display: grid;
+      grid-template-columns: 24px auto minmax(0, 1fr);
+      gap: 6px;
+      align-items: start;
+      min-width: 0;
+      border: 1px solid var(--deck-class-border, var(--border));
+      border-radius: 7px;
+      padding: 5px 6px;
+      background: var(--deck-class-row, #fff);
+    }
+
+    .summary-overview-index {
+      display: inline-grid;
+      place-items: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      background: #fff;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .summary-overview-deck-main {
+      display: grid;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .summary-overview-deck-name {
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1.25;
+      overflow-wrap: anywhere;
+    }
+
+    .summary-overview-deck-meta {
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.25;
+      overflow-wrap: anywhere;
+    }
+
+    .summary-provisional-label {
+      color: var(--warn);
+      font-weight: 900;
+      white-space: nowrap;
     }
 
     .battle-summary-rounds {
@@ -1467,6 +1581,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
       .battle-status-grid,
       .battle-round-grid,
       .battle-side-grid,
+      .summary-overview-grid,
       .battle-summary-rounds,
       .summary-candidate-grid {
         grid-template-columns: 1fr;
@@ -3551,6 +3666,113 @@ PS_SIMULATOR_HTML = """<!doctype html>
       return assignment?.playerSnapshot || playerById(assignment?.playerId);
     }
 
+    function summarySubmissionTeamText(logSubmission) {
+      const explicitTeamName = String(logSubmission?.teamName || "").trim();
+      if (explicitTeamName && explicitTeamName !== teamFilterDisplayName(allPlayersTeamValue)) {
+        return explicitTeamName;
+      }
+      const teamNames = uniqueStrings((logSubmission?.assignments || []).map(assignment => (
+        playerTeamName(assignment.playerSnapshot)
+      )));
+      if (teamNames.length === 1) return teamNames[0];
+      if (teamNames.length > 1) return teamNames.join("、");
+      return "チーム未設定";
+    }
+
+    function summarySubmissionPlayerText(logSubmission) {
+      const playerNames = uniqueStrings((logSubmission?.assignments || []).map(assignment => (
+        playerDisplayName(assignment.playerSnapshot)
+      ))).filter(name => name !== "未選択");
+      return playerNames.length ? playerNames.join("、") : "選手未設定";
+    }
+
+    function summarySubmissionMetaText(logSubmission) {
+      return `${summarySubmissionTeamText(logSubmission)} / ${summarySubmissionPlayerText(logSubmission)}`;
+    }
+
+    function summarySubmissionDeckItems(logSubmission) {
+      const items = [];
+      (logSubmission?.assignments || []).forEach(assignment => {
+        const deckSnapshots = assignment.deckSnapshots || [];
+        (assignment.deckIds || []).forEach(deckId => {
+          const deck = deckSnapshots.find(snapshot => snapshot.deckId === deckId)
+            || deckById(deckId)
+            || { deckId, deckName: deckId || "未選択", source: "missing" };
+          items.push({
+            role: assignment.role || "",
+            player: assignment.playerSnapshot || null,
+            deckId,
+            deck
+          });
+        });
+      });
+      return items;
+    }
+
+    function summaryDeckPlayerMetaText(item) {
+      const playerName = playerDisplayName(item.player);
+      const teamName = playerTeamName(item.player);
+      return [
+        item.role ? `${item.role}担当` : "",
+        playerName && playerName !== "未選択" ? playerName : "担当未選択",
+        teamName
+      ].filter(Boolean).join(" / ");
+    }
+
+    function summaryDeckProvisionalLabelHtml(deck) {
+      return deckIsProvisional(deck) ? `<span class="summary-provisional-label">（仮）</span>` : "";
+    }
+
+    function summaryOverviewDeckRowHtml(item, index) {
+      const className = item.deck?.className || "";
+      const deckName = deckDisplayName(item.deck) || item.deckId || "未選択";
+      return `
+        <div class="summary-overview-deck ${escapeHtml(classCssClass(className))}">
+          <span class="summary-overview-index">${index + 1}</span>
+          ${compactClassBadgeHtml(className)}
+          <div class="summary-overview-deck-main">
+            <div class="summary-overview-deck-name">${escapeHtml(deckName)}${summaryDeckProvisionalLabelHtml(item.deck)}</div>
+            <div class="summary-overview-deck-meta">${escapeHtml(summaryDeckPlayerMetaText(item))}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function summaryOverviewSideHtml(battleLog, side) {
+      const logSubmission = logSubmissionSnapshot(battleLog, side);
+      const deckItems = summarySubmissionDeckItems(logSubmission);
+      const deckRows = deckItems.length
+        ? deckItems.map(summaryOverviewDeckRowHtml).join("")
+        : `<div class="validation-item warn">デッキ未選択</div>`;
+      return `
+        <section class="summary-overview-side" aria-label="${escapeHtml(sideLabel(side))}の7デッキ一覧">
+          <div class="summary-overview-side-head">
+            <div class="summary-overview-side-title">
+              <h4>${escapeHtml(sideLabel(side))}</h4>
+              <span class="badge">${deckItems.length}/7デッキ</span>
+            </div>
+            <div class="summary-overview-side-meta">${escapeHtml(summarySubmissionMetaText(logSubmission))}</div>
+          </div>
+          <div class="summary-overview-list">${deckRows}</div>
+        </section>
+      `;
+    }
+
+    function battleSummaryOverviewHtml(battleLog) {
+      return `
+        <section class="battle-summary-overview" aria-labelledby="battle-summary-overview-title">
+          <div class="summary-overview-head">
+            <h3 id="battle-summary-overview-title">7デッキ概観</h3>
+            <span class="source-note">自分側7デッキ vs 相手側7デッキ</span>
+          </div>
+          <div class="summary-overview-grid">
+            ${summaryOverviewSideHtml(battleLog, "self")}
+            ${summaryOverviewSideHtml(battleLog, "opponent")}
+          </div>
+        </section>
+      `;
+    }
+
     function logDeckTokenHtml(battleLog, side, deckId) {
       if (!deckId) {
         return `<span class="deck-token"><strong class="deck-token-name">未選択</strong></span>`;
@@ -3664,6 +3886,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
       }
       return `
         <div class="battle-summary-card">
+          ${battleSummaryOverviewHtml(battleLog)}
           ${battleSummaryHeroHtml(battleLog)}
           <div class="battle-summary-rounds" aria-label="バトル1からバトル5の試合流れ">
             ${[1, 2, 3, 4, 5].map(roundNumber => summaryRoundCardHtml(battleLog, roundNumber)).join("")}
