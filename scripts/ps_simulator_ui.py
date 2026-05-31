@@ -353,6 +353,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
       border-radius: 8px;
       padding: 10px;
       background: #fff;
+      cursor: pointer;
     }
 
     .team-filter-card.active {
@@ -360,9 +361,15 @@ PS_SIMULATOR_HTML = """<!doctype html>
       background: var(--accent-soft);
     }
 
+    .team-filter-card:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
     .team-filter-card select {
       width: 100%;
       min-width: 0;
+      cursor: auto;
     }
 
     .role-panel {
@@ -1221,18 +1228,8 @@ PS_SIMULATOR_HTML = """<!doctype html>
       border-top: 1px solid var(--border);
     }
 
-    .submission-actions-label {
-      display: inline-flex;
-      align-items: center;
-      min-height: 36px;
-      color: var(--muted);
-      font-size: 13px;
-      font-weight: 700;
-      white-space: nowrap;
-    }
-
     .submission-actions button {
-      min-width: 72px;
+      min-width: 128px;
       padding: 0 11px;
     }
 
@@ -1522,12 +1519,6 @@ PS_SIMULATOR_HTML = """<!doctype html>
     <div class="shell">
       <div class="toolbar">
         <div class="control-row">
-          <label class="field">提出側
-            <select id="submission-side">
-              <option value="self">自分側</option>
-              <option value="opponent">相手側</option>
-            </select>
-          </label>
           <button class="primary" id="reset-sample" type="button">サンプル提出案に戻す</button>
           <button id="clear-decks" type="button">デッキ選択をクリア</button>
           <button id="reload-matchups" type="button">相性表を再読み込み</button>
@@ -1548,10 +1539,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
               <div class="team-filter-grid" id="team-filter-grid" aria-label="チーム別選手候補"></div>
               <div class="role-grid" id="role-grid"></div>
               <div class="submission-actions">
-                <span class="submission-actions-label">各側の提出案をセット</span>
-                <button class="primary" id="set-self-submission" type="button">自分側</button>
-                <button id="set-opponent-submission" type="button">相手側</button>
-                <button id="set-both-submission" type="button">両側</button>
+                <button class="primary" id="set-active-submission" type="button">提出案をセット</button>
               </div>
             </div>
           </section>
@@ -3562,11 +3550,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
     function renderBattle(validation) {
       if (!state.battle) initializeBattleState();
       const battle = state.battle;
-      const selfDraftReady = canUseBattleSubmission(currentSubmission("self"));
-      const opponentDraftReady = canUseBattleSubmission(currentSubmission("opponent"));
-      document.getElementById("set-self-submission").disabled = !selfDraftReady;
-      document.getElementById("set-opponent-submission").disabled = !opponentDraftReady;
-      document.getElementById("set-both-submission").disabled = !(selfDraftReady && opponentDraftReady);
+      document.getElementById("set-active-submission").disabled = !canUseBattleSubmission(currentSubmission(state.side));
       document.getElementById("battle-seed").value = battle.seed;
       document.getElementById("battle-submissions").innerHTML = [
         submissionSummaryHtml("自分側提出案", battle.selfSubmission),
@@ -4107,18 +4091,23 @@ PS_SIMULATOR_HTML = """<!doctype html>
     function teamFilterControlHtml(side) {
       const selectedTeam = selectedTeamFilterForSide(side);
       const candidateCount = playersForSide(side).length;
-      const selectedTeamLabel = teamFilterDisplayName(selectedTeam);
       return `
-        <label class="team-filter-card ${side === state.side ? "active" : ""}">
+        <div
+          class="team-filter-card ${side === state.side ? "active" : ""}"
+          data-side-picker="${escapeHtml(side)}"
+          role="button"
+          tabindex="0"
+          aria-pressed="${side === state.side ? "true" : "false"}"
+          aria-label="${escapeHtml(sideTeamLabel(side))}を提出側にする"
+        >
           <span class="deck-class-group-head">
             <strong>${escapeHtml(sideTeamLabel(side))}</strong>
             <span class="badge">${candidateCount}選手</span>
           </span>
-          <select data-side-team="${escapeHtml(side)}">
+          <select data-side-team="${escapeHtml(side)}" aria-label="${escapeHtml(sideTeamLabel(side))}のチーム選択">
             ${teamSelectOptionsHtml(selectedTeam)}
           </select>
-          <span class="source-note">${escapeHtml(sideLabel(side))}A/B/Cの候補: ${escapeHtml(selectedTeamLabel)}</span>
-        </label>
+        </div>
       `;
     }
 
@@ -4133,6 +4122,22 @@ PS_SIMULATOR_HTML = """<!doctype html>
           const side = event.target.dataset.sideTeam;
           state.teamFilters[side] = event.target.value;
           ensureAssignmentPlayersMatchTeam(side);
+          activateDraftSide(side);
+          render();
+        });
+      });
+
+      document.querySelectorAll("[data-side-picker]").forEach(card => {
+        card.addEventListener("click", event => {
+          if (event.target.closest("select")) return;
+          activateDraftSide(event.currentTarget.dataset.sidePicker);
+          render();
+        });
+        card.addEventListener("keydown", event => {
+          if (event.target.closest("select")) return;
+          if (event.key !== "Enter" && event.key !== " ") return;
+          event.preventDefault();
+          activateDraftSide(event.currentTarget.dataset.sidePicker);
           render();
         });
       });
@@ -4154,12 +4159,10 @@ PS_SIMULATOR_HTML = """<!doctype html>
       const invalid = selectedCount !== roleDef.expectedDeckCount;
       const selectedPlayer = playerById(assignment.playerId);
       const candidatePlayers = playersForSide(state.side);
-      const teamName = teamFilterDisplayName(selectedTeamFilterForSide(state.side));
       const playerOptions = [
         `<option value=""${assignment.playerId ? "" : " selected"}>担当未選択</option>`,
         ...candidatePlayers.map(player => {
-        const teamName = playerTeamName(player);
-        const label = [playerDisplayName(player), teamName].filter(Boolean).join(" / ");
+        const label = playerDisplayName(player) || player.playerId;
         return `
           <option value="${escapeHtml(player.playerId)}"${player.playerId === assignment.playerId ? " selected" : ""}>
             ${escapeHtml(label || player.playerId)}
@@ -4214,7 +4217,6 @@ PS_SIMULATOR_HTML = """<!doctype html>
                 ${playerOptions}
               </select>
             </span>
-            <span class="source-note">${escapeHtml(sideLabel(state.side))} / ${escapeHtml(teamName)} 候補 ${candidatePlayers.length}選手</span>
           </label>
           ${roleClassSummaryHtml(roleDef)}
           <div class="deck-options">${deckOptions}</div>
@@ -4223,7 +4225,6 @@ PS_SIMULATOR_HTML = """<!doctype html>
     }
 
     function renderBuilder(validation) {
-      document.getElementById("submission-side").value = state.side;
       renderTeamFilters();
       document.getElementById("role-grid").innerHTML = roles.map(renderRolePanel).join("");
       renderClassCoverage(validation);
@@ -4451,11 +4452,6 @@ PS_SIMULATOR_HTML = """<!doctype html>
       await loadMatchups({ useFallbackOnError: true, force: true });
     }
 
-    document.getElementById("submission-side").addEventListener("change", event => {
-      activateDraftSide(event.target.value);
-      render();
-    });
-
     document.getElementById("reset-sample").addEventListener("click", () => {
       loadSampleSubmission();
       render();
@@ -4466,16 +4462,8 @@ PS_SIMULATOR_HTML = """<!doctype html>
       loadMatchups({ useFallbackOnError: false });
     });
 
-    document.getElementById("set-self-submission").addEventListener("click", () => {
-      setBattleSubmission("self", currentSubmission("self"));
-    });
-
-    document.getElementById("set-opponent-submission").addEventListener("click", () => {
-      setBattleSubmission("opponent", currentSubmission("opponent"));
-    });
-
-    document.getElementById("set-both-submission").addEventListener("click", () => {
-      setBattleSubmissionForBothSides();
+    document.getElementById("set-active-submission").addEventListener("click", () => {
+      setBattleSubmission(state.side, currentSubmission(state.side));
     });
 
     document.getElementById("reset-battle-progress").addEventListener("click", () => {
