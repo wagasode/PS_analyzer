@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from common import DEFAULT_DB_PATH, ROOT_DIR, connect, dedupe_simulcast_groups, init_schema
+from player_profiles import PLAYER_PROFILES_PUBLIC_PATH
 from ps_simulator_ui import write_ps_simulator_assets
 
 
@@ -3891,6 +3892,7 @@ def main() -> None:
     print(f"wrote {args.out_dir / 'data' / 'metadata.json'}")
     print(f"wrote {args.out_dir / 'ps-simulator.html'}")
     print(f"wrote {args.out_dir / 'data' / 'ps_simulator' / 'sample_dataset.json'}")
+    print(f"wrote {args.out_dir / PLAYER_PROFILES_PUBLIC_PATH}")
     for path in copied_functions:
         print(f"wrote {path}")
 

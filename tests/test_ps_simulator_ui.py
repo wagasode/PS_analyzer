@@ -24,6 +24,7 @@ from ps_simulator_ui import (  # noqa: E402
     battle_used_deck_ids_for_side,
     validate_round_candidate_count,
 )
+from player_profiles import PLAYER_PROFILES_PUBLIC_PATH  # noqa: E402
 
 
 class PsSimulatorUiTest(unittest.TestCase):
@@ -31,7 +32,12 @@ class PsSimulatorUiTest(unittest.TestCase):
         html = render_ps_simulator_html()
 
         self.assertIn('const datasetUrl = "data/ps_simulator/sample_dataset.json";', html)
+        self.assertIn('const playerProfilesUrl = "data/player_profiles.json";', html)
         self.assertIn("fetch(datasetUrl)", html)
+        self.assertIn("async function loadPlayerProfiles()", html)
+        self.assertIn("function mergePlayerProfilesIntoDataset(dataset, profilePayload)", html)
+        self.assertIn("function playerDisplayName(player)", html)
+        self.assertIn("function playerTeamName(player)", html)
         self.assertIn("function validateSubmission(submission)", html)
         self.assertIn("function candidateDeckIdsForRound(submission, roundNumber, usedDeckIds)", html)
         self.assertIn("function usedDeckIdsForSideFromRounds(rounds, side, options = {})", html)
@@ -162,6 +168,8 @@ class PsSimulatorUiTest(unittest.TestCase):
         self.assertIn("debug-dataset-meta", html)
         self.assertIn("schemaVersion", html)
         self.assertIn("function avatarHtml(name, imageUrl, extraClass = \"\")", html)
+        self.assertIn("teamName", html)
+        self.assertIn("aliases", html)
         self.assertIn('class="player-select-row"', html)
         self.assertIn('"player-avatar", extraClass', html)
         self.assertIn("function playerForDeckInSubmission(submission, deckId)", html)
@@ -247,6 +255,11 @@ class PsSimulatorUiTest(unittest.TestCase):
             self.assertTrue(public_dataset_path.exists())
             copied_dataset = json.loads(public_dataset_path.read_text(encoding="utf-8"))
             self.assertEqual(copied_dataset, source_dataset)
+            public_profiles_path = out_dir / PLAYER_PROFILES_PUBLIC_PATH
+            self.assertTrue(public_profiles_path.exists())
+            player_profiles = json.loads(public_profiles_path.read_text(encoding="utf-8"))
+            self.assertEqual(player_profiles["schemaVersion"], "player-profiles.v1")
+            self.assertIn("player-maito", {player["playerId"] for player in player_profiles["players"]})
 
     def test_battle_candidate_generation_supports_r4_r5_minimum_flow(self) -> None:
         submission = read_ps_simulator_sample_dataset()["sampleSubmission"]

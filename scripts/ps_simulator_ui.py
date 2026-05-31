@@ -4,6 +4,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+from player_profiles import PLAYER_PROFILES_PUBLIC_PATH, build_player_profiles
+
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 PS_SIMULATOR_SAMPLE_DATASET_PATH = ROOT_DIR / "data" / "ps_simulator" / "sample_dataset.json"
@@ -1638,6 +1640,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
     const roundRoleByNumber = { 1: "A", 2: "B", 3: "C" };
     const expectedRoundCandidateCounts = { 1: 3, 2: 2, 3: 2, 4: 4, 5: 3 };
     const datasetUrl = "data/ps_simulator/sample_dataset.json";
+    const playerProfilesUrl = "data/player_profiles.json";
     const matchupApiUrl = "/api/ps-simulator/matchups";
     const fallbackWinRate = 0.5;
     const fallbackWinRateNote = "相性表未定義のため0.5";
@@ -1658,6 +1661,11 @@ PS_SIMULATOR_HTML = """<!doctype html>
         lastAttemptedAt: "",
         fallback: false,
         fallbackReason: ""
+      },
+      profileLoad: {
+        status: "idle",
+        message: "",
+        count: 0
       },
       side: "self",
       assignments: {},
@@ -1717,6 +1725,90 @@ PS_SIMULATOR_HTML = """<!doctype html>
       return (state.dataset?.players || []).find(player => player.playerId === playerId) || null;
     }
 
+    function uniqueStrings(values) {
+      const seen = new Set();
+      const unique = [];
+      (values || []).forEach(value => {
+        const normalized = String(value || "").trim();
+        if (!normalized || seen.has(normalized)) return;
+        seen.add(normalized);
+        unique.push(normalized);
+      });
+      return unique;
+    }
+
+    function playerDisplayName(player) {
+      return player?.playerName || player?.displayName || player?.player_name || player?.playerId || "";
+    }
+
+    function playerTeamName(player) {
+      return player?.teamName || player?.team || player?.team_name || "";
+    }
+
+    function normalizePlayerProfile(player) {
+      const playerId = String(player?.playerId || player?.player_id || "").trim();
+      const displayName = String(player?.displayName || player?.playerName || player?.player_name || playerId).trim();
+      const teamName = String(player?.teamName || player?.team || player?.team_name || "").trim();
+      const iconUrl = playerIconUrl(player);
+      return {
+        ...player,
+        playerId,
+        playerName: displayName,
+        displayName,
+        team: teamName,
+        teamName,
+        iconUrl,
+        playerIconUrl: iconUrl,
+        aliases: uniqueStrings(player?.aliases || []),
+        source: player?.source || ""
+      };
+    }
+
+    function mergePlayerProfile(existing, profile) {
+      return {
+        ...profile,
+        ...existing,
+        playerName: existing.playerName || profile.playerName,
+        displayName: existing.displayName || profile.displayName,
+        team: existing.team || profile.team,
+        teamName: existing.teamName || profile.teamName,
+        iconUrl: existing.iconUrl || profile.iconUrl,
+        playerIconUrl: existing.playerIconUrl || profile.playerIconUrl,
+        aliases: uniqueStrings([...(profile.aliases || []), ...(existing.aliases || [])]),
+        source: uniqueStrings([profile.source, existing.source]).join("+")
+      };
+    }
+
+    function mergePlayerProfilesIntoDataset(dataset, profilePayload) {
+      const basePlayers = (dataset?.players || []).map(player => normalizePlayerProfile({
+        source: "sample_dataset",
+        ...player
+      }));
+      const profilePlayers = (profilePayload?.players || [])
+        .map(normalizePlayerProfile)
+        .filter(player => player.playerId);
+      const playersById = new Map();
+      basePlayers.forEach(player => {
+        playersById.set(player.playerId, player);
+      });
+      profilePlayers.forEach(profile => {
+        const existing = playersById.get(profile.playerId);
+        playersById.set(profile.playerId, existing ? mergePlayerProfile(existing, profile) : profile);
+      });
+      return {
+        ...dataset,
+        players: Array.from(playersById.values()),
+        playerProfileMeta: profilePayload
+          ? {
+              schemaVersion: profilePayload.schemaVersion || "",
+              source: profilePayload.source || "",
+              generatedAt: profilePayload.generatedAt || "",
+              count: profilePlayers.length
+            }
+          : null
+      };
+    }
+
     function initials(value) {
       const name = String(value || "?").trim();
       return Array.from(name || "?").slice(0, 2).join("").toUpperCase();
@@ -1736,7 +1828,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
     }
 
     function playerAvatarHtml(player, extraClass = "") {
-      return avatarHtml(player?.playerName || "?", playerIconUrl(player), extraClass);
+      return avatarHtml(playerDisplayName(player) || "?", playerIconUrl(player), extraClass);
     }
 
     function classDefinition(className) {
@@ -1821,7 +1913,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
         <div class="role-selection-summary ${invalid ? "invalid" : ""}">
           <div class="role-summary-head">
             <span class="badge">${escapeHtml(roleDef.role)}</span>
-            <strong>${escapeHtml(selectedPlayer?.playerName || "担当未選択")}</strong>
+            <strong>${escapeHtml(playerDisplayName(selectedPlayer) || "担当未選択")}</strong>
             <span class="count">${selectedDecks.length}/${roleDef.expectedDeckCount}デッキ</span>
           </div>
           <div class="summary-deck-chips">${chips}</div>
@@ -1915,7 +2007,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
       return `
         <div class="player-status-row current">
           <div class="badge-row">
-            <strong>${escapeHtml(player.playerName)}</strong>
+            <strong>${escapeHtml(playerDisplayName(player))}</strong>
             <span class="badge ok">担当</span>
           </div>
           <div class="badge-row">${statusBadgeHtml(status)}</div>
@@ -2025,14 +2117,20 @@ PS_SIMULATOR_HTML = """<!doctype html>
         return {
           playerId,
           playerName: playerId || "未選択",
+          displayName: playerId || "未選択",
           team: "",
+          teamName: "",
+          iconUrl: "",
           note: ""
         };
       }
       return {
         playerId: player.playerId,
-        playerName: player.playerName,
-        team: player.team || "",
+        playerName: playerDisplayName(player),
+        displayName: playerDisplayName(player),
+        team: playerTeamName(player),
+        teamName: playerTeamName(player),
+        iconUrl: playerIconUrl(player),
         note: player.note || ""
       };
     }
@@ -2707,7 +2805,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
     }
 
     function playerSideText(player, fallbackSide) {
-      return player ? `${player.playerName}側` : sideLabel(fallbackSide);
+      return player ? `${playerDisplayName(player)}側` : sideLabel(fallbackSide);
     }
 
     function playerSideHtml(player, fallbackSide) {
@@ -2717,7 +2815,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
       return `
         <span class="side-label">
           ${playerAvatarHtml(player, "small")}
-          <span>${escapeHtml(player.playerName)}側</span>
+          <span>${escapeHtml(playerDisplayName(player))}側</span>
         </span>
       `;
     }
@@ -2815,7 +2913,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
               <div class="battle-assignment-head">
                 <span class="badge">${escapeHtml(roleDef.role)}</span>
                 ${playerAvatarHtml(player, "small")}
-                <strong>${escapeHtml(player?.playerName || assignment.playerId || "未選択")}</strong>
+                <strong>${escapeHtml(playerDisplayName(player) || assignment.playerId || "未選択")}</strong>
               </div>
               ${deckTokenListHtml(deckIds)}
             </div>
@@ -3428,7 +3526,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
       }
 
       entries.forEach(entry => {
-        const playerName = entry.player?.playerName || entry.playerId || "未選択選手";
+        const playerName = playerDisplayName(entry.player) || entry.playerId || "未選択選手";
         const deckName = entry.deck?.deckName || entry.deckId || "未選択デッキ";
         if (!entry.deck) {
           errors.push(`デッキが見つかりません: ${entry.deckId}`);
@@ -3819,9 +3917,14 @@ PS_SIMULATOR_HTML = """<!doctype html>
       const dataset = state.dataset;
       const statuses = dataset?.playerDeckStatuses || [];
       const matchups = matchupStatus();
+      const profileMeta = dataset?.playerProfileMeta || {};
+      const profileStatus = state.profileLoad.status === "success"
+        ? `共通プロフィール ${profileMeta.count || 0}件`
+        : state.profileLoad.message || "共通プロフィール未使用";
       document.getElementById("data-summary").innerHTML = [
         `${dataset?.decks?.length || 0}デッキ`,
         `${dataset?.players?.length || 0}選手`,
+        profileStatus,
         `${statuses.length} status行`,
         `相性表: ${matchups.sourceLabel}`,
         `状態: ${matchups.statusLabel}`,
@@ -3829,9 +3932,9 @@ PS_SIMULATOR_HTML = """<!doctype html>
         `相性表warning ${matchups.warningCount}`,
         `取得: ${matchups.formattedFetchedAt}`
         ].map(label => `<span class="badge">${escapeHtml(label)}</span>`).join("");
-        document.getElementById("dataset-meta").textContent = "サンプルデータ読込済み";
+        document.getElementById("dataset-meta").textContent = `サンプルデータ読込済み / ${profileStatus}`;
         document.getElementById("debug-dataset-meta").textContent =
-          `${datasetUrl} を読み込みました。schemaVersion: ${dataset?.schemaVersion || "不明"} / 相性表: ${matchups.sourceLabel} / ${matchups.statusLabel} / ${matchups.count}件 / warning ${matchups.warningCount}件 / 取得: ${matchups.formattedFetchedAt}`;
+          `${datasetUrl} を読み込みました。schemaVersion: ${dataset?.schemaVersion || "不明"} / playerProfiles: ${state.profileLoad.status} / ${playerProfilesUrl} / source: ${profileMeta.source || "なし"} / generatedAt: ${profileMeta.generatedAt || "なし"} / 相性表: ${matchups.sourceLabel} / ${matchups.statusLabel} / ${matchups.count}件 / warning ${matchups.warningCount}件 / 取得: ${matchups.formattedFetchedAt}`;
         renderMatchupLoadStatus();
     }
 
@@ -3851,9 +3954,11 @@ PS_SIMULATOR_HTML = """<!doctype html>
       const invalid = selectedCount !== roleDef.expectedDeckCount;
       const selectedPlayer = playerById(assignment.playerId);
       const playerOptions = (state.dataset?.players || []).map(player => {
+        const teamName = playerTeamName(player);
+        const label = [playerDisplayName(player), teamName].filter(Boolean).join(" / ");
         return `
           <option value="${escapeHtml(player.playerId)}"${player.playerId === assignment.playerId ? " selected" : ""}>
-            ${escapeHtml(player.playerName)}
+            ${escapeHtml(label || player.playerId)}
           </option>
         `;
       }).join("");
@@ -4002,8 +4107,12 @@ PS_SIMULATOR_HTML = """<!doctype html>
         const missingCount = playerStatuses.filter(status => !status).length;
         return `
           <tr>
-            <td><strong>${escapeHtml(player.playerName)}</strong><div class="source-note">${escapeHtml(player.playerId)}</div></td>
-            <td>${escapeHtml(player.team || "")}</td>
+            <td>
+              ${playerAvatarHtml(player, "small")}
+              <strong>${escapeHtml(playerDisplayName(player))}</strong>
+              <div class="source-note">${escapeHtml(player.playerId)}</div>
+            </td>
+            <td>${escapeHtml(playerTeamName(player))}</td>
             <td>
               <div class="badge-row">
                 <span class="badge bad">きつそう ${hardCount}</span>
@@ -4011,13 +4120,15 @@ PS_SIMULATOR_HTML = """<!doctype html>
                 <span class="badge ${missingCount ? "warn" : "ok"}">データなし ${missingCount}</span>
               </div>
             </td>
+            <td>${escapeHtml((player.aliases || []).join(", "))}</td>
+            <td>${escapeHtml(player.source || "")}</td>
             <td>${escapeHtml(player.note || "")}</td>
           </tr>
         `;
       }).join("");
       document.getElementById("player-reference").innerHTML = `
         <table>
-          <thead><tr><th>選手</th><th>チーム</th><th>PlayerDeckStatus概況</th><th>メモ</th></tr></thead>
+          <thead><tr><th>選手</th><th>チーム</th><th>PlayerDeckStatus概況</th><th>aliases</th><th>source</th><th>メモ</th></tr></thead>
           <tbody>${rows}</tbody>
         </table>
       `;
@@ -4075,12 +4186,46 @@ PS_SIMULATOR_HTML = """<!doctype html>
         JSON.stringify(previewPayload(submission, validation), null, 2);
     }
 
+    async function loadPlayerProfiles() {
+      try {
+        const response = await fetch(playerProfilesUrl);
+        if (!response.ok) {
+          return {
+            payload: null,
+            status: response.status === 404 ? "missing" : "error",
+            message: `共通プロフィール未使用: HTTP ${response.status}`
+          };
+        }
+        const payload = await response.json();
+        return {
+          payload,
+          status: "success",
+          message: `共通プロフィール読込済み ${payload?.players?.length || 0}件`
+        };
+      } catch (error) {
+        return {
+          payload: null,
+          status: "error",
+          message: `共通プロフィール未使用: ${error.message || "読み込み失敗"}`
+        };
+      }
+    }
+
     async function loadDataset() {
       const response = await fetch(datasetUrl);
       if (!response.ok) {
         throw new Error(`sample datasetを読み込めませんでした: HTTP ${response.status}`);
       }
-      state.dataset = await response.json();
+      const [dataset, profiles] = await Promise.all([
+        response.json(),
+        loadPlayerProfiles()
+      ]);
+      state.profileLoad = {
+        status: profiles.status,
+        message: profiles.message,
+        count: profiles.payload?.players?.length || 0
+      };
+      state.dataset = mergePlayerProfilesIntoDataset(dataset, profiles.payload);
       state.matchupIndex = buildMatchupIndex(state.dataset, {
         loadStatus: "loading"
       });
@@ -4181,3 +4326,11 @@ def write_ps_simulator_assets(
     public_dataset_path = out_dir / PS_SIMULATOR_PUBLIC_DATASET_PATH
     public_dataset_path.parent.mkdir(parents=True, exist_ok=True)
     public_dataset_path.write_text(json.dumps(dataset, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+    player_profiles = build_player_profiles()
+    public_player_profiles_path = out_dir / PLAYER_PROFILES_PUBLIC_PATH
+    public_player_profiles_path.parent.mkdir(parents=True, exist_ok=True)
+    public_player_profiles_path.write_text(
+        json.dumps(player_profiles, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
