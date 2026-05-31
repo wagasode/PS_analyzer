@@ -241,6 +241,7 @@ Outputs:
 - `public/data/streaming_timeline_by_player.json`
 - `public/data/streaming_deck_usage.json`
 - `public/data/metadata.json`
+- `public/data/player_profiles.json`
 - `public/data/ps_simulator/sample_dataset.json`
 
 The dashboard is a static table UI for the latest generated reports. It supports
@@ -248,14 +249,17 @@ team/player views, filtering, sorting, channel status checks, player-level
 archive timelines, deck usage lookup, and links back to the GitHub Actions run
 when built in CI.
 
-The generated `ps-simulator.html` page uses only
-`data/ps_simulator/sample_dataset.json` for the PS simulator MVP. It lets the
+The generated `ps-simulator.html` page loads
+`data/ps_simulator/sample_dataset.json` and optionally merges
+`data/player_profiles.json` by `playerId`. The shared profile JSON is generated
+from the streaming report player master, exposes display fields such as
+`playerName`, `displayName`, `teamName`, `iconUrl`, and `aliases`, and keeps
+PS-only state such as `PlayerDeckStatus` in the simulator dataset. It lets the
 user draft a 7-class submission, assign decks to A/B/C as 3/2/2, inspect
 PlayerDeckStatus risks, run a browser-state R1-R5 battle with manual deck
 selection, preview BattleLog JSON, and export BattleLog as a local JSON file.
-Google Sheets import, full matchup loading, persistent BattleLog storage,
-summary-card UI, image export, and replay logging are intentionally outside
-this build step.
+Google Sheets player/status import, persistent BattleLog storage, replay UI,
+and profile editing are intentionally outside this build step.
 
 After the `Collect streaming data` workflow completes successfully, the
 `Publish dashboard` workflow deploys the dashboard to Cloudflare Pages.
