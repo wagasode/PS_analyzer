@@ -338,6 +338,33 @@ PS_SIMULATOR_HTML = """<!doctype html>
       gap: 12px;
     }
 
+    .team-filter-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .team-filter-card {
+      display: grid;
+      gap: 8px;
+      min-width: 0;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+      background: #fff;
+    }
+
+    .team-filter-card.active {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    .team-filter-card select {
+      width: 100%;
+      min-width: 0;
+    }
+
     .role-panel {
       display: grid;
       gap: 12px;
@@ -1518,9 +1545,10 @@ PS_SIMULATOR_HTML = """<!doctype html>
               <div class="class-coverage" id="class-coverage"></div>
             </div>
             <div class="panel-body">
+              <div class="team-filter-grid" id="team-filter-grid" aria-label="チーム別選手候補"></div>
               <div class="role-grid" id="role-grid"></div>
               <div class="submission-actions">
-                <span class="submission-actions-label">現在の提出案をセット</span>
+                <span class="submission-actions-label">各側の提出案をセット</span>
                 <button class="primary" id="set-self-submission" type="button">自分側</button>
                 <button id="set-opponent-submission" type="button">相手側</button>
                 <button id="set-both-submission" type="button">両側</button>
@@ -1644,6 +1672,9 @@ PS_SIMULATOR_HTML = """<!doctype html>
     const matchupApiUrl = "/api/ps-simulator/matchups";
     const fallbackWinRate = 0.5;
     const fallbackWinRateNote = "相性表未定義のため0.5";
+    const allPlayersTeamValue = "";
+    const unassignedTeamValue = "__unassigned__";
+    const unassignedTeamLabel = "未設定";
     const statusLabels = {
       confident: "自信あり",
       available: "使用可能",
@@ -1668,6 +1699,14 @@ PS_SIMULATOR_HTML = """<!doctype html>
         count: 0
       },
       side: "self",
+      teamFilters: {
+        self: allPlayersTeamValue,
+        opponent: allPlayersTeamValue
+      },
+      assignmentDrafts: {
+        self: {},
+        opponent: {}
+      },
       assignments: {},
       battle: null
     };
@@ -1743,6 +1782,88 @@ PS_SIMULATOR_HTML = """<!doctype html>
 
     function playerTeamName(player) {
       return player?.teamName || player?.team || player?.team_name || "";
+    }
+
+    function teamFilterValueForPlayer(player) {
+      return playerTeamName(player).trim() || unassignedTeamValue;
+    }
+
+    function teamFilterDisplayName(value) {
+      if (!value) return "全選手";
+      if (value === unassignedTeamValue) return unassignedTeamLabel;
+      return value;
+    }
+
+    function selectedTeamFilterForSide(side) {
+      return state.teamFilters?.[side] || allPlayersTeamValue;
+    }
+
+    function availableTeamOptions() {
+      const teams = new Map();
+      (state.dataset?.players || []).forEach(player => {
+        const value = teamFilterValueForPlayer(player);
+        const label = teamFilterDisplayName(value);
+        const current = teams.get(value) || { value, label, count: 0 };
+        current.count += 1;
+        teams.set(value, current);
+      });
+      return Array.from(teams.values()).sort((left, right) => {
+        if (left.value === unassignedTeamValue) return 1;
+        if (right.value === unassignedTeamValue) return -1;
+        return left.label.localeCompare(right.label, "ja");
+      });
+    }
+
+    function playersForSide(side) {
+      const selectedTeam = selectedTeamFilterForSide(side);
+      const players = state.dataset?.players || [];
+      if (!selectedTeam) return players;
+      return players.filter(player => teamFilterValueForPlayer(player) === selectedTeam);
+    }
+
+    function playerMatchesSideTeam(playerId, side) {
+      if (!playerId) return true;
+      const selectedTeam = selectedTeamFilterForSide(side);
+      if (!selectedTeam) return true;
+      const player = playerById(playerId);
+      return Boolean(player && teamFilterValueForPlayer(player) === selectedTeam);
+    }
+
+    function defaultAssignmentsForSubmission(sampleSubmission) {
+      const assignments = {};
+      roles.forEach((roleDef, index) => {
+        assignments[roleDef.role] = defaultAssignmentForRole(roleDef.role, index, sampleSubmission);
+      });
+      return assignments;
+    }
+
+    function ensureDraftAssignments(side) {
+      if (!state.assignmentDrafts[side]) {
+        state.assignmentDrafts[side] = defaultAssignmentsForSubmission(state.dataset?.sampleSubmission || {});
+      }
+      return state.assignmentDrafts[side];
+    }
+
+    function activateDraftSide(side) {
+      state.side = side;
+      state.assignments = ensureDraftAssignments(side);
+    }
+
+    function ensureAssignmentPlayersMatchTeam(side) {
+      const assignments = ensureDraftAssignments(side);
+      roles.forEach(roleDef => {
+        const assignment = assignments[roleDef.role];
+        if (assignment?.playerId && !playerMatchesSideTeam(assignment.playerId, side)) {
+          assignment.playerId = "";
+        }
+      });
+      if (side === state.side) {
+        state.assignments = assignments;
+      }
+    }
+
+    function ensureAllAssignmentPlayersMatchTeams() {
+      ["self", "opponent"].forEach(ensureAssignmentPlayersMatchTeam);
     }
 
     function normalizePlayerProfile(player) {
@@ -2040,11 +2161,17 @@ PS_SIMULATOR_HTML = """<!doctype html>
 
     function loadSampleSubmission() {
       const sample = state.dataset?.sampleSubmission || {};
+      state.teamFilters = {
+        self: allPlayersTeamValue,
+        opponent: allPlayersTeamValue
+      };
+      state.assignmentDrafts = {
+        self: defaultAssignmentsForSubmission(sample),
+        opponent: defaultAssignmentsForSubmission(sample)
+      };
       state.side = sample.side || "self";
-      state.assignments = {};
-      roles.forEach((roleDef, index) => {
-        state.assignments[roleDef.role] = defaultAssignmentForRole(roleDef.role, index, sample);
-      });
+      activateDraftSide(state.side);
+      ensureAllAssignmentPlayersMatchTeams();
     }
 
     function clearDeckSelections() {
@@ -2054,14 +2181,18 @@ PS_SIMULATOR_HTML = """<!doctype html>
       render();
     }
 
-    function currentSubmission() {
+    function currentSubmission(side = state.side) {
+      const assignments = ensureDraftAssignments(side);
+      const teamFilter = selectedTeamFilterForSide(side);
       return {
-        submissionId: `draft-${state.side}-submission`,
-        side: state.side,
+        submissionId: `draft-${side}-submission`,
+        side,
+        teamFilter,
+        teamName: teamFilterDisplayName(teamFilter),
         assignments: roles.map(roleDef => ({
           role: roleDef.role,
-          playerId: state.assignments[roleDef.role]?.playerId || "",
-          deckIds: [...(state.assignments[roleDef.role]?.deckIds || [])].sort(byDeckOrder)
+          playerId: assignments[roleDef.role]?.playerId || "",
+          deckIds: [...(assignments[roleDef.role]?.deckIds || [])].sort(byDeckOrder)
         }))
       };
     }
@@ -2071,9 +2202,12 @@ PS_SIMULATOR_HTML = """<!doctype html>
     }
 
     function normalizeSubmissionForSide(submission, side) {
+      const teamFilter = submission?.teamFilter || selectedTeamFilterForSide(side);
       return {
         submissionId: submission?.submissionId || `draft-${side}-submission`,
         side,
+        teamFilter,
+        teamName: submission?.teamName || teamFilterDisplayName(teamFilter),
         assignments: roles.map(roleDef => {
           const source = (submission?.assignments || []).find(assignment => assignment.role === roleDef.role) || {};
           return {
@@ -2089,6 +2223,8 @@ PS_SIMULATOR_HTML = """<!doctype html>
       const sample = cloneJson(state.dataset?.sampleSubmission || { assignments: [] });
       sample.side = side;
       sample.submissionId = side === "self" ? "sample-self-submission" : "sample-opponent-submission";
+      sample.teamFilter = selectedTeamFilterForSide(side);
+      sample.teamName = teamFilterDisplayName(sample.teamFilter);
       return normalizeSubmissionForSide(sample, side);
     }
 
@@ -2136,9 +2272,12 @@ PS_SIMULATOR_HTML = """<!doctype html>
     }
 
     function snapshotSubmission(submission, side) {
+      const teamFilter = submission?.teamFilter || "";
       return {
         submissionId: submission?.submissionId || `draft-${side}-submission`,
         side,
+        teamFilter,
+        teamName: submission?.teamName || teamFilterDisplayName(teamFilter),
         assignments: roles.map(roleDef => {
           const source = (submission?.assignments || []).find(assignment => assignment.role === roleDef.role) || {};
           const deckIds = [...(source.deckIds || [])].sort(byDeckOrder);
@@ -2705,10 +2844,10 @@ PS_SIMULATOR_HTML = """<!doctype html>
       resetBattleProgress();
     }
 
-    function setBattleSubmissionForBothSides(submission) {
+    function setBattleSubmissionForBothSides(submission = null) {
       if (!state.battle) initializeBattleState();
-      state.battle.selfSubmission = normalizeSubmissionForSide(submission, "self");
-      state.battle.opponentSubmission = normalizeSubmissionForSide(submission, "opponent");
+      state.battle.selfSubmission = normalizeSubmissionForSide(submission || currentSubmission("self"), "self");
+      state.battle.opponentSubmission = normalizeSubmissionForSide(submission || currentSubmission("opponent"), "opponent");
       resetBattleProgress();
     }
 
@@ -2802,6 +2941,12 @@ PS_SIMULATOR_HTML = """<!doctype html>
       if (side === "self") return "自分側";
       if (side === "opponent") return "相手側";
       return "未定";
+    }
+
+    function sideTeamLabel(side) {
+      if (side === "self") return "自分側チーム";
+      if (side === "opponent") return "相手側チーム";
+      return "未定チーム";
     }
 
     function playerSideText(player, fallbackSide) {
@@ -3417,10 +3562,11 @@ PS_SIMULATOR_HTML = """<!doctype html>
     function renderBattle(validation) {
       if (!state.battle) initializeBattleState();
       const battle = state.battle;
-      const currentSubmissionReady = validation.canStartBattle;
-      document.getElementById("set-self-submission").disabled = !currentSubmissionReady;
-      document.getElementById("set-opponent-submission").disabled = !currentSubmissionReady;
-      document.getElementById("set-both-submission").disabled = !currentSubmissionReady;
+      const selfDraftReady = canUseBattleSubmission(currentSubmission("self"));
+      const opponentDraftReady = canUseBattleSubmission(currentSubmission("opponent"));
+      document.getElementById("set-self-submission").disabled = !selfDraftReady;
+      document.getElementById("set-opponent-submission").disabled = !opponentDraftReady;
+      document.getElementById("set-both-submission").disabled = !(selfDraftReady && opponentDraftReady);
       document.getElementById("battle-seed").value = battle.seed;
       document.getElementById("battle-submissions").innerHTML = [
         submissionSummaryHtml("自分側提出案", battle.selfSubmission),
@@ -3571,6 +3717,10 @@ PS_SIMULATOR_HTML = """<!doctype html>
       const matchups = matchupStatus();
       return {
         submission,
+        draftSubmissions: {
+          self: currentSubmission("self"),
+          opponent: currentSubmission("opponent")
+        },
         battle: battlePreviewPayload(),
         battleLog: buildBattleLog(),
         matchupStatus: {
@@ -3924,6 +4074,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
       document.getElementById("data-summary").innerHTML = [
         `${dataset?.decks?.length || 0}デッキ`,
         `${dataset?.players?.length || 0}選手`,
+        `${availableTeamOptions().length}チーム`,
         profileStatus,
         `${statuses.length} status行`,
         `相性表: ${matchups.sourceLabel}`,
@@ -3936,6 +4087,55 @@ PS_SIMULATOR_HTML = """<!doctype html>
         document.getElementById("debug-dataset-meta").textContent =
           `${datasetUrl} を読み込みました。schemaVersion: ${dataset?.schemaVersion || "不明"} / playerProfiles: ${state.profileLoad.status} / ${playerProfilesUrl} / source: ${profileMeta.source || "なし"} / generatedAt: ${profileMeta.generatedAt || "なし"} / 相性表: ${matchups.sourceLabel} / ${matchups.statusLabel} / ${matchups.count}件 / warning ${matchups.warningCount}件 / 取得: ${matchups.formattedFetchedAt}`;
         renderMatchupLoadStatus();
+    }
+
+    function teamSelectOptionsHtml(selectedTeam) {
+      const players = state.dataset?.players || [];
+      const allOption = `
+        <option value="${allPlayersTeamValue}"${selectedTeam === allPlayersTeamValue ? " selected" : ""}>
+          全選手 (${players.length})
+        </option>
+      `;
+      const teamOptions = availableTeamOptions().map(team => `
+        <option value="${escapeHtml(team.value)}"${team.value === selectedTeam ? " selected" : ""}>
+          ${escapeHtml(team.label)} (${team.count})
+        </option>
+      `).join("");
+      return allOption + teamOptions;
+    }
+
+    function teamFilterControlHtml(side) {
+      const selectedTeam = selectedTeamFilterForSide(side);
+      const candidateCount = playersForSide(side).length;
+      const selectedTeamLabel = teamFilterDisplayName(selectedTeam);
+      return `
+        <label class="team-filter-card ${side === state.side ? "active" : ""}">
+          <span class="deck-class-group-head">
+            <strong>${escapeHtml(sideTeamLabel(side))}</strong>
+            <span class="badge">${candidateCount}選手</span>
+          </span>
+          <select data-side-team="${escapeHtml(side)}">
+            ${teamSelectOptionsHtml(selectedTeam)}
+          </select>
+          <span class="source-note">${escapeHtml(sideLabel(side))}A/B/Cの候補: ${escapeHtml(selectedTeamLabel)}</span>
+        </label>
+      `;
+    }
+
+    function renderTeamFilters() {
+      document.getElementById("team-filter-grid").innerHTML = [
+        teamFilterControlHtml("self"),
+        teamFilterControlHtml("opponent")
+      ].join("");
+
+      document.querySelectorAll("[data-side-team]").forEach(select => {
+        select.addEventListener("change", event => {
+          const side = event.target.dataset.sideTeam;
+          state.teamFilters[side] = event.target.value;
+          ensureAssignmentPlayersMatchTeam(side);
+          render();
+        });
+      });
     }
 
     function renderClassCoverage(validation) {
@@ -3953,7 +4153,11 @@ PS_SIMULATOR_HTML = """<!doctype html>
       const selectedCount = assignment.deckIds.length;
       const invalid = selectedCount !== roleDef.expectedDeckCount;
       const selectedPlayer = playerById(assignment.playerId);
-      const playerOptions = (state.dataset?.players || []).map(player => {
+      const candidatePlayers = playersForSide(state.side);
+      const teamName = teamFilterDisplayName(selectedTeamFilterForSide(state.side));
+      const playerOptions = [
+        `<option value=""${assignment.playerId ? "" : " selected"}>担当未選択</option>`,
+        ...candidatePlayers.map(player => {
         const teamName = playerTeamName(player);
         const label = [playerDisplayName(player), teamName].filter(Boolean).join(" / ");
         return `
@@ -3961,7 +4165,8 @@ PS_SIMULATOR_HTML = """<!doctype html>
             ${escapeHtml(label || player.playerId)}
           </option>
         `;
-      }).join("");
+        })
+      ].join("");
       const deckOptions = (state.dataset?.classDefinitions || [])
         .filter(definition => shouldShowClassForRole(roleDef.role, definition.className))
         .map(definition => {
@@ -4009,6 +4214,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
                 ${playerOptions}
               </select>
             </span>
+            <span class="source-note">${escapeHtml(sideLabel(state.side))} / ${escapeHtml(teamName)} 候補 ${candidatePlayers.length}選手</span>
           </label>
           ${roleClassSummaryHtml(roleDef)}
           <div class="deck-options">${deckOptions}</div>
@@ -4018,6 +4224,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
 
     function renderBuilder(validation) {
       document.getElementById("submission-side").value = state.side;
+      renderTeamFilters();
       document.getElementById("role-grid").innerHTML = roles.map(renderRolePanel).join("");
       renderClassCoverage(validation);
 
@@ -4245,7 +4452,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
     }
 
     document.getElementById("submission-side").addEventListener("change", event => {
-      state.side = event.target.value;
+      activateDraftSide(event.target.value);
       render();
     });
 
@@ -4260,15 +4467,15 @@ PS_SIMULATOR_HTML = """<!doctype html>
     });
 
     document.getElementById("set-self-submission").addEventListener("click", () => {
-      setBattleSubmission("self", currentSubmission());
+      setBattleSubmission("self", currentSubmission("self"));
     });
 
     document.getElementById("set-opponent-submission").addEventListener("click", () => {
-      setBattleSubmission("opponent", currentSubmission());
+      setBattleSubmission("opponent", currentSubmission("opponent"));
     });
 
     document.getElementById("set-both-submission").addEventListener("click", () => {
-      setBattleSubmissionForBothSides(currentSubmission());
+      setBattleSubmissionForBothSides();
     });
 
     document.getElementById("reset-battle-progress").addEventListener("click", () => {
