@@ -131,6 +131,8 @@ class PsSimulatorUiTest(unittest.TestCase):
         self.assertIn("throw-advice-metric-grid", html)
         self.assertIn("throw-advice-breakdown-grid", html)
         self.assertIn("function throwAdviceCandidateBreakdownMetricsHtml(candidate)", html)
+        self.assertIn("function throwAdviceMetricIfNonZeroHtml(label, value)", html)
+        self.assertIn('Number(value) === 0 ? ""', html)
         self.assertIn("throwAdviceCandidateBreakdownMetricsHtml(lowest)", html)
         self.assertIn("throw-advice-modal-button", html)
         self.assertIn("throw-advice-modal-backdrop", html)

@@ -3788,12 +3788,12 @@ PS_SIMULATOR_HTML = """<!doctype html>
           ${throwAdviceMetricHtml("平均", formatWinRateDecimal(candidate.averageWinRate))}
           ${throwAdviceMetricHtml("最低", formatWinRateDecimal(candidate.minWinRate))}
           ${throwAdviceMetricHtml("最高", formatWinRateDecimal(candidate.maxWinRate))}
-          ${throwAdviceMetricHtml("5分", candidate.neutralCount)}
-          ${throwAdviceMetricHtml("微有利", candidate.slightFavorableCount)}
-          ${throwAdviceMetricHtml("有利", candidate.favorableCount)}
-          ${throwAdviceMetricHtml("微不利", candidate.slightUnfavorableCount)}
-          ${throwAdviceMetricHtml("不利", candidate.unfavorableCount)}
-          ${throwAdviceMetricHtml("データなし", candidate.missingCount)}
+          ${throwAdviceMetricIfNonZeroHtml("5分", candidate.neutralCount)}
+          ${throwAdviceMetricIfNonZeroHtml("微有利", candidate.slightFavorableCount)}
+          ${throwAdviceMetricIfNonZeroHtml("有利", candidate.favorableCount)}
+          ${throwAdviceMetricIfNonZeroHtml("微不利", candidate.slightUnfavorableCount)}
+          ${throwAdviceMetricIfNonZeroHtml("不利", candidate.unfavorableCount)}
+          ${throwAdviceMetricIfNonZeroHtml("データなし", candidate.missingCount)}
         </div>
       `;
     }
@@ -3808,7 +3808,6 @@ PS_SIMULATOR_HTML = """<!doctype html>
           ${throwAdviceDeckTokenHtml(candidate.deckId, "self")}
         </div>
         ${throwAdviceCandidateBreakdownMetricsHtml(candidate)}
-        <div class="throw-advice-breakdown-note">${escapeHtml(throwAdviceCandidateReason(candidate))}</div>
       `;
     }
 
@@ -3828,7 +3827,6 @@ PS_SIMULATOR_HTML = """<!doctype html>
               <span class="source-note">評価候補 ${escapeHtml(String(rankedCandidates.length))}</span>
             </div>
             ${throwAdviceCandidateBreakdownMetricsHtml(lowest)}
-            <div class="throw-advice-breakdown-note">${escapeHtml(throwAdviceCandidateReason(lowest))}</div>
           </section>
         `;
       }
@@ -3840,7 +3838,6 @@ PS_SIMULATOR_HTML = """<!doctype html>
                 ${throwAdviceDeckTokenHtml(candidate.deckId, "self")}
               </div>
               ${throwAdviceCandidateBreakdownMetricsHtml(candidate)}
-              <div class="throw-advice-breakdown-note">${escapeHtml(throwAdviceCandidateReason(candidate))}</div>
             </section>
           `).join("")}
         </div>
@@ -3883,6 +3880,10 @@ PS_SIMULATOR_HTML = """<!doctype html>
           <strong>${escapeHtml(String(value))}</strong>
         </div>
       `;
+    }
+
+    function throwAdviceMetricIfNonZeroHtml(label, value) {
+      return Number(value) === 0 ? "" : throwAdviceMetricHtml(label, value);
     }
 
     function throwAdviceCandidateMetricGridHtml(candidate) {
@@ -3938,12 +3939,12 @@ PS_SIMULATOR_HTML = """<!doctype html>
           ${throwAdviceMetricHtml("相手側平均", formatWinRateDecimal(pick.averageWinRate))}
           ${throwAdviceMetricHtml("最低", formatWinRateDecimal(pick.minWinRate))}
           ${throwAdviceMetricHtml("最高", formatWinRateDecimal(pick.maxWinRate))}
-          ${throwAdviceMetricHtml("5分", pick.neutralCount)}
-          ${throwAdviceMetricHtml("微有利", pick.slightFavorableCount)}
-          ${throwAdviceMetricHtml("有利", pick.favorableCount)}
-          ${throwAdviceMetricHtml("微不利", pick.slightUnfavorableCount)}
-          ${throwAdviceMetricHtml("不利", pick.unfavorableCount)}
-          ${throwAdviceMetricHtml("データなし", pick.missingCount)}
+          ${throwAdviceMetricIfNonZeroHtml("5分", pick.neutralCount)}
+          ${throwAdviceMetricIfNonZeroHtml("微有利", pick.slightFavorableCount)}
+          ${throwAdviceMetricIfNonZeroHtml("有利", pick.favorableCount)}
+          ${throwAdviceMetricIfNonZeroHtml("微不利", pick.slightUnfavorableCount)}
+          ${throwAdviceMetricIfNonZeroHtml("不利", pick.unfavorableCount)}
+          ${throwAdviceMetricIfNonZeroHtml("データなし", pick.missingCount)}
         </div>
         <div class="throw-advice-breakdown-note">${escapeHtml(pick.reason || "相手側候補全体で平均勝率が最も高い候補です。")}</div>
       `;
