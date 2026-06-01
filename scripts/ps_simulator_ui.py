@@ -3608,11 +3608,11 @@ PS_SIMULATOR_HTML = """<!doctype html>
           <dl class="throw-advice-definition-list">
             <div>
               <dt>総合</dt>
-              <dd>Score = 平均勝率(%)。相手候補が同確率で選ばれる前提で、平均勝率が最大の候補を選びます。欠損 matchup は50%として計算し、追加減点しません。</dd>
+              <dd>Score = 平均勝率(%)。</dd>
             </div>
             <div>
               <dt>安定</dt>
-              <dd>最低勝率が最大の候補です。同点時は平均勝率が高い、勝率40%以下対面数が少ない順で選びます。</dd>
+              <dd>最低勝率が最大の候補です。同点時は平均勝率、勝率40%以下対面数が少ない順で選びます。</dd>
             </div>
             <div>
               <dt>攻撃</dt>
@@ -3620,7 +3620,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
             </div>
             <div>
               <dt>勝率40%以下候補</dt>
-              <dd>相手候補に対する自分側勝率が40%以下の対面を1つ以上含む候補です。</dd>
+              <dd>自分側勝率が40%以下の対面を1つ以上含む候補です。</dd>
             </div>
             <div>
               <dt>しきい値</dt>
