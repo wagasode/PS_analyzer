@@ -3302,19 +3302,26 @@ PS_SIMULATOR_HTML = """<!doctype html>
       })[0] || null;
     }
 
-    function battleThrowDeckSetForRound(roundNumber) {
-      const selfDeckIds = candidateDeckIdsForRound(state.battle?.selfSubmission, roundNumber, []);
-      const opponentDeckIds = candidateDeckIdsForRound(state.battle?.opponentSubmission, roundNumber, []);
+    function battleThrowDeckSetForRound(roundOrNumber) {
+      const round = typeof roundOrNumber === "object" && roundOrNumber ? roundOrNumber : null;
+      const roundNumber = round?.roundNumber || Number(roundOrNumber);
+      const selfDeckIds = round
+        ? uniqueDeckIds(round.selfCandidateDeckIds || [])
+        : candidateDeckIdsForRound(state.battle?.selfSubmission, roundNumber, usedDeckIdsBeforeRound("self", roundNumber));
+      const opponentDeckIds = round
+        ? uniqueDeckIds(round.opponentCandidateDeckIds || [])
+        : candidateDeckIdsForRound(state.battle?.opponentSubmission, roundNumber, usedDeckIdsBeforeRound("opponent", roundNumber));
+      const warnings = round?.candidateWarnings || [
+        ...validateRoundCandidates(roundNumber, selfDeckIds).map(message => `自分側: ${message}`),
+        ...validateRoundCandidates(roundNumber, opponentDeckIds).map(message => `相手側: ${message}`)
+      ];
       return {
         roundNumber,
         role: roundRoleByNumber[roundNumber] || "",
         expectedCount: expectedRoundCandidateCounts[roundNumber] || 0,
         selfDeckIds,
         opponentDeckIds,
-        warnings: [
-          ...validateRoundCandidates(roundNumber, selfDeckIds).map(message => `自分側: ${message}`),
-          ...validateRoundCandidates(roundNumber, opponentDeckIds).map(message => `相手側: ${message}`)
-        ]
+        warnings
       };
     }
 
@@ -3738,7 +3745,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
 
     function opponentLikelyDeckIdForRound(round) {
       if (!round || round.result || state.battle?.isComplete) return "";
-      const advice = buildBattleThrowAdvice(battleThrowDeckSetForRound(round.roundNumber));
+      const advice = buildBattleThrowAdvice(battleThrowDeckSetForRound(round));
       const deckId = advice.opponentLikelyPick?.opponentDeckId || "";
       return round.opponentCandidateDeckIds.includes(deckId) ? deckId : "";
     }
@@ -4051,7 +4058,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
         ...(active.candidateWarnings || []),
         ...(active.matchupWarnings || [])
       ];
-      const activeAdvice = buildBattleThrowAdvice(battleThrowDeckSetForRound(active.roundNumber));
+      const activeAdvice = buildBattleThrowAdvice(battleThrowDeckSetForRound(active));
       const opponentLikelyDeckId = opponentLikelyDeckIdForRound(active);
       const canAutoSelectOpponent = Boolean(opponentLikelyDeckId);
       const opponentAutoNote = opponentLikelyDeckId
