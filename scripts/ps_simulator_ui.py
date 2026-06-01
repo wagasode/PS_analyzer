@@ -886,22 +886,63 @@ PS_SIMULATOR_HTML = """<!doctype html>
     .throw-advice-disclosure summary {
       display: inline-flex;
       align-items: center;
-      min-height: 24px;
+      gap: 5px;
+      min-height: 28px;
       width: fit-content;
       cursor: pointer;
-      border: 1px solid #99f6e4;
-      border-radius: 999px;
-      padding: 2px 8px;
-      background: var(--accent-soft);
+      list-style: none;
+      border: 1px solid #5eead4;
+      border-radius: 6px;
+      padding: 3px 10px;
+      background: #fff;
       color: var(--accent);
       font-size: 12px;
       font-weight: 800;
       line-height: 1.2;
+      box-shadow: 0 1px 0 rgba(15, 23, 42, 0.06);
+    }
+
+    .throw-advice-disclosure summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .throw-advice-disclosure summary::before {
+      content: "▶";
+      color: var(--accent);
+      font-size: 10px;
+      line-height: 1;
+    }
+
+    .throw-advice-disclosure[open] summary::before {
+      content: "▼";
     }
 
     .throw-advice-disclosure[open] summary {
-      border-bottom: 1px solid #99f6e4;
+      border-bottom: 1px solid #5eead4;
       margin-bottom: 4px;
+      background: var(--accent-soft);
+    }
+
+    .throw-advice-disclosure-body {
+      min-width: 0;
+    }
+
+    .throw-advice-breakdown-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 5px;
+      min-width: 0;
+    }
+
+    .throw-advice-breakdown-note {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+      overflow-wrap: anywhere;
+    }
+
+    .throw-advice-breakdown-grid + .throw-advice-breakdown-note {
+      margin-top: 5px;
     }
 
     .throw-advice-definition-list {
@@ -1951,9 +1992,8 @@ PS_SIMULATOR_HTML = """<!doctype html>
     };
     const throwAdviceScoreWeights = {
       minWinRate: 0.3,
-      strongCount: 2,
-      dangerCount: -3,
-      missingCount: -5
+      winRate60OrMoreCount: 2,
+      winRate40OrLessCount: -3
     };
     const allPlayersTeamValue = "";
     const unassignedTeamValue = "__unassigned__";
@@ -3273,9 +3313,8 @@ PS_SIMULATOR_HTML = """<!doctype html>
         `平均${formatWinRateDecimal(candidate.averageWinRate)}`,
         `最低${formatWinRateDecimal(candidate.minWinRate)}`,
         `最高${formatWinRateDecimal(candidate.maxWinRate)}`,
-        `危険${candidate.dangerCount}`,
-        `強有利${candidate.strongCount}`,
-        `欠損${candidate.missingCount}`
+        `40%以下${candidate.dangerCount}`,
+        `60%以上${candidate.strongCount}`
       ].join(" / ");
     }
 
@@ -3315,9 +3354,8 @@ PS_SIMULATOR_HTML = """<!doctype html>
         ? (
             averageWinRate * 100
             + minWinRate * 100 * throwAdviceScoreWeights.minWinRate
-            + strongCount * throwAdviceScoreWeights.strongCount
-            + dangerCount * throwAdviceScoreWeights.dangerCount
-            + missingCount * throwAdviceScoreWeights.missingCount
+            + strongCount * throwAdviceScoreWeights.winRate60OrMoreCount
+            + dangerCount * throwAdviceScoreWeights.winRate40OrLessCount
           )
         : null;
       const selfDeck = deckById(selfDeckId);
@@ -3335,9 +3373,6 @@ PS_SIMULATOR_HTML = """<!doctype html>
           warnings.push(`${deckDisplayName(opponentDeck)} は仮デッキです。`);
         }
       });
-      if (missingCount > 0) {
-        warnings.push("一部の相性データが欠損しているため、評価は参考値です。");
-      }
       if (!opponentIds.length) {
         warnings.push("相手側候補がないため、勝率統計を算出できません。");
       }
@@ -3444,9 +3479,6 @@ PS_SIMULATOR_HTML = """<!doctype html>
           warnings.push(`${deckDisplayName(selfDeck)} は仮デッキです。`);
         }
       });
-      if (missingCount > 0) {
-        warnings.push("一部の相性データが欠損しているため、評価は参考値です。");
-      }
       if (!selfIds.length) {
         warnings.push("自分側候補がないため、相手側候補の勝率統計を算出できません。");
       }
@@ -3482,9 +3514,8 @@ PS_SIMULATOR_HTML = """<!doctype html>
         `相手側平均${formatWinRateDecimal(candidate.averageWinRate)}`,
         `最低${formatWinRateDecimal(candidate.minWinRate)}`,
         `最高${formatWinRateDecimal(candidate.maxWinRate)}`,
-        `危険${candidate.dangerCount}`,
-        `強有利${candidate.strongCount}`,
-        `欠損${candidate.missingCount}`
+        `40%以下${candidate.dangerCount}`,
+        `60%以上${candidate.strongCount}`
       ].join(" / ");
     }
 
@@ -3500,8 +3531,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
         candidate => candidate.averageWinRate,
         candidate => candidate.minWinRate,
         candidate => candidate.strongCount,
-        candidate => -candidate.dangerCount,
-        candidate => -candidate.missingCount
+        candidate => -candidate.dangerCount
       ]);
       if (!selected) {
         return {
@@ -3538,20 +3568,17 @@ PS_SIMULATOR_HTML = """<!doctype html>
         candidate => candidate.score,
         candidate => candidate.averageWinRate,
         candidate => candidate.minWinRate,
-        candidate => -candidate.missingCount,
         candidate => -candidate.dangerCount
       ]);
       const stableDeck = pickThrowAdviceCandidate(candidates, [
         candidate => candidate.minWinRate,
         candidate => candidate.averageWinRate,
-        candidate => -candidate.dangerCount,
-        candidate => -candidate.missingCount
+        candidate => -candidate.dangerCount
       ]);
       const aggressiveDeck = pickThrowAdviceCandidate(candidates, [
         candidate => candidate.strongCount,
         candidate => candidate.maxWinRate,
-        candidate => candidate.averageWinRate,
-        candidate => -candidate.missingCount
+        candidate => candidate.averageWinRate
       ]);
       const riskyDecks = [...candidates].filter(candidate => candidate.dangerCount > 0).sort((left, right) => (
         right.dangerCount - left.dangerCount
@@ -3562,9 +3589,6 @@ PS_SIMULATOR_HTML = """<!doctype html>
       const status = matchupStatus();
       const warnings = [
         ...deckSet.warnings,
-        ...(candidates.some(candidate => candidate.missingCount > 0)
-          ? ["一部の相性データが欠損しているため、評価は参考値です。"]
-          : []),
         ...([...deckSet.selfDeckIds, ...deckSet.opponentDeckIds].some(deckId => deckIsProvisional(deckById(deckId)))
           ? ["仮デッキを含むため、正式デッキ定義確定前の参考値です。"]
           : []),
@@ -3583,11 +3607,11 @@ PS_SIMULATOR_HTML = """<!doctype html>
       };
     }
 
-    function throwAdviceMetricDisclosureHtml(summary, body) {
+    function throwAdviceDisclosureHtml(summary, bodyHtml) {
       return `
         <details class="throw-advice-disclosure">
           <summary>${escapeHtml(summary)}</summary>
-          <div class="source-note">${escapeHtml(body)}</div>
+          <div class="throw-advice-disclosure-body">${bodyHtml}</div>
         </details>
       `;
     }
@@ -3599,23 +3623,23 @@ PS_SIMULATOR_HTML = """<!doctype html>
           <dl class="throw-advice-definition-list">
             <div>
               <dt>総合</dt>
-              <dd>Score = 平均勝率(%) + 最低勝率(%) × 0.3 + 強有利数 × 2 - 危険数 × 3 - 欠損数 × 5。Score最大の候補です。</dd>
+              <dd>Score = 平均勝率(%) + 最低勝率(%) × 0.3 + 勝率60%以上対面数 × 2 - 勝率40%以下対面数 × 3。欠損 matchup は50%として計算し、追加減点しません。</dd>
             </div>
             <div>
               <dt>安定</dt>
-              <dd>最低勝率が最大の候補です。同点時は平均勝率が高い、危険数が少ない、欠損数が少ない順で選びます。</dd>
+              <dd>最低勝率が最大の候補です。同点時は平均勝率が高い、勝率40%以下対面数が少ない順で選びます。</dd>
             </div>
             <div>
               <dt>攻撃</dt>
-              <dd>強有利数が最大の候補です。同点時は最高勝率、平均勝率が高い、欠損数が少ない順で選びます。</dd>
+              <dd>勝率60%以上対面数が最大の候補です。同点時は最高勝率、平均勝率が高い順で選びます。</dd>
             </div>
             <div>
-              <dt>危険候補</dt>
-              <dd>危険数が1以上の候補です。危険数は、相手候補に対する自分側勝率が40%以下の対面数です。</dd>
+              <dt>勝率40%以下候補</dt>
+              <dd>相手候補に対する自分側勝率が40%以下の対面を1つ以上含む候補です。</dd>
             </div>
             <div>
               <dt>しきい値</dt>
-              <dd>有利: 50%以上 / 不利: 50%未満 / 危険: 40%以下 / 強有利: 60%以上。</dd>
+              <dd>有利: 50%以上 / 不利: 50%未満 / 勝率40%以下: 40%以下 / 勝率60%以上: 60%以上。</dd>
             </div>
           </dl>
         </details>
@@ -3635,34 +3659,70 @@ PS_SIMULATOR_HTML = """<!doctype html>
         <div class="throw-advice-summary-item">
           <span class="source-note">${escapeHtml(label)}</span>
           ${throwAdviceDeckTokenHtml(candidate.deckId, "self")}
-          ${throwAdviceMetricDisclosureHtml("内訳", throwAdviceCandidateReason(candidate))}
+          ${throwAdviceDisclosureHtml("内訳", throwAdviceCandidateBreakdownHtml(candidate))}
         </div>
       `;
     }
 
-    function throwAdviceRiskyReason(candidates, allCandidates) {
+    function throwAdviceCandidateBreakdownHtml(candidate) {
+      if (!candidate || !candidate.details?.length) {
+        return `<div class="throw-advice-breakdown-note">相手側候補がなく、勝率統計を算出できません。</div>`;
+      }
+      return `
+        <div class="throw-advice-breakdown-grid">
+          ${throwAdviceMetricHtml("平均", formatWinRateDecimal(candidate.averageWinRate))}
+          ${throwAdviceMetricHtml("最低", formatWinRateDecimal(candidate.minWinRate))}
+          ${throwAdviceMetricHtml("最高", formatWinRateDecimal(candidate.maxWinRate))}
+          ${throwAdviceMetricHtml("60%以上", candidate.strongCount)}
+          ${throwAdviceMetricHtml("40%以下", candidate.dangerCount)}
+          ${throwAdviceMetricHtml("データなし", candidate.missingCount)}
+        </div>
+        <div class="throw-advice-breakdown-note">${escapeHtml(throwAdviceCandidateReason(candidate))}</div>
+      `;
+    }
+
+    function throwAdviceRiskyBreakdownHtml(candidates, allCandidates) {
       const rankedCandidates = [...(allCandidates || [])].filter(usableThrowCandidate);
-      if (!rankedCandidates.length) return "評価対象候補なし";
+      if (!rankedCandidates.length) return `<div class="throw-advice-breakdown-note">評価対象候補なし</div>`;
       if (!candidates.length) {
         const lowest = [...rankedCandidates].sort((left, right) => (
           numericMetric(left.minWinRate, Number.POSITIVE_INFINITY) - numericMetric(right.minWinRate, Number.POSITIVE_INFINITY)
           || deckIndex(left.deckId) - deckIndex(right.deckId)
         ))[0];
-        return `危険0 / 全候補の最低勝率 ${formatWinRateDecimal(lowest.minWinRate)} / 評価候補 ${rankedCandidates.length}`;
+        return `
+          <div class="throw-advice-breakdown-grid">
+            ${throwAdviceMetricHtml("40%以下", 0)}
+            ${throwAdviceMetricHtml("全候補の最低", formatWinRateDecimal(lowest.minWinRate))}
+            ${throwAdviceMetricHtml("評価候補", rankedCandidates.length)}
+          </div>
+        `;
       }
-      return candidates.map(candidate => (
-        `${deckDisplayNameById(candidate.deckId)}: 危険${candidate.dangerCount} / 最低${formatWinRateDecimal(candidate.minWinRate)} / 平均${formatWinRateDecimal(candidate.averageWinRate)}`
-      )).join(" / ");
+      return `
+        <div class="throw-advice-candidate-list compact">
+          ${candidates.map(candidate => `
+            <section class="throw-advice-candidate-card compact">
+              <div class="throw-advice-candidate-head">
+                ${throwAdviceDeckTokenHtml(candidate.deckId, "self")}
+              </div>
+              <div class="throw-advice-breakdown-grid">
+                ${throwAdviceMetricHtml("40%以下", candidate.dangerCount)}
+                ${throwAdviceMetricHtml("最低", formatWinRateDecimal(candidate.minWinRate))}
+                ${throwAdviceMetricHtml("平均", formatWinRateDecimal(candidate.averageWinRate))}
+              </div>
+            </section>
+          `).join("")}
+        </div>
+      `;
     }
 
     function throwAdviceRiskyHtml(candidates, allCandidates) {
       return `
         <div class="throw-advice-summary-item">
-          <span class="source-note">危険候補</span>
+          <span class="source-note">勝率40%以下候補</span>
           ${candidates.length
             ? `<div class="deck-token-row">${candidates.map(candidate => throwAdviceDeckTokenHtml(candidate.deckId, "self")).join("")}</div>`
             : `<strong>なし</strong>`}
-          ${throwAdviceMetricDisclosureHtml("内訳", throwAdviceRiskyReason(candidates, allCandidates))}
+          ${throwAdviceDisclosureHtml("内訳", throwAdviceRiskyBreakdownHtml(candidates, allCandidates))}
         </div>
       `;
     }
@@ -3674,10 +3734,10 @@ PS_SIMULATOR_HTML = """<!doctype html>
       return `
         <div class="throw-advice-matchups">
           ${candidate.details.map(detail => `
-            <span class="throw-advice-matchup-chip ${detail.missing ? "missing" : ""}">
+            <span class="throw-advice-matchup-chip">
               <span>vs ${escapeHtml(deckDisplayNameById(detail.opponentDeckId))}</span>
               <strong>${escapeHtml(formatWinRateDecimal(detail.winRate))}</strong>
-              ${detail.missing ? `<span>欠損</span>` : ""}
+              ${detail.missing ? `<span>データなし</span>` : ""}
             </span>
           `).join("")}
         </div>
@@ -3701,9 +3761,9 @@ PS_SIMULATOR_HTML = """<!doctype html>
           ${throwAdviceMetricHtml("最高", formatWinRateDecimal(candidate.maxWinRate))}
           ${throwAdviceMetricHtml("有利", candidate.favorableCount)}
           ${throwAdviceMetricHtml("不利", candidate.unfavorableCount)}
-          ${throwAdviceMetricHtml("危険", candidate.dangerCount)}
-          ${throwAdviceMetricHtml("強有利", candidate.strongCount)}
-          ${throwAdviceMetricHtml("欠損", candidate.missingCount)}
+          ${throwAdviceMetricHtml("40%以下", candidate.dangerCount)}
+          ${throwAdviceMetricHtml("60%以上", candidate.strongCount)}
+          ${throwAdviceMetricHtml("データなし", candidate.missingCount)}
         </div>
       `;
     }
@@ -3732,6 +3792,23 @@ PS_SIMULATOR_HTML = """<!doctype html>
       `;
     }
 
+    function throwAdviceOpponentBreakdownHtml(pick) {
+      if (!pick?.opponentDeckId) {
+        return `<div class="throw-advice-breakdown-note">相手側候補がありません。</div>`;
+      }
+      return `
+        <div class="throw-advice-breakdown-grid">
+          ${throwAdviceMetricHtml("相手側平均", formatWinRateDecimal(pick.averageWinRate))}
+          ${throwAdviceMetricHtml("最低", formatWinRateDecimal(pick.minWinRate))}
+          ${throwAdviceMetricHtml("最高", formatWinRateDecimal(pick.maxWinRate))}
+          ${throwAdviceMetricHtml("60%以上", pick.strongCount)}
+          ${throwAdviceMetricHtml("40%以下", pick.dangerCount)}
+          ${throwAdviceMetricHtml("データなし", pick.missingCount)}
+        </div>
+        <div class="throw-advice-breakdown-note">${escapeHtml(pick.reason || "相手側候補全体で平均勝率が最も高い候補です。")}</div>
+      `;
+    }
+
     function throwAdviceOpponentLikelyHtml(advice) {
       const pick = advice.opponentLikelyPick;
       return `
@@ -3741,8 +3818,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
             <span class="source-note">自分側候補全体で評価</span>
           </div>
           ${pick?.opponentDeckId ? throwAdviceDeckTokenHtml(pick.opponentDeckId, "opponent") : `<div class="validation-item warn">相手有力候補を算出できません。</div>`}
-          ${throwAdviceMetricDisclosureHtml("判定理由", pick?.reason || "相手側候補がありません。")}
-          ${pick?.missing ? `<div class="validation-item warn">相手有力候補の判定に欠損matchupのfallbackを含みます。</div>` : ""}
+          ${throwAdviceDisclosureHtml("判定理由", throwAdviceOpponentBreakdownHtml(pick))}
         </div>
       `;
     }
