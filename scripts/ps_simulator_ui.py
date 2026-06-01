@@ -3736,6 +3736,20 @@ PS_SIMULATOR_HTML = """<!doctype html>
       render();
     }
 
+    function opponentLikelyDeckIdForRound(round) {
+      if (!round || round.result || state.battle?.isComplete) return "";
+      const advice = buildBattleThrowAdvice(battleThrowDeckSetForRound(round.roundNumber));
+      const deckId = advice.opponentLikelyPick?.opponentDeckId || "";
+      return round.opponentCandidateDeckIds.includes(deckId) ? deckId : "";
+    }
+
+    function autoSelectOpponentLikelyDeck() {
+      const round = activeBattleRound();
+      const deckId = opponentLikelyDeckIdForRound(round);
+      if (!deckId) return;
+      selectBattleDeck("opponent", deckId);
+    }
+
     function deterministicUnitInterval(seedText) {
       let hash = 2166136261;
       for (const char of String(seedText)) {
@@ -4038,6 +4052,11 @@ PS_SIMULATOR_HTML = """<!doctype html>
         ...(active.matchupWarnings || [])
       ];
       const activeAdvice = buildBattleThrowAdvice(battleThrowDeckSetForRound(active.roundNumber));
+      const opponentLikelyDeckId = opponentLikelyDeckIdForRound(active);
+      const canAutoSelectOpponent = Boolean(opponentLikelyDeckId);
+      const opponentAutoNote = opponentLikelyDeckId
+        ? `候補: ${deckDisplayNameById(opponentLikelyDeckId)}`
+        : "相手有力候補を算出できません。";
       document.getElementById("battle-current-round").innerHTML = `
         <div class="deck-class-group-head">
           <div>
@@ -4057,7 +4076,11 @@ PS_SIMULATOR_HTML = """<!doctype html>
           </section>
           <section class="battle-card">
             <div class="deck-class-group-head">
-              <h3>相手側候補</h3>
+              <div>
+                <h3>相手側候補</h3>
+                <div class="source-note">${escapeHtml(opponentAutoNote)}</div>
+              </div>
+              <button id="auto-opponent-pick" type="button" ${canAutoSelectOpponent ? "" : "disabled"}>相手自動選択</button>
             </div>
             ${renderChoiceList("opponent", active)}
           </section>
@@ -4534,6 +4557,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
       document.querySelector("#battle-current-round .active-throw-advice-details")?.addEventListener("toggle", event => {
         state.throwAdviceDetailsOpen = event.currentTarget.open;
       });
+      document.getElementById("auto-opponent-pick")?.addEventListener("click", autoSelectOpponentLikelyDeck);
       document.getElementById("roll-round")?.addEventListener("click", rollBattleRound);
       document.getElementById("manual-self-win")?.addEventListener("click", () => decideBattleRound("self_win"));
       document.getElementById("manual-opponent-win")?.addEventListener("click", () => decideBattleRound("opponent_win"));
