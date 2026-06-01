@@ -835,11 +835,35 @@ PS_SIMULATOR_HTML = """<!doctype html>
     }
 
     .active-throw-advice-details summary {
-      display: flex;
+      display: inline-flex;
       align-items: center;
       gap: 8px;
       flex-wrap: wrap;
       min-width: 0;
+      width: fit-content;
+      margin: 12px;
+      border: 1px solid #5eead4;
+      border-radius: 6px;
+      padding: 6px 12px;
+      background: #fff;
+      color: var(--accent);
+      list-style: none;
+      box-shadow: 0 1px 0 rgba(15, 23, 42, 0.06);
+    }
+
+    .active-throw-advice-details summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .active-throw-advice-details summary::before {
+      content: "▶";
+      color: var(--accent);
+      font-size: 11px;
+      line-height: 1;
+    }
+
+    .active-throw-advice-details[open] summary::before {
+      content: "▼";
     }
 
     .active-throw-advice-body {
@@ -3892,12 +3916,12 @@ PS_SIMULATOR_HTML = """<!doctype html>
           ${throwAdviceMetricHtml("平均", formatWinRateDecimal(candidate.averageWinRate))}
           ${throwAdviceMetricHtml("最低", formatWinRateDecimal(candidate.minWinRate))}
           ${throwAdviceMetricHtml("最高", formatWinRateDecimal(candidate.maxWinRate))}
-          ${throwAdviceMetricHtml("5分", candidate.neutralCount)}
-          ${throwAdviceMetricHtml("微有利", candidate.slightFavorableCount)}
-          ${throwAdviceMetricHtml("有利", candidate.favorableCount)}
-          ${throwAdviceMetricHtml("微不利", candidate.slightUnfavorableCount)}
-          ${throwAdviceMetricHtml("不利", candidate.unfavorableCount)}
-          ${throwAdviceMetricHtml("データなし", candidate.missingCount)}
+          ${throwAdviceMetricIfNonZeroHtml("5分", candidate.neutralCount)}
+          ${throwAdviceMetricIfNonZeroHtml("微有利", candidate.slightFavorableCount)}
+          ${throwAdviceMetricIfNonZeroHtml("有利", candidate.favorableCount)}
+          ${throwAdviceMetricIfNonZeroHtml("微不利", candidate.slightUnfavorableCount)}
+          ${throwAdviceMetricIfNonZeroHtml("不利", candidate.unfavorableCount)}
+          ${throwAdviceMetricIfNonZeroHtml("データなし", candidate.missingCount)}
         </div>
       `;
     }
@@ -3918,7 +3942,6 @@ PS_SIMULATOR_HTML = """<!doctype html>
                 </div>
                 ${throwAdviceCandidateMetricGridHtml(candidate)}
                 ${throwAdviceMatchupChipsHtml(candidate)}
-                <div class="throw-advice-candidate-reason">Score内訳: ${escapeHtml(candidate.reason)}</div>
               </section>
             `).join("")}
           </div>
@@ -3970,7 +3993,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
       return `
         <details class="active-throw-advice-details"${state.throwAdviceDetailsOpen ? " open" : ""}>
           <summary>
-            <strong>参考評価</strong>
+            <strong>参考評価を見る</strong>
           </summary>
           <div class="active-throw-advice-body">
             ${advice.warnings.map(message => `<div class="validation-item warn">${escapeHtml(message)}</div>`).join("")}
