@@ -1158,6 +1158,18 @@ PS_SIMULATOR_HTML = """<!doctype html>
       padding: 14px;
     }
 
+    .throw-advice-modal-subject {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      min-width: 0;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px;
+      background: #f8fafc;
+    }
+
     .battle-assignment-list {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -3765,7 +3777,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
         <div class="throw-advice-summary-item">
           <span class="source-note">${escapeHtml(label)}</span>
           ${throwAdviceDeckTokenHtml(candidate.deckId, "self")}
-          ${throwAdviceModalButtonHtml("内訳", throwAdviceCandidateBreakdownHtml(candidate), `${label}の内訳`)}
+          ${throwAdviceModalButtonHtml("内訳", throwAdviceCandidateBreakdownHtml(candidate), `${label}の内訳: ${deckDisplayNameById(candidate.deckId)}`)}
         </div>
       `;
     }
@@ -3791,6 +3803,10 @@ PS_SIMULATOR_HTML = """<!doctype html>
         return `<div class="throw-advice-breakdown-note">相手側候補がなく、勝率統計を算出できません。</div>`;
       }
       return `
+        <div class="throw-advice-modal-subject">
+          <span class="source-note">対象デッキ</span>
+          ${throwAdviceDeckTokenHtml(candidate.deckId, "self")}
+        </div>
         ${throwAdviceCandidateBreakdownMetricsHtml(candidate)}
         <div class="throw-advice-breakdown-note">${escapeHtml(throwAdviceCandidateReason(candidate))}</div>
       `;
@@ -3914,6 +3930,10 @@ PS_SIMULATOR_HTML = """<!doctype html>
         return `<div class="throw-advice-breakdown-note">相手側候補がありません。</div>`;
       }
       return `
+        <div class="throw-advice-modal-subject">
+          <span class="source-note">対象デッキ</span>
+          ${throwAdviceDeckTokenHtml(pick.opponentDeckId, "opponent")}
+        </div>
         <div class="throw-advice-breakdown-grid">
           ${throwAdviceMetricHtml("相手側平均", formatWinRateDecimal(pick.averageWinRate))}
           ${throwAdviceMetricHtml("最低", formatWinRateDecimal(pick.minWinRate))}
@@ -3938,7 +3958,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
             <span class="source-note">自分側候補全体で評価</span>
           </div>
           ${pick?.opponentDeckId ? throwAdviceDeckTokenHtml(pick.opponentDeckId, "opponent") : `<div class="validation-item warn">相手有力候補を算出できません。</div>`}
-          ${throwAdviceModalButtonHtml("判定理由", throwAdviceOpponentBreakdownHtml(pick), "相手有力候補の判定理由")}
+          ${throwAdviceModalButtonHtml("判定理由", throwAdviceOpponentBreakdownHtml(pick), pick?.opponentDeckId ? `相手有力候補の判定理由: ${deckDisplayNameById(pick.opponentDeckId)}` : "相手有力候補の判定理由")}
         </div>
       `;
     }
