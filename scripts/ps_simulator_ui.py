@@ -1990,11 +1990,6 @@ PS_SIMULATOR_HTML = """<!doctype html>
       danger: 0.4,
       strong: 0.6
     };
-    const throwAdviceScoreWeights = {
-      minWinRate: 0.3,
-      winRate60OrMoreCount: 2,
-      winRate40OrLessCount: -3
-    };
     const allPlayersTeamValue = "";
     const unassignedTeamValue = "__unassigned__";
     const unassignedTeamLabel = "未設定";
@@ -3350,14 +3345,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
       const dangerCount = details.filter(detail => detail.winRate <= matchupStatsThresholds.danger).length;
       const strongCount = details.filter(detail => detail.winRate >= matchupStatsThresholds.strong).length;
       const missingCount = details.filter(detail => detail.missing).length;
-      const score = rates.length
-        ? (
-            averageWinRate * 100
-            + minWinRate * 100 * throwAdviceScoreWeights.minWinRate
-            + strongCount * throwAdviceScoreWeights.winRate60OrMoreCount
-            + dangerCount * throwAdviceScoreWeights.winRate40OrLessCount
-          )
-        : null;
+      const score = rates.length ? averageWinRate * 100 : null;
       const selfDeck = deckById(selfDeckId);
       const warnings = [];
       if (!selfDeck) {
@@ -3565,10 +3553,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
         };
       });
       const recommendedDeck = pickThrowAdviceCandidate(candidates, [
-        candidate => candidate.score,
-        candidate => candidate.averageWinRate,
-        candidate => candidate.minWinRate,
-        candidate => -candidate.dangerCount
+        candidate => candidate.averageWinRate
       ]);
       const stableDeck = pickThrowAdviceCandidate(candidates, [
         candidate => candidate.minWinRate,
@@ -3623,7 +3608,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
           <dl class="throw-advice-definition-list">
             <div>
               <dt>総合</dt>
-              <dd>Score = 平均勝率(%) + 最低勝率(%) × 0.3 + 勝率60%以上対面数 × 2 - 勝率40%以下対面数 × 3。欠損 matchup は50%として計算し、追加減点しません。</dd>
+              <dd>Score = 平均勝率(%)。相手候補が同確率で選ばれる前提で、平均勝率が最大の候補を選びます。欠損 matchup は50%として計算し、追加減点しません。</dd>
             </div>
             <div>
               <dt>安定</dt>
