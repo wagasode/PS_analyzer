@@ -1986,7 +1986,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
     const fallbackWinRate = 0.5;
     const fallbackWinRateNote = "相性表未定義のため0.5";
     const matchupStatsThresholds = {
-      favorable: 0.5,
+      neutral: 0.5,
       danger: 0.4,
       strong: 0.6
     };
@@ -3308,9 +3308,25 @@ PS_SIMULATOR_HTML = """<!doctype html>
         `平均${formatWinRateDecimal(candidate.averageWinRate)}`,
         `最低${formatWinRateDecimal(candidate.minWinRate)}`,
         `最高${formatWinRateDecimal(candidate.maxWinRate)}`,
-        `40%以下${candidate.dangerCount}`,
-        `60%以上${candidate.strongCount}`
+        `有利${candidate.favorableCount}`,
+        `不利${candidate.unfavorableCount}`
       ].join(" / ");
+    }
+
+    function winRateCategoryCounts(details) {
+      return {
+        neutralCount: details.filter(detail => detail.winRate === matchupStatsThresholds.neutral).length,
+        slightFavorableCount: details.filter(detail => (
+          detail.winRate > matchupStatsThresholds.neutral
+          && detail.winRate < matchupStatsThresholds.strong
+        )).length,
+        favorableCount: details.filter(detail => detail.winRate >= matchupStatsThresholds.strong).length,
+        slightUnfavorableCount: details.filter(detail => (
+          detail.winRate < matchupStatsThresholds.neutral
+          && detail.winRate > matchupStatsThresholds.danger
+        )).length,
+        unfavorableCount: details.filter(detail => detail.winRate <= matchupStatsThresholds.danger).length
+      };
     }
 
     function buildMatchupStatsForCandidate(selfDeckId, opponentDeckIds, options = {}) {
@@ -3340,10 +3356,9 @@ PS_SIMULATOR_HTML = """<!doctype html>
         : null;
       const minWinRate = rates.length ? Math.min(...rates) : null;
       const maxWinRate = rates.length ? Math.max(...rates) : null;
-      const favorableCount = details.filter(detail => detail.winRate >= matchupStatsThresholds.favorable).length;
-      const unfavorableCount = details.filter(detail => detail.winRate < matchupStatsThresholds.favorable).length;
-      const dangerCount = details.filter(detail => detail.winRate <= matchupStatsThresholds.danger).length;
-      const strongCount = details.filter(detail => detail.winRate >= matchupStatsThresholds.strong).length;
+      const categoryCounts = winRateCategoryCounts(details);
+      const dangerCount = categoryCounts.unfavorableCount;
+      const strongCount = categoryCounts.favorableCount;
       const missingCount = details.filter(detail => detail.missing).length;
       const score = rates.length ? averageWinRate * 100 : null;
       const selfDeck = deckById(selfDeckId);
@@ -3371,8 +3386,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
         averageWinRate,
         minWinRate,
         maxWinRate,
-        favorableCount,
-        unfavorableCount,
+        ...categoryCounts,
         dangerCount,
         strongCount,
         missingCount,
@@ -3447,10 +3461,9 @@ PS_SIMULATOR_HTML = """<!doctype html>
         : null;
       const minWinRate = rates.length ? Math.min(...rates) : null;
       const maxWinRate = rates.length ? Math.max(...rates) : null;
-      const favorableCount = details.filter(detail => detail.winRate >= matchupStatsThresholds.favorable).length;
-      const unfavorableCount = details.filter(detail => detail.winRate < matchupStatsThresholds.favorable).length;
-      const dangerCount = details.filter(detail => detail.winRate <= matchupStatsThresholds.danger).length;
-      const strongCount = details.filter(detail => detail.winRate >= matchupStatsThresholds.strong).length;
+      const categoryCounts = winRateCategoryCounts(details);
+      const dangerCount = categoryCounts.unfavorableCount;
+      const strongCount = categoryCounts.favorableCount;
       const missingCount = details.filter(detail => detail.missing).length;
       const opponentDeck = deckById(opponentDeckId);
       const warnings = [];
@@ -3478,8 +3491,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
         averageWinRate,
         minWinRate,
         maxWinRate,
-        favorableCount,
-        unfavorableCount,
+        ...categoryCounts,
         dangerCount,
         strongCount,
         missingCount,
@@ -3502,8 +3514,8 @@ PS_SIMULATOR_HTML = """<!doctype html>
         `相手側平均${formatWinRateDecimal(candidate.averageWinRate)}`,
         `最低${formatWinRateDecimal(candidate.minWinRate)}`,
         `最高${formatWinRateDecimal(candidate.maxWinRate)}`,
-        `40%以下${candidate.dangerCount}`,
-        `60%以上${candidate.strongCount}`
+        `有利${candidate.favorableCount}`,
+        `不利${candidate.unfavorableCount}`
       ].join(" / ");
     }
 
@@ -3612,19 +3624,19 @@ PS_SIMULATOR_HTML = """<!doctype html>
             </div>
             <div>
               <dt>安定</dt>
-              <dd>最低勝率が最大の候補です。同点時は平均勝率、勝率40%以下対面数が少ない順で選びます。</dd>
+              <dd>最低勝率が最大の候補です。同点時は平均勝率、不利対面数が少ない順で選びます。</dd>
             </div>
             <div>
               <dt>攻撃</dt>
-              <dd>勝率60%以上対面数が最大の候補です。同点時は最高勝率、平均勝率が高い順で選びます。</dd>
+              <dd>有利対面数が最大の候補です。同点時は最高勝率、平均勝率が高い順で選びます。</dd>
             </div>
             <div>
-              <dt>勝率40%以下候補</dt>
-              <dd>自分側勝率が40%以下の対面を1つ以上含む候補です。</dd>
+              <dt>不利候補</dt>
+              <dd>自分側勝率が40%以下の不利対面を1つ以上含む候補です。</dd>
             </div>
             <div>
               <dt>しきい値</dt>
-              <dd>有利: 50%以上 / 不利: 50%未満 / 勝率40%以下: 40%以下 / 勝率60%以上: 60%以上。</dd>
+              <dd>5分: 50% / 微有利: 51%〜59% / 有利: 60%以上 / 微不利: 41%〜49% / 不利: 40%以下。</dd>
             </div>
           </dl>
         </details>
@@ -3658,8 +3670,11 @@ PS_SIMULATOR_HTML = """<!doctype html>
           ${throwAdviceMetricHtml("平均", formatWinRateDecimal(candidate.averageWinRate))}
           ${throwAdviceMetricHtml("最低", formatWinRateDecimal(candidate.minWinRate))}
           ${throwAdviceMetricHtml("最高", formatWinRateDecimal(candidate.maxWinRate))}
-          ${throwAdviceMetricHtml("60%以上", candidate.strongCount)}
-          ${throwAdviceMetricHtml("40%以下", candidate.dangerCount)}
+          ${throwAdviceMetricHtml("5分", candidate.neutralCount)}
+          ${throwAdviceMetricHtml("微有利", candidate.slightFavorableCount)}
+          ${throwAdviceMetricHtml("有利", candidate.favorableCount)}
+          ${throwAdviceMetricHtml("微不利", candidate.slightUnfavorableCount)}
+          ${throwAdviceMetricHtml("不利", candidate.unfavorableCount)}
           ${throwAdviceMetricHtml("データなし", candidate.missingCount)}
         </div>
         <div class="throw-advice-breakdown-note">${escapeHtml(throwAdviceCandidateReason(candidate))}</div>
@@ -3676,7 +3691,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
         ))[0];
         return `
           <div class="throw-advice-breakdown-grid">
-            ${throwAdviceMetricHtml("40%以下", 0)}
+            ${throwAdviceMetricHtml("不利", 0)}
             ${throwAdviceMetricHtml("全候補の最低", formatWinRateDecimal(lowest.minWinRate))}
             ${throwAdviceMetricHtml("評価候補", rankedCandidates.length)}
           </div>
@@ -3690,7 +3705,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
                 ${throwAdviceDeckTokenHtml(candidate.deckId, "self")}
               </div>
               <div class="throw-advice-breakdown-grid">
-                ${throwAdviceMetricHtml("40%以下", candidate.dangerCount)}
+                ${throwAdviceMetricHtml("不利", candidate.unfavorableCount)}
                 ${throwAdviceMetricHtml("最低", formatWinRateDecimal(candidate.minWinRate))}
                 ${throwAdviceMetricHtml("平均", formatWinRateDecimal(candidate.averageWinRate))}
               </div>
@@ -3703,7 +3718,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
     function throwAdviceRiskyHtml(candidates, allCandidates) {
       return `
         <div class="throw-advice-summary-item">
-          <span class="source-note">勝率40%以下候補</span>
+          <span class="source-note">不利候補</span>
           ${candidates.length
             ? `<div class="deck-token-row">${candidates.map(candidate => throwAdviceDeckTokenHtml(candidate.deckId, "self")).join("")}</div>`
             : `<strong>なし</strong>`}
@@ -3744,10 +3759,11 @@ PS_SIMULATOR_HTML = """<!doctype html>
           ${throwAdviceMetricHtml("平均", formatWinRateDecimal(candidate.averageWinRate))}
           ${throwAdviceMetricHtml("最低", formatWinRateDecimal(candidate.minWinRate))}
           ${throwAdviceMetricHtml("最高", formatWinRateDecimal(candidate.maxWinRate))}
+          ${throwAdviceMetricHtml("5分", candidate.neutralCount)}
+          ${throwAdviceMetricHtml("微有利", candidate.slightFavorableCount)}
           ${throwAdviceMetricHtml("有利", candidate.favorableCount)}
+          ${throwAdviceMetricHtml("微不利", candidate.slightUnfavorableCount)}
           ${throwAdviceMetricHtml("不利", candidate.unfavorableCount)}
-          ${throwAdviceMetricHtml("40%以下", candidate.dangerCount)}
-          ${throwAdviceMetricHtml("60%以上", candidate.strongCount)}
           ${throwAdviceMetricHtml("データなし", candidate.missingCount)}
         </div>
       `;
@@ -3786,8 +3802,11 @@ PS_SIMULATOR_HTML = """<!doctype html>
           ${throwAdviceMetricHtml("相手側平均", formatWinRateDecimal(pick.averageWinRate))}
           ${throwAdviceMetricHtml("最低", formatWinRateDecimal(pick.minWinRate))}
           ${throwAdviceMetricHtml("最高", formatWinRateDecimal(pick.maxWinRate))}
-          ${throwAdviceMetricHtml("60%以上", pick.strongCount)}
-          ${throwAdviceMetricHtml("40%以下", pick.dangerCount)}
+          ${throwAdviceMetricHtml("5分", pick.neutralCount)}
+          ${throwAdviceMetricHtml("微有利", pick.slightFavorableCount)}
+          ${throwAdviceMetricHtml("有利", pick.favorableCount)}
+          ${throwAdviceMetricHtml("微不利", pick.slightUnfavorableCount)}
+          ${throwAdviceMetricHtml("不利", pick.unfavorableCount)}
           ${throwAdviceMetricHtml("データなし", pick.missingCount)}
         </div>
         <div class="throw-advice-breakdown-note">${escapeHtml(pick.reason || "相手側候補全体で平均勝率が最も高い候補です。")}</div>
