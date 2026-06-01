@@ -906,6 +906,30 @@ PS_SIMULATOR_HTML = """<!doctype html>
       display: none;
     }
 
+    .throw-advice-modal-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      min-height: 28px;
+      width: fit-content;
+      border: 1px solid #5eead4;
+      border-radius: 6px;
+      padding: 3px 10px;
+      background: #fff;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1.2;
+      box-shadow: 0 1px 0 rgba(15, 23, 42, 0.06);
+    }
+
+    .throw-advice-modal-button::before {
+      content: "▶";
+      color: var(--accent);
+      font-size: 10px;
+      line-height: 1;
+    }
+
     .throw-advice-disclosure summary::before {
       content: "▶";
       color: var(--accent);
@@ -1077,6 +1101,61 @@ PS_SIMULATOR_HTML = """<!doctype html>
       border-color: #fdba74;
       background: var(--warn-soft);
       color: var(--warn);
+    }
+
+    .throw-advice-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 80;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(15, 23, 42, 0.46);
+    }
+
+    .throw-advice-modal {
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      width: min(560px, 100%);
+      max-height: min(720px, calc(100vh - 40px));
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 18px 45px rgba(15, 23, 42, 0.24);
+      overflow: hidden;
+    }
+
+    .throw-advice-modal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-width: 0;
+      border-bottom: 1px solid var(--border);
+      padding: 12px 14px;
+      background: #f8fafc;
+    }
+
+    .throw-advice-modal-head h3 {
+      min-width: 0;
+      color: var(--text);
+      font-size: 16px;
+      overflow-wrap: anywhere;
+    }
+
+    .throw-advice-modal-close {
+      min-height: 30px;
+      padding: 0 10px;
+      color: var(--muted);
+    }
+
+    .throw-advice-modal-body {
+      display: grid;
+      gap: 8px;
+      min-width: 0;
+      overflow: auto;
+      padding: 14px;
     }
 
     .battle-assignment-list {
@@ -1796,6 +1875,15 @@ PS_SIMULATOR_HTML = """<!doctype html>
       .throw-advice-metric-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
+
+      .throw-advice-modal-backdrop {
+        align-items: end;
+        padding: 10px;
+      }
+
+      .throw-advice-modal {
+        max-height: calc(100vh - 20px);
+      }
     }
 
     @media (max-width: 700px) {
@@ -2028,9 +2116,11 @@ PS_SIMULATOR_HTML = """<!doctype html>
       },
       assignments: {},
       throwAdviceDetailsOpen: false,
+      throwAdviceModalId: "",
       battle: null
     };
     let isBattleSummaryPngExporting = false;
+    let throwAdviceModalEntries = [];
 
     function escapeHtml(value) {
       return String(value ?? "")
@@ -2829,6 +2919,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
       state.battle.rounds = state.battle.rounds.filter(round => round.roundNumber < roundNumber);
       state.battle.score = scoreFromRounds(state.battle.rounds);
       state.throwAdviceDetailsOpen = false;
+      state.throwAdviceModalId = "";
       state.battle.isComplete = false;
       state.battle.winner = "";
       state.battle.finishedAtRound = null;
@@ -2843,6 +2934,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
       state.battle.rounds = [];
       state.battle.score = { self: 0, opponent: 0 };
       state.throwAdviceDetailsOpen = false;
+      state.throwAdviceModalId = "";
       state.battle.isComplete = false;
       state.battle.winner = "";
       state.battle.finishedAtRound = null;
@@ -3604,12 +3696,29 @@ PS_SIMULATOR_HTML = """<!doctype html>
       };
     }
 
-    function throwAdviceDisclosureHtml(summary, bodyHtml) {
+    function throwAdviceModalButtonHtml(summary, bodyHtml, title = summary) {
+      const id = `throw-advice-modal-${throwAdviceModalEntries.length}`;
+      throwAdviceModalEntries.push({ id, title, bodyHtml });
       return `
-        <details class="throw-advice-disclosure">
-          <summary>${escapeHtml(summary)}</summary>
-          <div class="throw-advice-disclosure-body">${bodyHtml}</div>
-        </details>
+        <button class="throw-advice-modal-button" type="button" data-throw-advice-modal-id="${escapeHtml(id)}">
+          ${escapeHtml(summary)}
+        </button>
+      `;
+    }
+
+    function throwAdviceModalHtml() {
+      const entry = throwAdviceModalEntries.find(item => item.id === state.throwAdviceModalId);
+      if (!entry) return "";
+      return `
+        <div class="throw-advice-modal-backdrop" data-close-throw-advice-modal>
+          <section class="throw-advice-modal" role="dialog" aria-modal="true" aria-labelledby="throw-advice-modal-title">
+            <div class="throw-advice-modal-head">
+              <h3 id="throw-advice-modal-title">${escapeHtml(entry.title)}</h3>
+              <button class="throw-advice-modal-close" type="button" data-close-throw-advice-modal>閉じる</button>
+            </div>
+            <div class="throw-advice-modal-body">${entry.bodyHtml}</div>
+          </section>
+        </div>
       `;
     }
 
@@ -3656,7 +3765,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
         <div class="throw-advice-summary-item">
           <span class="source-note">${escapeHtml(label)}</span>
           ${throwAdviceDeckTokenHtml(candidate.deckId, "self")}
-          ${throwAdviceDisclosureHtml("内訳", throwAdviceCandidateBreakdownHtml(candidate))}
+          ${throwAdviceModalButtonHtml("内訳", throwAdviceCandidateBreakdownHtml(candidate), `${label}の内訳`)}
         </div>
       `;
     }
@@ -3722,7 +3831,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
           ${candidates.length
             ? `<div class="deck-token-row">${candidates.map(candidate => throwAdviceDeckTokenHtml(candidate.deckId, "self")).join("")}</div>`
             : `<strong>なし</strong>`}
-          ${throwAdviceDisclosureHtml("内訳", throwAdviceRiskyBreakdownHtml(candidates, allCandidates))}
+          ${throwAdviceModalButtonHtml("内訳", throwAdviceRiskyBreakdownHtml(candidates, allCandidates), "不利候補の内訳")}
         </div>
       `;
     }
@@ -3822,12 +3931,13 @@ PS_SIMULATOR_HTML = """<!doctype html>
             <span class="source-note">自分側候補全体で評価</span>
           </div>
           ${pick?.opponentDeckId ? throwAdviceDeckTokenHtml(pick.opponentDeckId, "opponent") : `<div class="validation-item warn">相手有力候補を算出できません。</div>`}
-          ${throwAdviceDisclosureHtml("判定理由", throwAdviceOpponentBreakdownHtml(pick))}
+          ${throwAdviceModalButtonHtml("判定理由", throwAdviceOpponentBreakdownHtml(pick), "相手有力候補の判定理由")}
         </div>
       `;
     }
 
     function activeThrowAdviceDetailsHtml(advice) {
+      throwAdviceModalEntries = [];
       if (!advice) return "";
       return `
         <details class="active-throw-advice-details"${state.throwAdviceDetailsOpen ? " open" : ""}>
@@ -3847,7 +3957,20 @@ PS_SIMULATOR_HTML = """<!doctype html>
             ${throwAdviceCandidateRowsHtml(advice.candidates)}
           </div>
         </details>
+        ${throwAdviceModalHtml()}
       `;
+    }
+
+    function openThrowAdviceModal(modalId) {
+      if (!modalId) return;
+      state.throwAdviceModalId = modalId;
+      render();
+    }
+
+    function closeThrowAdviceModal() {
+      if (!state.throwAdviceModalId) return;
+      state.throwAdviceModalId = "";
+      render();
     }
 
     function updateRoundWinRate(round) {
@@ -3984,9 +4107,11 @@ PS_SIMULATOR_HTML = """<!doctype html>
         state.battle.winner = state.battle.score.self > state.battle.score.opponent ? "self" : "opponent";
         state.battle.finishedAtRound = round.roundNumber;
         state.throwAdviceDetailsOpen = false;
+        state.throwAdviceModalId = "";
       } else {
         state.battle.rounds.push(createBattleRound(round.roundNumber + 1));
         state.throwAdviceDetailsOpen = false;
+        state.throwAdviceModalId = "";
       }
       render();
     }
@@ -4730,6 +4855,18 @@ PS_SIMULATOR_HTML = """<!doctype html>
       });
       document.querySelector("#battle-current-round .active-throw-advice-details")?.addEventListener("toggle", event => {
         state.throwAdviceDetailsOpen = event.currentTarget.open;
+      });
+      document.querySelectorAll("[data-throw-advice-modal-id]").forEach(button => {
+        button.addEventListener("click", event => {
+          openThrowAdviceModal(event.currentTarget.dataset.throwAdviceModalId);
+        });
+      });
+      document.querySelectorAll("[data-close-throw-advice-modal]").forEach(element => {
+        element.addEventListener("click", event => {
+          if (event.target === event.currentTarget || event.currentTarget.tagName === "BUTTON") {
+            closeThrowAdviceModal();
+          }
+        });
       });
       document.getElementById("auto-opponent-pick")?.addEventListener("click", autoSelectOpponentLikelyDeck);
       document.getElementById("roll-round")?.addEventListener("click", rollBattleRound);
@@ -5630,6 +5767,12 @@ PS_SIMULATOR_HTML = """<!doctype html>
       if (!state.battle) return;
       state.battle.seed = event.target.value || "sample-seed-001";
       render();
+    });
+
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape") {
+        closeThrowAdviceModal();
+      }
     });
 
     loadDataset().catch(error => {
