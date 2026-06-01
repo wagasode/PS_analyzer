@@ -878,14 +878,30 @@ PS_SIMULATOR_HTML = """<!doctype html>
       display: grid;
       gap: 6px;
       min-width: 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
     }
 
     .throw-advice-disclosure summary {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
       width: fit-content;
       cursor: pointer;
+      border: 1px solid #99f6e4;
+      border-radius: 999px;
+      padding: 2px 8px;
+      background: var(--accent-soft);
       color: var(--accent);
       font-size: 12px;
       font-weight: 800;
+      line-height: 1.2;
+    }
+
+    .throw-advice-disclosure[open] summary {
+      border-bottom: 1px solid #99f6e4;
+      margin-bottom: 4px;
     }
 
     .throw-advice-definition-list {
@@ -914,30 +930,82 @@ PS_SIMULATOR_HTML = """<!doctype html>
       min-width: 0;
     }
 
-    .throw-advice-table-wrap {
-      overflow-x: auto;
+    .throw-advice-candidate-list {
+      display: grid;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .throw-advice-candidate-card {
+      display: grid;
+      gap: 8px;
       border: 1px solid var(--border);
       border-radius: 8px;
       background: #fff;
+      padding: 8px;
+      min-width: 0;
     }
 
-    .throw-advice-table {
-      min-width: 900px;
+    .throw-advice-candidate-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+      min-width: 0;
+    }
+
+    .throw-advice-score-pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 2px 8px;
+      background: #f8fafc;
+      color: var(--muted);
       font-size: 12px;
-    }
-
-    .throw-advice-table th,
-    .throw-advice-table td {
-      padding: 7px 8px;
-    }
-
-    .throw-advice-table .numeric {
-      text-align: right;
+      font-weight: 800;
+      line-height: 1.2;
       white-space: nowrap;
     }
 
-    .throw-advice-reason {
-      min-width: 180px;
+    .throw-advice-metric-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(72px, 1fr));
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .throw-advice-metric {
+      display: grid;
+      gap: 2px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 5px 6px;
+      background: #f8fafc;
+      min-width: 0;
+    }
+
+    .throw-advice-metric span {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1.1;
+    }
+
+    .throw-advice-metric strong {
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.15;
+      white-space: nowrap;
+    }
+
+    .throw-advice-candidate-reason {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+      overflow-wrap: anywhere;
     }
 
     .throw-advice-matchups {
@@ -1682,6 +1750,10 @@ PS_SIMULATOR_HTML = """<!doctype html>
       .throw-advice-definition-list div {
         grid-template-columns: 1fr;
         gap: 2px;
+      }
+
+      .throw-advice-metric-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
     }
 
@@ -3527,19 +3599,23 @@ PS_SIMULATOR_HTML = """<!doctype html>
           <dl class="throw-advice-definition-list">
             <div>
               <dt>総合</dt>
-              <dd>平均勝率、最低勝率、強有利数、危険数、欠損数をまとめて見た候補です。</dd>
+              <dd>Score = 平均勝率(%) + 最低勝率(%) × 0.3 + 強有利数 × 2 - 危険数 × 3 - 欠損数 × 5。Score最大の候補です。</dd>
             </div>
             <div>
               <dt>安定</dt>
-              <dd>最低勝率を優先し、悪い対面を作りにくい候補です。</dd>
+              <dd>最低勝率が最大の候補です。同点時は平均勝率が高い、危険数が少ない、欠損数が少ない順で選びます。</dd>
             </div>
             <div>
               <dt>攻撃</dt>
-              <dd>強有利数と最高勝率を優先し、上振れを取りにいく候補です。</dd>
+              <dd>強有利数が最大の候補です。同点時は最高勝率、平均勝率が高い、欠損数が少ない順で選びます。</dd>
             </div>
             <div>
               <dt>危険候補</dt>
-              <dd>40%以下の対面を含む候補です。</dd>
+              <dd>危険数が1以上の候補です。危険数は、相手候補に対する自分側勝率が40%以下の対面数です。</dd>
+            </div>
+            <div>
+              <dt>しきい値</dt>
+              <dd>有利: 50%以上 / 不利: 50%未満 / 危険: 40%以下 / 強有利: 60%以上。</dd>
             </div>
           </dl>
         </details>
@@ -3564,14 +3640,29 @@ PS_SIMULATOR_HTML = """<!doctype html>
       `;
     }
 
-    function throwAdviceRiskyHtml(candidates) {
+    function throwAdviceRiskyReason(candidates, allCandidates) {
+      const rankedCandidates = [...(allCandidates || [])].filter(usableThrowCandidate);
+      if (!rankedCandidates.length) return "評価対象候補なし";
+      if (!candidates.length) {
+        const lowest = [...rankedCandidates].sort((left, right) => (
+          numericMetric(left.minWinRate, Number.POSITIVE_INFINITY) - numericMetric(right.minWinRate, Number.POSITIVE_INFINITY)
+          || deckIndex(left.deckId) - deckIndex(right.deckId)
+        ))[0];
+        return `危険0 / 全候補の最低勝率 ${formatWinRateDecimal(lowest.minWinRate)} / 評価候補 ${rankedCandidates.length}`;
+      }
+      return candidates.map(candidate => (
+        `${deckDisplayNameById(candidate.deckId)}: 危険${candidate.dangerCount} / 最低${formatWinRateDecimal(candidate.minWinRate)} / 平均${formatWinRateDecimal(candidate.averageWinRate)}`
+      )).join(" / ");
+    }
+
+    function throwAdviceRiskyHtml(candidates, allCandidates) {
       return `
         <div class="throw-advice-summary-item">
           <span class="source-note">危険候補</span>
           ${candidates.length
             ? `<div class="deck-token-row">${candidates.map(candidate => throwAdviceDeckTokenHtml(candidate.deckId, "self")).join("")}</div>`
             : `<strong>なし</strong>`}
-          ${throwAdviceMetricDisclosureHtml("内訳", candidates.length ? "40%以下対面を含む候補です。" : "40%以下対面はありません。")}
+          ${throwAdviceMetricDisclosureHtml("内訳", throwAdviceRiskyReason(candidates, allCandidates))}
         </div>
       `;
     }
@@ -3593,6 +3684,30 @@ PS_SIMULATOR_HTML = """<!doctype html>
       `;
     }
 
+    function throwAdviceMetricHtml(label, value) {
+      return `
+        <div class="throw-advice-metric">
+          <span>${escapeHtml(label)}</span>
+          <strong>${escapeHtml(String(value))}</strong>
+        </div>
+      `;
+    }
+
+    function throwAdviceCandidateMetricGridHtml(candidate) {
+      return `
+        <div class="throw-advice-metric-grid">
+          ${throwAdviceMetricHtml("平均", formatWinRateDecimal(candidate.averageWinRate))}
+          ${throwAdviceMetricHtml("最低", formatWinRateDecimal(candidate.minWinRate))}
+          ${throwAdviceMetricHtml("最高", formatWinRateDecimal(candidate.maxWinRate))}
+          ${throwAdviceMetricHtml("有利", candidate.favorableCount)}
+          ${throwAdviceMetricHtml("不利", candidate.unfavorableCount)}
+          ${throwAdviceMetricHtml("危険", candidate.dangerCount)}
+          ${throwAdviceMetricHtml("強有利", candidate.strongCount)}
+          ${throwAdviceMetricHtml("欠損", candidate.missingCount)}
+        </div>
+      `;
+    }
+
     function throwAdviceCandidateRowsHtml(candidates) {
       if (!candidates.length) {
         return `<div class="validation-item warn">自分側候補がありません。</div>`;
@@ -3600,44 +3715,18 @@ PS_SIMULATOR_HTML = """<!doctype html>
       return `
         <details class="throw-advice-disclosure">
           <summary>候補別の数値</summary>
-          <div class="throw-advice-table-wrap">
-            <table class="throw-advice-table">
-              <thead>
-                <tr>
-                  <th>候補</th>
-                  <th class="numeric">平均</th>
-                  <th class="numeric">最低</th>
-                  <th class="numeric">最高</th>
-                  <th class="numeric">有利</th>
-                  <th class="numeric">不利</th>
-                  <th class="numeric">危険</th>
-                  <th class="numeric">強有利</th>
-                  <th class="numeric">欠損</th>
-                  <th class="numeric">Score</th>
-                  <th>理由</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${candidates.map(candidate => `
-                  <tr>
-                    <td>
-                      ${throwAdviceDeckTokenHtml(candidate.deckId, "self")}
-                      ${throwAdviceMatchupChipsHtml(candidate)}
-                    </td>
-                    <td class="numeric">${escapeHtml(formatWinRateDecimal(candidate.averageWinRate))}</td>
-                    <td class="numeric">${escapeHtml(formatWinRateDecimal(candidate.minWinRate))}</td>
-                    <td class="numeric">${escapeHtml(formatWinRateDecimal(candidate.maxWinRate))}</td>
-                    <td class="numeric">${candidate.favorableCount}</td>
-                    <td class="numeric">${candidate.unfavorableCount}</td>
-                    <td class="numeric">${candidate.dangerCount}</td>
-                    <td class="numeric">${candidate.strongCount}</td>
-                    <td class="numeric">${candidate.missingCount}</td>
-                    <td class="numeric">${escapeHtml(formatThrowAdviceScore(candidate.score))}</td>
-                    <td class="throw-advice-reason">${escapeHtml(candidate.reason)}</td>
-                  </tr>
-                `).join("")}
-              </tbody>
-            </table>
+          <div class="throw-advice-candidate-list">
+            ${candidates.map(candidate => `
+              <section class="throw-advice-candidate-card">
+                <div class="throw-advice-candidate-head">
+                  ${throwAdviceDeckTokenHtml(candidate.deckId, "self")}
+                  <span class="throw-advice-score-pill">Score ${escapeHtml(formatThrowAdviceScore(candidate.score))}</span>
+                </div>
+                ${throwAdviceCandidateMetricGridHtml(candidate)}
+                ${throwAdviceMatchupChipsHtml(candidate)}
+                <div class="throw-advice-candidate-reason">Score内訳: ${escapeHtml(candidate.reason)}</div>
+              </section>
+            `).join("")}
           </div>
         </details>
       `;
@@ -3672,7 +3761,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
               ${throwAdvicePickHtml("総合おすすめ", advice.recommendedDeck)}
               ${throwAdvicePickHtml("安定投げ", advice.stableDeck)}
               ${throwAdvicePickHtml("攻撃的投げ", advice.aggressiveDeck)}
-              ${throwAdviceRiskyHtml(advice.riskyDecks)}
+              ${throwAdviceRiskyHtml(advice.riskyDecks, advice.candidates)}
             </div>
             ${throwAdviceOpponentLikelyHtml(advice)}
             ${throwAdviceCandidateRowsHtml(advice.candidates)}
