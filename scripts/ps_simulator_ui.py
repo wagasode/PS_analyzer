@@ -3770,10 +3770,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
       `;
     }
 
-    function throwAdviceCandidateBreakdownHtml(candidate) {
-      if (!candidate || !candidate.details?.length) {
-        return `<div class="throw-advice-breakdown-note">相手側候補がなく、勝率統計を算出できません。</div>`;
-      }
+    function throwAdviceCandidateBreakdownMetricsHtml(candidate) {
       return `
         <div class="throw-advice-breakdown-grid">
           ${throwAdviceMetricHtml("平均", formatWinRateDecimal(candidate.averageWinRate))}
@@ -3786,6 +3783,15 @@ PS_SIMULATOR_HTML = """<!doctype html>
           ${throwAdviceMetricHtml("不利", candidate.unfavorableCount)}
           ${throwAdviceMetricHtml("データなし", candidate.missingCount)}
         </div>
+      `;
+    }
+
+    function throwAdviceCandidateBreakdownHtml(candidate) {
+      if (!candidate || !candidate.details?.length) {
+        return `<div class="throw-advice-breakdown-note">相手側候補がなく、勝率統計を算出できません。</div>`;
+      }
+      return `
+        ${throwAdviceCandidateBreakdownMetricsHtml(candidate)}
         <div class="throw-advice-breakdown-note">${escapeHtml(throwAdviceCandidateReason(candidate))}</div>
       `;
     }
@@ -3799,11 +3805,15 @@ PS_SIMULATOR_HTML = """<!doctype html>
           || deckIndex(left.deckId) - deckIndex(right.deckId)
         ))[0];
         return `
-          <div class="throw-advice-breakdown-grid">
-            ${throwAdviceMetricHtml("不利", 0)}
-            ${throwAdviceMetricHtml("全候補の最低", formatWinRateDecimal(lowest.minWinRate))}
-            ${throwAdviceMetricHtml("評価候補", rankedCandidates.length)}
-          </div>
+          <div class="throw-advice-breakdown-note">不利候補はありません。全候補のうち最低勝率が最も低い候補を参考表示します。</div>
+          <section class="throw-advice-candidate-card compact">
+            <div class="throw-advice-candidate-head">
+              ${throwAdviceDeckTokenHtml(lowest.deckId, "self")}
+              <span class="source-note">評価候補 ${escapeHtml(String(rankedCandidates.length))}</span>
+            </div>
+            ${throwAdviceCandidateBreakdownMetricsHtml(lowest)}
+            <div class="throw-advice-breakdown-note">${escapeHtml(throwAdviceCandidateReason(lowest))}</div>
+          </section>
         `;
       }
       return `
@@ -3813,11 +3823,8 @@ PS_SIMULATOR_HTML = """<!doctype html>
               <div class="throw-advice-candidate-head">
                 ${throwAdviceDeckTokenHtml(candidate.deckId, "self")}
               </div>
-              <div class="throw-advice-breakdown-grid">
-                ${throwAdviceMetricHtml("不利", candidate.unfavorableCount)}
-                ${throwAdviceMetricHtml("最低", formatWinRateDecimal(candidate.minWinRate))}
-                ${throwAdviceMetricHtml("平均", formatWinRateDecimal(candidate.averageWinRate))}
-              </div>
+              ${throwAdviceCandidateBreakdownMetricsHtml(candidate)}
+              <div class="throw-advice-breakdown-note">${escapeHtml(throwAdviceCandidateReason(candidate))}</div>
             </section>
           `).join("")}
         </div>
