@@ -3703,6 +3703,11 @@ PS_SIMULATOR_HTML = """<!doctype html>
       round.winRateFallback = Boolean(lookup.isFallback);
     }
 
+    function roundWinRateDisplayHtml(round) {
+      if (!round?.selfSelectedDeckId || !round?.opponentSelectedDeckId) return "";
+      return `<div class="source-note">相性表における勝率: ${formatWinRate(round.selfWinRate)}</div>`;
+    }
+
     function refreshActiveRoundWinRate() {
       const round = activeBattleRound();
       if (!round || round.result) return;
@@ -4026,14 +4031,13 @@ PS_SIMULATOR_HTML = """<!doctype html>
           <section class="battle-card ${battle.isComplete ? "ended" : ""}">
             <h3>ラウンドスコア</h3>
             <div class="scoreline">自分側 ${battle.score.self} - ${battle.score.opponent} 相手側</div>
-            <div class="source-note">現在バトル: ${escapeHtml(currentBattleLabel)}</div>
+            <div class="source-note">現在: ${escapeHtml(currentBattleLabel)}</div>
           </section>
         `,
         `
           <section class="battle-card ${battle.isComplete ? "ended" : ""}">
             <h3>ラウンド条件</h3>
             <div><strong>3勝先取</strong></div>
-            <div class="source-note">最大5バトルで終了します。</div>
           </section>
         `
       ].join("");
@@ -4061,14 +4065,11 @@ PS_SIMULATOR_HTML = """<!doctype html>
       const activeAdvice = buildBattleThrowAdvice(battleThrowDeckSetForRound(active));
       const opponentLikelyDeckId = opponentLikelyDeckIdForRound(active);
       const canAutoSelectOpponent = Boolean(opponentLikelyDeckId);
-      const opponentAutoNote = opponentLikelyDeckId
-        ? `候補: ${deckDisplayNameById(opponentLikelyDeckId)}`
-        : "相手有力候補を算出できません。";
       document.getElementById("battle-current-round").innerHTML = `
         <div class="deck-class-group-head">
           <div>
             <h3>${escapeHtml(battleLabel(active.roundNumber))} 選出</h3>
-            <div class="source-note">採用勝率: ${formatWinRate(active.selfWinRate)} / ${escapeHtml(winRateSourceDetailLabel(active.winRateSource))} / ${escapeHtml(active.winRateNote)}</div>
+            ${roundWinRateDisplayHtml(active)}
             ${activeWarnings.map(message => (
               `<div class="validation-item warn">${escapeHtml(message)}</div>`
             )).join("")}
@@ -4083,10 +4084,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
           </section>
           <section class="battle-card">
             <div class="deck-class-group-head">
-              <div>
-                <h3>相手側候補</h3>
-                <div class="source-note">${escapeHtml(opponentAutoNote)}</div>
-              </div>
+              <h3>相手側候補</h3>
               <button id="auto-opponent-pick" type="button" ${canAutoSelectOpponent ? "" : "disabled"}>相手自動選択</button>
             </div>
             ${renderChoiceList("opponent", active)}
@@ -4142,7 +4140,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
                 ${battleSideResultHtml(round.result, "opponent")}
               </span>
             </div>
-            <div class="source-note">採用勝率 ${formatWinRate(round.selfWinRate)} / ${escapeHtml(winRateSourceDetailLabel(round.winRateSource))}</div>
+            ${roundWinRateDisplayHtml(round)}
           </div>
         `;
       }).join("");
