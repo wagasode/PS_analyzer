@@ -834,7 +834,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
       background: #fff;
     }
 
-    .active-throw-advice-details summary {
+    .active-throw-advice-details > summary {
       display: inline-flex;
       align-items: center;
       gap: 8px;
@@ -851,18 +851,18 @@ PS_SIMULATOR_HTML = """<!doctype html>
       box-shadow: 0 1px 0 rgba(15, 23, 42, 0.06);
     }
 
-    .active-throw-advice-details summary::-webkit-details-marker {
+    .active-throw-advice-details > summary::-webkit-details-marker {
       display: none;
     }
 
-    .active-throw-advice-details summary::before {
+    .active-throw-advice-details > summary::before {
       content: "▶";
       color: var(--accent);
       font-size: 11px;
       line-height: 1;
     }
 
-    .active-throw-advice-details[open] summary::before {
+    .active-throw-advice-details[open] > summary::before {
       content: "▼";
     }
 
@@ -907,7 +907,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
       background: transparent;
     }
 
-    .throw-advice-disclosure summary {
+    .throw-advice-disclosure > summary {
       display: inline-flex;
       align-items: center;
       gap: 5px;
@@ -926,7 +926,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
       box-shadow: 0 1px 0 rgba(15, 23, 42, 0.06);
     }
 
-    .throw-advice-disclosure summary::-webkit-details-marker {
+    .throw-advice-disclosure > summary::-webkit-details-marker {
       display: none;
     }
 
@@ -954,18 +954,18 @@ PS_SIMULATOR_HTML = """<!doctype html>
       line-height: 1;
     }
 
-    .throw-advice-disclosure summary::before {
+    .throw-advice-disclosure > summary::before {
       content: "▶";
       color: var(--accent);
       font-size: 10px;
       line-height: 1;
     }
 
-    .throw-advice-disclosure[open] summary::before {
+    .throw-advice-disclosure[open] > summary::before {
       content: "▼";
     }
 
-    .throw-advice-disclosure[open] summary {
+    .throw-advice-disclosure[open] > summary {
       border-bottom: 1px solid #5eead4;
       margin-bottom: 4px;
       background: var(--accent-soft);
@@ -1733,7 +1733,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
       font-weight: 700;
     }
 
-    details[open] summary {
+    details[open] > summary {
       border-bottom: 1px solid var(--border);
     }
 
@@ -1758,7 +1758,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
       font-weight: 600;
     }
 
-    .deck-status-details[open] summary {
+    .deck-status-details[open] > summary {
       border-bottom: 0;
       padding-bottom: 6px;
     }
