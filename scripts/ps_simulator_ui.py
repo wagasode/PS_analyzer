@@ -816,8 +816,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
     .battle-card,
     .battle-round,
     .battle-submission,
-    .battle-list,
-    .throw-advice-card {
+    .battle-list {
       display: grid;
       gap: 9px;
       min-width: 0;
@@ -831,36 +830,42 @@ PS_SIMULATOR_HTML = """<!doctype html>
       align-content: start;
     }
 
-    .throw-advice-section {
-      display: grid;
-      gap: 10px;
-      min-width: 0;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 12px;
+    .active-throw-advice-details {
       background: #fff;
     }
 
-    .throw-advice-list {
-      display: grid;
-      gap: 12px;
+    .active-throw-advice-details summary {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
       min-width: 0;
     }
 
-    .throw-advice-head,
+    .active-throw-advice-summary {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      min-width: 0;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .active-throw-advice-body {
+      display: grid;
+      gap: 10px;
+      min-width: 0;
+      padding: 12px;
+    }
+
     .throw-advice-cpu-head {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 8px;
       flex-wrap: wrap;
-      min-width: 0;
-    }
-
-    .throw-advice-candidate-groups {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 10px;
       min-width: 0;
     }
 
@@ -1638,7 +1643,6 @@ PS_SIMULATOR_HTML = """<!doctype html>
       .battle-status-grid,
       .battle-round-grid,
       .battle-side-grid,
-      .throw-advice-candidate-groups,
       .throw-advice-summary-grid,
       .summary-overview-grid,
       .battle-summary-rounds,
@@ -1804,7 +1808,6 @@ PS_SIMULATOR_HTML = """<!doctype html>
               <div id="battle-opponent-deck-list"></div>
             </div>
           </div>
-          <section class="throw-advice-section" id="battle-throw-advice" aria-labelledby="battle-throw-advice-title"></section>
           <section class="battle-summary-section" aria-labelledby="battle-summary-title">
             <div class="deck-class-group-head">
               <h3 id="battle-summary-title">スクショ共有用サマリー</h3>
@@ -1835,7 +1838,6 @@ PS_SIMULATOR_HTML = """<!doctype html>
     const matchupApiUrl = "/api/ps-simulator/matchups";
     const fallbackWinRate = 0.5;
     const fallbackWinRateNote = "相性表未定義のため0.5";
-    const throwAdviceRoundNumbers = [1, 2, 3];
     const matchupStatsThresholds = {
       favorable: 0.5,
       danger: 0.4,
@@ -1884,6 +1886,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
         opponent: {}
       },
       assignments: {},
+      throwAdviceDetailsOpen: false,
       battle: null
     };
     let isBattleSummaryPngExporting = false;
@@ -2684,6 +2687,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
       // 後続状態を保持せず、この関数で編集ラウンド以降を作り直す。
       state.battle.rounds = state.battle.rounds.filter(round => round.roundNumber < roundNumber);
       state.battle.score = scoreFromRounds(state.battle.rounds);
+      state.throwAdviceDetailsOpen = false;
       state.battle.isComplete = false;
       state.battle.winner = "";
       state.battle.finishedAtRound = null;
@@ -2697,6 +2701,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
       state.battle.createdAt = new Date().toISOString();
       state.battle.rounds = [];
       state.battle.score = { self: 0, opponent: 0 };
+      state.throwAdviceDetailsOpen = false;
       state.battle.isComplete = false;
       state.battle.winner = "";
       state.battle.finishedAtRound = null;
@@ -3502,56 +3507,42 @@ PS_SIMULATOR_HTML = """<!doctype html>
       `;
     }
 
-    function throwAdviceCardHtml(advice) {
-      return `
-        <section class="throw-advice-card">
-          <div class="throw-advice-head">
-            <h4>${escapeHtml(battleLabel(advice.roundNumber))}: ${advice.expectedCount}デッキ枠</h4>
-            <span class="badge">Role ${escapeHtml(advice.role)}</span>
-          </div>
-          <div class="throw-advice-candidate-groups">
-            <div class="deck-list-group">
-              <strong>自分側候補</strong>
-              ${deckGroupListHtml(state.battle.selfSubmission, advice.selfDeckIds)}
-            </div>
-            <div class="deck-list-group">
-              <strong>相手側候補</strong>
-              ${deckGroupListHtml(state.battle.opponentSubmission, advice.opponentDeckIds)}
-            </div>
-          </div>
-          ${advice.warnings.map(message => `<div class="validation-item warn">${escapeHtml(message)}</div>`).join("")}
-          <div class="throw-advice-summary-grid">
-            ${throwAdvicePickHtml("総合おすすめ", advice.recommendedDeck)}
-            ${throwAdvicePickHtml("安定投げ", advice.stableDeck)}
-            ${throwAdvicePickHtml("攻撃的投げ", advice.aggressiveDeck)}
-            ${throwAdviceRiskyHtml(advice.riskyDecks)}
-          </div>
-          ${throwAdviceOpponentCpuHtml(advice)}
-          ${throwAdviceCandidateRowsHtml(advice.candidates)}
-        </section>
-      `;
+    function activeThrowAdviceSummaryText(advice) {
+      if (!advice?.recommendedDeck) {
+        return "参考評価: 算出不可";
+      }
+      const riskyText = advice.riskyDecks.length ? `危険${advice.riskyDecks.length}` : "危険なし";
+      const missingCount = advice.candidates.reduce((total, candidate) => total + candidate.missingCount, 0);
+      const warningText = advice.warnings.length ? `warning ${advice.warnings.length}` : "warningなし";
+      return [
+        `参考評価: 総合 ${deckDisplayNameById(advice.recommendedDeck.deckId)}`,
+        `安定 ${advice.stableDeck ? deckDisplayNameById(advice.stableDeck.deckId) : "算出不可"}`,
+        riskyText,
+        `欠損${missingCount}`,
+        warningText
+      ].join(" / ");
     }
 
-    function renderBattleThrowAdvice() {
-      const container = document.getElementById("battle-throw-advice");
-      if (!container) return;
-      if (!state.battle) {
-        container.innerHTML = "";
-        return;
-      }
-      const advices = throwAdviceRoundNumbers
-        .map(battleThrowDeckSetForRound)
-        .map(buildBattleThrowAdvice);
-      container.innerHTML = `
-        <div class="deck-class-group-head">
-          <div>
-            <h3 id="battle-throw-advice-title">3/2/2 投げ判定</h3>
-            <div class="source-note">固定されたA/B/C割当に基づくBattle単位の参考評価です。</div>
+    function activeThrowAdviceDetailsHtml(advice) {
+      if (!advice) return "";
+      return `
+        <details class="active-throw-advice-details"${state.throwAdviceDetailsOpen ? " open" : ""}>
+          <summary>
+            <strong>参考評価</strong>
+            <span class="active-throw-advice-summary">${escapeHtml(activeThrowAdviceSummaryText(advice))}</span>
+          </summary>
+          <div class="active-throw-advice-body">
+            ${advice.warnings.map(message => `<div class="validation-item warn">${escapeHtml(message)}</div>`).join("")}
+            <div class="throw-advice-summary-grid">
+              ${throwAdvicePickHtml("総合おすすめ", advice.recommendedDeck)}
+              ${throwAdvicePickHtml("安定投げ", advice.stableDeck)}
+              ${throwAdvicePickHtml("攻撃的投げ", advice.aggressiveDeck)}
+              ${throwAdviceRiskyHtml(advice.riskyDecks)}
+            </div>
+            ${throwAdviceOpponentCpuHtml(advice)}
+            ${throwAdviceCandidateRowsHtml(advice.candidates)}
           </div>
-        </div>
-        <div class="throw-advice-list">
-          ${advices.map(throwAdviceCardHtml).join("")}
-        </div>
+        </details>
       `;
     }
 
@@ -3669,8 +3660,10 @@ PS_SIMULATOR_HTML = """<!doctype html>
         state.battle.isComplete = true;
         state.battle.winner = state.battle.score.self > state.battle.score.opponent ? "self" : "opponent";
         state.battle.finishedAtRound = round.roundNumber;
+        state.throwAdviceDetailsOpen = false;
       } else {
         state.battle.rounds.push(createBattleRound(round.roundNumber + 1));
+        state.throwAdviceDetailsOpen = false;
       }
       render();
     }
@@ -3916,6 +3909,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
         ...(active.candidateWarnings || []),
         ...(active.matchupWarnings || [])
       ];
+      const activeAdvice = buildBattleThrowAdvice(battleThrowDeckSetForRound(active.roundNumber));
       document.getElementById("battle-current-round").innerHTML = `
         <div class="deck-class-group-head">
           <div>
@@ -3940,6 +3934,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
             ${renderChoiceList("opponent", active)}
           </section>
         </div>
+        ${activeThrowAdviceDetailsHtml(activeAdvice)}
         <div class="battle-controls">
           <button class="primary" id="roll-round" type="button" ${canDecide ? "" : "disabled"}>抽選</button>
           <button id="manual-self-win" type="button" ${canDecide ? "" : "disabled"}>手動: ${escapeHtml(playerSideText(selfPlayer, "self"))}勝ち</button>
@@ -4390,12 +4385,6 @@ PS_SIMULATOR_HTML = """<!doctype html>
         document.getElementById("battle-self-deck-list").innerHTML = "";
         document.getElementById("battle-opponent-deck-list").innerHTML = "";
         document.getElementById("battle-progress").innerHTML = "";
-        document.getElementById("battle-throw-advice").innerHTML = `
-          <div class="deck-class-group-head">
-            <h3 id="battle-throw-advice-title">3/2/2 投げ判定</h3>
-          </div>
-          <div class="validation-item warn">投げ判定は、自分側・相手側の提出案が成立すると表示されます。</div>
-        `;
         document.getElementById("battle-summary-card").innerHTML = `
           <div class="validation-item warn">共有用サマリーは、自分側・相手側の提出案が成立すると表示されます。</div>
         `;
@@ -4407,13 +4396,15 @@ PS_SIMULATOR_HTML = """<!doctype html>
       renderCurrentRound();
       renderBattleDeckLists();
       renderBattleProgress();
-      renderBattleThrowAdvice();
       renderBattleSummaryCard();
 
       document.querySelectorAll("[data-battle-side]").forEach(button => {
         button.addEventListener("click", event => {
           selectBattleDeck(event.currentTarget.dataset.battleSide, event.currentTarget.dataset.battleDeckId);
         });
+      });
+      document.querySelector("#battle-current-round .active-throw-advice-details")?.addEventListener("toggle", event => {
+        state.throwAdviceDetailsOpen = event.currentTarget.open;
       });
       document.getElementById("roll-round")?.addEventListener("click", rollBattleRound);
       document.getElementById("manual-self-win")?.addEventListener("click", () => decideBattleRound("self_win"));
