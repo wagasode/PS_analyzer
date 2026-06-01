@@ -816,7 +816,8 @@ PS_SIMULATOR_HTML = """<!doctype html>
     .battle-card,
     .battle-round,
     .battle-submission,
-    .battle-list {
+    .battle-list,
+    .throw-advice-card {
       display: grid;
       gap: 9px;
       min-width: 0;
@@ -828,6 +829,111 @@ PS_SIMULATOR_HTML = """<!doctype html>
 
     .battle-submission {
       align-content: start;
+    }
+
+    .throw-advice-section {
+      display: grid;
+      gap: 10px;
+      min-width: 0;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      background: #fff;
+    }
+
+    .throw-advice-list {
+      display: grid;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .throw-advice-head,
+    .throw-advice-cpu-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+      min-width: 0;
+    }
+
+    .throw-advice-candidate-groups {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .throw-advice-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px 12px;
+      min-width: 0;
+    }
+
+    .throw-advice-summary-item,
+    .throw-advice-cpu {
+      display: grid;
+      gap: 5px;
+      min-width: 0;
+      padding-top: 8px;
+      border-top: 1px solid var(--border);
+    }
+
+    .throw-advice-table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .throw-advice-table {
+      min-width: 900px;
+      font-size: 12px;
+    }
+
+    .throw-advice-table th,
+    .throw-advice-table td {
+      padding: 7px 8px;
+    }
+
+    .throw-advice-table .numeric {
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .throw-advice-reason {
+      min-width: 180px;
+    }
+
+    .throw-advice-matchups {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 5px;
+      min-width: 0;
+    }
+
+    .throw-advice-matchup-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      max-width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 2px 6px;
+      background: #f8fafc;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1.2;
+      overflow-wrap: anywhere;
+    }
+
+    .throw-advice-matchup-chip.missing {
+      border-color: #fdba74;
+      background: var(--warn-soft);
+      color: var(--warn);
     }
 
     .battle-assignment-list {
@@ -1532,6 +1638,8 @@ PS_SIMULATOR_HTML = """<!doctype html>
       .battle-status-grid,
       .battle-round-grid,
       .battle-side-grid,
+      .throw-advice-candidate-groups,
+      .throw-advice-summary-grid,
       .summary-overview-grid,
       .battle-summary-rounds,
       .summary-candidate-grid {
@@ -1696,6 +1804,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
               <div id="battle-opponent-deck-list"></div>
             </div>
           </div>
+          <section class="throw-advice-section" id="battle-throw-advice" aria-labelledby="battle-throw-advice-title"></section>
           <section class="battle-summary-section" aria-labelledby="battle-summary-title">
             <div class="deck-class-group-head">
               <h3 id="battle-summary-title">スクショ共有用サマリー</h3>
@@ -1726,6 +1835,18 @@ PS_SIMULATOR_HTML = """<!doctype html>
     const matchupApiUrl = "/api/ps-simulator/matchups";
     const fallbackWinRate = 0.5;
     const fallbackWinRateNote = "相性表未定義のため0.5";
+    const throwAdviceRoundNumbers = [1, 2, 3];
+    const matchupStatsThresholds = {
+      favorable: 0.5,
+      danger: 0.4,
+      strong: 0.6
+    };
+    const throwAdviceScoreWeights = {
+      minWinRate: 0.3,
+      strongCount: 2,
+      dangerCount: -3,
+      missingCount: -5
+    };
     const allPlayersTeamValue = "";
     const unassignedTeamValue = "__unassigned__";
     const unassignedTeamLabel = "未設定";
@@ -2996,6 +3117,444 @@ PS_SIMULATOR_HTML = """<!doctype html>
       };
     }
 
+    function formatWinRateDecimal(value) {
+      if (value === null || value === undefined || value === "") return "算出不可";
+      const number = Number(value);
+      if (!Number.isFinite(number)) return "算出不可";
+      return `${(number * 100).toFixed(1)}%`;
+    }
+
+    function formatThrowAdviceScore(value) {
+      if (value === null || value === undefined || value === "") return "算出不可";
+      const number = Number(value);
+      if (!Number.isFinite(number)) return "算出不可";
+      return number.toFixed(1);
+    }
+
+    function numericMetric(value, fallback = Number.NEGATIVE_INFINITY) {
+      if (value === null || value === undefined || value === "") return fallback;
+      const number = Number(value);
+      return Number.isFinite(number) ? number : fallback;
+    }
+
+    function deckDisplayNameById(deckId) {
+      return deckDisplayName(deckById(deckId)) || deckId || "未選択";
+    }
+
+    function throwAdviceDeckTokenHtml(deckId, side) {
+      const submission = side === "opponent" ? state.battle?.opponentSubmission : state.battle?.selfSubmission;
+      return deckTokenHtml(deckId, {
+        player: playerForDeckInSubmission(submission, deckId)
+      });
+    }
+
+    function throwAdviceCandidateReason(candidate) {
+      if (
+        !candidate
+        || !candidate.details?.length
+        || candidate.averageWinRate === null
+        || candidate.averageWinRate === undefined
+        || !Number.isFinite(Number(candidate.averageWinRate))
+      ) {
+        return "相手側候補がなく、勝率統計を算出できません。";
+      }
+      return [
+        `平均${formatWinRateDecimal(candidate.averageWinRate)}`,
+        `最低${formatWinRateDecimal(candidate.minWinRate)}`,
+        `最高${formatWinRateDecimal(candidate.maxWinRate)}`,
+        `危険${candidate.dangerCount}`,
+        `強有利${candidate.strongCount}`,
+        `欠損${candidate.missingCount}`
+      ].join(" / ");
+    }
+
+    function buildMatchupStatsForCandidate(selfDeckId, opponentDeckIds, options = {}) {
+      const opponentIds = uniqueDeckIds(opponentDeckIds || []);
+      const details = opponentIds.map(opponentDeckId => {
+        const lookup = lookupSelfWinRate(selfDeckId, opponentDeckId);
+        const rawWinRate = Number(lookup.winRate);
+        const parsed = Number.isFinite(rawWinRate);
+        const winRate = parsed ? rawWinRate : fallbackWinRate;
+        const missing = Boolean(lookup.isFallback || lookup.source?.type === "fallback" || !parsed);
+        const warnings = [
+          ...(lookup.warnings || []),
+          ...(!parsed ? [`winRateを数値として読めません: ${lookup.winRate}`] : [])
+        ];
+        return {
+          selfDeckId,
+          opponentDeckId,
+          winRate,
+          missing,
+          warnings,
+          source: lookup.source || {}
+        };
+      });
+      const rates = details.map(detail => detail.winRate);
+      const averageWinRate = rates.length
+        ? rates.reduce((total, value) => total + value, 0) / rates.length
+        : null;
+      const minWinRate = rates.length ? Math.min(...rates) : null;
+      const maxWinRate = rates.length ? Math.max(...rates) : null;
+      const favorableCount = details.filter(detail => detail.winRate >= matchupStatsThresholds.favorable).length;
+      const unfavorableCount = details.filter(detail => detail.winRate < matchupStatsThresholds.favorable).length;
+      const dangerCount = details.filter(detail => detail.winRate < matchupStatsThresholds.danger).length;
+      const strongCount = details.filter(detail => detail.winRate >= matchupStatsThresholds.strong).length;
+      const missingCount = details.filter(detail => detail.missing).length;
+      const score = rates.length
+        ? (
+            averageWinRate * 100
+            + minWinRate * 100 * throwAdviceScoreWeights.minWinRate
+            + strongCount * throwAdviceScoreWeights.strongCount
+            + dangerCount * throwAdviceScoreWeights.dangerCount
+            + missingCount * throwAdviceScoreWeights.missingCount
+          )
+        : null;
+      const selfDeck = deckById(selfDeckId);
+      const warnings = [];
+      if (!selfDeck) {
+        warnings.push(`候補デッキ定義が見つかりません: ${selfDeckId || "未選択"}`);
+      } else if (deckIsProvisional(selfDeck)) {
+        warnings.push(`${deckDisplayName(selfDeck)} は仮デッキです。`);
+      }
+      opponentIds.forEach(opponentDeckId => {
+        const opponentDeck = deckById(opponentDeckId);
+        if (!opponentDeck) {
+          warnings.push(`相手側デッキ定義が見つかりません: ${opponentDeckId || "未選択"}`);
+        } else if (deckIsProvisional(opponentDeck)) {
+          warnings.push(`${deckDisplayName(opponentDeck)} は仮デッキです。`);
+        }
+      });
+      if (missingCount > 0) {
+        warnings.push("一部の相性データが欠損しているため、評価は参考値です。");
+      }
+      if (!opponentIds.length) {
+        warnings.push("相手側候補がないため、勝率統計を算出できません。");
+      }
+      return {
+        deckId: selfDeckId,
+        opponentDeckIds: opponentIds,
+        details,
+        averageWinRate,
+        minWinRate,
+        maxWinRate,
+        favorableCount,
+        unfavorableCount,
+        dangerCount,
+        strongCount,
+        missingCount,
+        score,
+        warnings: uniqueStrings(warnings),
+        reason: "",
+        context: options.context || {}
+      };
+    }
+
+    function usableThrowCandidate(candidate) {
+      return Boolean(candidate && candidate.details?.length && Number.isFinite(Number(candidate.averageWinRate)));
+    }
+
+    function pickThrowAdviceCandidate(candidates, metrics) {
+      return [...(candidates || [])].filter(usableThrowCandidate).sort((left, right) => {
+        for (const metric of metrics) {
+          const diff = numericMetric(metric(right)) - numericMetric(metric(left));
+          if (diff !== 0) return diff;
+        }
+        return deckIndex(left.deckId) - deckIndex(right.deckId);
+      })[0] || null;
+    }
+
+    function battleThrowDeckSetForRound(roundNumber) {
+      const selfDeckIds = candidateDeckIdsForRound(state.battle?.selfSubmission, roundNumber, []);
+      const opponentDeckIds = candidateDeckIdsForRound(state.battle?.opponentSubmission, roundNumber, []);
+      return {
+        roundNumber,
+        role: roundRoleByNumber[roundNumber] || "",
+        expectedCount: expectedRoundCandidateCounts[roundNumber] || 0,
+        selfDeckIds,
+        opponentDeckIds,
+        warnings: [
+          ...validateRoundCandidates(roundNumber, selfDeckIds).map(message => `自分側: ${message}`),
+          ...validateRoundCandidates(roundNumber, opponentDeckIds).map(message => `相手側: ${message}`)
+        ]
+      };
+    }
+
+    function buildOpponentCpuPick(selfDeckId, opponentDeckIds) {
+      if (!selfDeckId) return null;
+      const details = uniqueDeckIds(opponentDeckIds || []).map(opponentDeckId => {
+        const lookup = lookupSelfWinRate(selfDeckId, opponentDeckId);
+        const rawWinRate = Number(lookup.winRate);
+        const parsed = Number.isFinite(rawWinRate);
+        return {
+          opponentDeckId,
+          selfWinRate: parsed ? rawWinRate : fallbackWinRate,
+          missing: Boolean(lookup.isFallback || lookup.source?.type === "fallback" || !parsed),
+          warnings: [
+            ...(lookup.warnings || []),
+            ...(!parsed ? [`winRateを数値として読めません: ${lookup.winRate}`] : [])
+          ],
+          source: lookup.source || {}
+        };
+      });
+      const selected = details.sort((left, right) => (
+        left.selfWinRate - right.selfWinRate
+        || Number(left.missing) - Number(right.missing)
+        || deckIndex(left.opponentDeckId) - deckIndex(right.opponentDeckId)
+      ))[0] || null;
+      if (!selected) {
+        return {
+          opponentDeckId: "",
+          selfWinRate: null,
+          missing: false,
+          warnings: ["相手側候補がないため、相手CPU候補を算出できません。"],
+          reason: "相手側候補がありません。"
+        };
+      }
+      return {
+        ...selected,
+        reason: `${deckDisplayNameById(selfDeckId)}に対する自分側勝率が${formatWinRateDecimal(selected.selfWinRate)}で、このBattle内では最も低い候補です。`
+      };
+    }
+
+    function buildBattleThrowAdvice(deckSet) {
+      const candidates = deckSet.selfDeckIds.map(deckId => {
+        const candidate = buildMatchupStatsForCandidate(deckId, deckSet.opponentDeckIds, {
+          context: {
+            roundNumber: deckSet.roundNumber,
+            role: deckSet.role
+          }
+        });
+        return {
+          ...candidate,
+          reason: throwAdviceCandidateReason(candidate)
+        };
+      });
+      const recommendedDeck = pickThrowAdviceCandidate(candidates, [
+        candidate => candidate.score,
+        candidate => candidate.averageWinRate,
+        candidate => candidate.minWinRate,
+        candidate => -candidate.missingCount,
+        candidate => -candidate.dangerCount
+      ]);
+      const stableDeck = pickThrowAdviceCandidate(candidates, [
+        candidate => candidate.minWinRate,
+        candidate => candidate.averageWinRate,
+        candidate => -candidate.dangerCount,
+        candidate => -candidate.missingCount
+      ]);
+      const aggressiveDeck = pickThrowAdviceCandidate(candidates, [
+        candidate => candidate.strongCount,
+        candidate => candidate.maxWinRate,
+        candidate => candidate.averageWinRate,
+        candidate => -candidate.missingCount
+      ]);
+      const riskyDecks = [...candidates].filter(candidate => candidate.dangerCount > 0).sort((left, right) => (
+        right.dangerCount - left.dangerCount
+        || numericMetric(left.minWinRate, Number.POSITIVE_INFINITY) - numericMetric(right.minWinRate, Number.POSITIVE_INFINITY)
+        || deckIndex(left.deckId) - deckIndex(right.deckId)
+      ));
+      const roundState = (state.battle?.rounds || []).find(round => round.roundNumber === deckSet.roundNumber);
+      const selectedSelfDeckId = deckSet.selfDeckIds.includes(roundState?.selfSelectedDeckId)
+        ? roundState.selfSelectedDeckId
+        : "";
+      const opponentCpuPick = buildOpponentCpuPick(selectedSelfDeckId, deckSet.opponentDeckIds);
+      const status = matchupStatus();
+      const warnings = [
+        ...deckSet.warnings,
+        ...(candidates.some(candidate => candidate.missingCount > 0)
+          ? ["一部の相性データが欠損しているため、評価は参考値です。"]
+          : []),
+        ...([...deckSet.selfDeckIds, ...deckSet.opponentDeckIds].some(deckId => deckIsProvisional(deckById(deckId)))
+          ? ["仮デッキを含むため、正式デッキ定義確定前の参考値です。"]
+          : []),
+        ...(status.fallback ? ["Google Sheets相性表がfallback中のため、repo-local fixtureで評価しています。"] : []),
+        ...(recommendedDeck ? [] : ["おすすめ候補を算出できません。"])
+      ];
+      return {
+        ...deckSet,
+        candidates,
+        recommendedDeck,
+        stableDeck,
+        aggressiveDeck,
+        riskyDecks,
+        selectedSelfDeckId,
+        opponentCpuPick,
+        warnings: uniqueStrings(warnings)
+      };
+    }
+
+    function throwAdvicePickHtml(label, candidate) {
+      if (!candidate) {
+        return `
+          <div class="throw-advice-summary-item">
+            <span class="source-note">${escapeHtml(label)}</span>
+            <strong>算出不可</strong>
+          </div>
+        `;
+      }
+      return `
+        <div class="throw-advice-summary-item">
+          <span class="source-note">${escapeHtml(label)}</span>
+          ${throwAdviceDeckTokenHtml(candidate.deckId, "self")}
+          <div class="source-note">${escapeHtml(throwAdviceCandidateReason(candidate))}</div>
+        </div>
+      `;
+    }
+
+    function throwAdviceRiskyHtml(candidates) {
+      return `
+        <div class="throw-advice-summary-item">
+          <span class="source-note">危険候補</span>
+          ${candidates.length
+            ? `<div class="deck-token-row">${candidates.map(candidate => throwAdviceDeckTokenHtml(candidate.deckId, "self")).join("")}</div>`
+            : `<strong>なし</strong>`}
+          <div class="source-note">${candidates.length ? "40%未満対面を含む候補です。" : "40%未満対面はありません。"}</div>
+        </div>
+      `;
+    }
+
+    function throwAdviceMatchupChipsHtml(candidate) {
+      if (!candidate.details.length) {
+        return `<div class="source-note">対面なし</div>`;
+      }
+      return `
+        <div class="throw-advice-matchups">
+          ${candidate.details.map(detail => `
+            <span class="throw-advice-matchup-chip ${detail.missing ? "missing" : ""}">
+              <span>vs ${escapeHtml(deckDisplayNameById(detail.opponentDeckId))}</span>
+              <strong>${escapeHtml(formatWinRateDecimal(detail.winRate))}</strong>
+              ${detail.missing ? `<span>欠損</span>` : ""}
+            </span>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    function throwAdviceCandidateRowsHtml(candidates) {
+      if (!candidates.length) {
+        return `<div class="validation-item warn">自分側候補がありません。</div>`;
+      }
+      return `
+        <div class="throw-advice-table-wrap">
+          <table class="throw-advice-table">
+            <thead>
+              <tr>
+                <th>候補</th>
+                <th class="numeric">平均</th>
+                <th class="numeric">最低</th>
+                <th class="numeric">最高</th>
+                <th class="numeric">有利</th>
+                <th class="numeric">不利</th>
+                <th class="numeric">危険</th>
+                <th class="numeric">強有利</th>
+                <th class="numeric">欠損</th>
+                <th class="numeric">Score</th>
+                <th>理由</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${candidates.map(candidate => `
+                <tr>
+                  <td>
+                    ${throwAdviceDeckTokenHtml(candidate.deckId, "self")}
+                    ${throwAdviceMatchupChipsHtml(candidate)}
+                  </td>
+                  <td class="numeric">${escapeHtml(formatWinRateDecimal(candidate.averageWinRate))}</td>
+                  <td class="numeric">${escapeHtml(formatWinRateDecimal(candidate.minWinRate))}</td>
+                  <td class="numeric">${escapeHtml(formatWinRateDecimal(candidate.maxWinRate))}</td>
+                  <td class="numeric">${candidate.favorableCount}</td>
+                  <td class="numeric">${candidate.unfavorableCount}</td>
+                  <td class="numeric">${candidate.dangerCount}</td>
+                  <td class="numeric">${candidate.strongCount}</td>
+                  <td class="numeric">${candidate.missingCount}</td>
+                  <td class="numeric">${escapeHtml(formatThrowAdviceScore(candidate.score))}</td>
+                  <td class="throw-advice-reason">${escapeHtml(candidate.reason)}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function throwAdviceOpponentCpuHtml(advice) {
+      const pick = advice.opponentCpuPick;
+      if (!advice.selectedSelfDeckId) {
+        return `
+          <div class="throw-advice-cpu">
+            <div class="throw-advice-cpu-head">
+              <strong>相手CPU</strong>
+              <span class="source-note">自分側選択なし</span>
+            </div>
+          </div>
+        `;
+      }
+      return `
+        <div class="throw-advice-cpu">
+          <div class="throw-advice-cpu-head">
+            <strong>相手CPU</strong>
+            <span class="source-note">自分側: ${escapeHtml(deckDisplayNameById(advice.selectedSelfDeckId))}</span>
+          </div>
+          ${pick?.opponentDeckId ? throwAdviceDeckTokenHtml(pick.opponentDeckId, "opponent") : `<div class="validation-item warn">相手CPU候補を算出できません。</div>`}
+          <div class="source-note">${escapeHtml(pick?.reason || "相手側候補がありません。")}</div>
+          ${pick?.missing ? `<div class="validation-item warn">相手CPUの判定に欠損matchupのfallbackを含みます。</div>` : ""}
+        </div>
+      `;
+    }
+
+    function throwAdviceCardHtml(advice) {
+      return `
+        <section class="throw-advice-card">
+          <div class="throw-advice-head">
+            <h4>${escapeHtml(battleLabel(advice.roundNumber))}: ${advice.expectedCount}デッキ枠</h4>
+            <span class="badge">Role ${escapeHtml(advice.role)}</span>
+          </div>
+          <div class="throw-advice-candidate-groups">
+            <div class="deck-list-group">
+              <strong>自分側候補</strong>
+              ${deckGroupListHtml(state.battle.selfSubmission, advice.selfDeckIds)}
+            </div>
+            <div class="deck-list-group">
+              <strong>相手側候補</strong>
+              ${deckGroupListHtml(state.battle.opponentSubmission, advice.opponentDeckIds)}
+            </div>
+          </div>
+          ${advice.warnings.map(message => `<div class="validation-item warn">${escapeHtml(message)}</div>`).join("")}
+          <div class="throw-advice-summary-grid">
+            ${throwAdvicePickHtml("総合おすすめ", advice.recommendedDeck)}
+            ${throwAdvicePickHtml("安定投げ", advice.stableDeck)}
+            ${throwAdvicePickHtml("攻撃的投げ", advice.aggressiveDeck)}
+            ${throwAdviceRiskyHtml(advice.riskyDecks)}
+          </div>
+          ${throwAdviceOpponentCpuHtml(advice)}
+          ${throwAdviceCandidateRowsHtml(advice.candidates)}
+        </section>
+      `;
+    }
+
+    function renderBattleThrowAdvice() {
+      const container = document.getElementById("battle-throw-advice");
+      if (!container) return;
+      if (!state.battle) {
+        container.innerHTML = "";
+        return;
+      }
+      const advices = throwAdviceRoundNumbers
+        .map(battleThrowDeckSetForRound)
+        .map(buildBattleThrowAdvice);
+      container.innerHTML = `
+        <div class="deck-class-group-head">
+          <div>
+            <h3 id="battle-throw-advice-title">3/2/2 投げ判定</h3>
+            <div class="source-note">固定されたA/B/C割当に基づくBattle単位の参考評価です。</div>
+          </div>
+        </div>
+        <div class="throw-advice-list">
+          ${advices.map(throwAdviceCardHtml).join("")}
+        </div>
+      `;
+    }
+
     function updateRoundWinRate(round) {
       if (!round.selfSelectedDeckId || !round.opponentSelectedDeckId) {
         round.selfWinRate = fallbackWinRate;
@@ -3831,6 +4390,12 @@ PS_SIMULATOR_HTML = """<!doctype html>
         document.getElementById("battle-self-deck-list").innerHTML = "";
         document.getElementById("battle-opponent-deck-list").innerHTML = "";
         document.getElementById("battle-progress").innerHTML = "";
+        document.getElementById("battle-throw-advice").innerHTML = `
+          <div class="deck-class-group-head">
+            <h3 id="battle-throw-advice-title">3/2/2 投げ判定</h3>
+          </div>
+          <div class="validation-item warn">投げ判定は、自分側・相手側の提出案が成立すると表示されます。</div>
+        `;
         document.getElementById("battle-summary-card").innerHTML = `
           <div class="validation-item warn">共有用サマリーは、自分側・相手側の提出案が成立すると表示されます。</div>
         `;
@@ -3842,6 +4407,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
       renderCurrentRound();
       renderBattleDeckLists();
       renderBattleProgress();
+      renderBattleThrowAdvice();
       renderBattleSummaryCard();
 
       document.querySelectorAll("[data-battle-side]").forEach(button => {
