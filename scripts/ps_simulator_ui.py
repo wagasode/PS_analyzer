@@ -1194,6 +1194,119 @@ PS_SIMULATOR_HTML = """<!doctype html>
       background: #f8fafc;
     }
 
+    .opponent-cpu {
+      display: grid;
+      gap: 12px;
+      min-width: 0;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      background: #fff;
+    }
+
+    .opponent-cpu-head {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      min-width: 0;
+    }
+
+    .opponent-cpu-head h3 {
+      font-size: 18px;
+      line-height: 1.25;
+    }
+
+    .opponent-cpu-grid {
+      display: grid;
+      grid-template-columns: minmax(280px, 0.8fr) minmax(360px, 1.2fr);
+      gap: 12px;
+      align-items: start;
+      min-width: 0;
+    }
+
+    .opponent-cpu-subsection {
+      display: grid;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .opponent-cpu-role-list {
+      display: grid;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .opponent-cpu-role {
+      display: grid;
+      grid-template-columns: 40px minmax(0, 1fr);
+      gap: 8px;
+      align-items: start;
+      min-width: 0;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px;
+      background: #f8fafc;
+    }
+
+    .opponent-cpu-suggestions {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .opponent-cpu-plan {
+      display: grid;
+      gap: 8px;
+      min-width: 0;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+      background: #f8fafc;
+    }
+
+    .opponent-cpu-plan-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+      min-width: 0;
+    }
+
+    .opponent-cpu-tag-row {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+      min-width: 0;
+    }
+
+    .opponent-cpu-metrics {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(72px, 1fr));
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .opponent-cpu-battle-list {
+      display: grid;
+      gap: 5px;
+      min-width: 0;
+    }
+
+    .opponent-cpu-battle {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      min-width: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
     .battle-assignment-list {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1896,6 +2009,8 @@ PS_SIMULATOR_HTML = """<!doctype html>
       .battle-status-grid,
       .battle-round-grid,
       .battle-side-grid,
+      .opponent-cpu-grid,
+      .opponent-cpu-suggestions,
       .throw-advice-summary-grid,
       .summary-overview-grid,
       .battle-summary-rounds,
@@ -2063,6 +2178,7 @@ PS_SIMULATOR_HTML = """<!doctype html>
         </div>
         <div class="panel-body stack">
           <div class="battle-submissions" id="battle-submissions"></div>
+          <div id="opponent-submission-cpu"></div>
           <div class="battle-main-grid">
             <div class="battle-main-column">
               <div id="battle-self-deck-list"></div>
@@ -2113,6 +2229,20 @@ PS_SIMULATOR_HTML = """<!doctype html>
       neutral: 0.5,
       danger: 0.4,
       strong: 0.6
+    };
+    const opponentSubmissionCpuLimits = {
+      maxClassCandidates: 4,
+      maxDeckSets: 12,
+      maxSplitsPerDeckSet: 210,
+      maxEvaluatedPlans: 1800
+    };
+    const opponentSubmissionCpuScoreWeights = {
+      averageWinRate: 100,
+      minWinRate: 30,
+      strongCount: 2,
+      dangerCount: -3,
+      missingPenalty: -5,
+      provisionalPenalty: -1
     };
     const allPlayersTeamValue = "";
     const unassignedTeamValue = "__unassigned__";
@@ -3732,6 +3862,527 @@ PS_SIMULATOR_HTML = """<!doctype html>
       };
     }
 
+    function combinations(values, size) {
+      const items = [...(values || [])];
+      const results = [];
+      function walk(startIndex, current) {
+        if (current.length === size) {
+          results.push([...current]);
+          return;
+        }
+        for (let index = startIndex; index < items.length; index += 1) {
+          current.push(items[index]);
+          walk(index + 1, current);
+          current.pop();
+        }
+      }
+      walk(0, []);
+      return results;
+    }
+
+    function opponentSubmissionCpuDeckIdsFromSplit(split) {
+      return uniqueDeckIds(roles.flatMap(roleDef => split?.[roleDef.role] || []));
+    }
+
+    function opponentSubmissionCpuDeckHeuristic(deckId, selfDeckIds) {
+      const stats = buildOpponentMatchupStatsForCandidate(deckId, selfDeckIds);
+      const provisionalCount = deckIsProvisional(deckById(deckId)) ? 1 : 0;
+      const score = Number.isFinite(Number(stats.averageWinRate))
+        ? (
+          stats.averageWinRate * opponentSubmissionCpuScoreWeights.averageWinRate
+          + numericMetric(stats.minWinRate, 0) * opponentSubmissionCpuScoreWeights.minWinRate
+          + stats.strongCount * opponentSubmissionCpuScoreWeights.strongCount
+          + stats.dangerCount * opponentSubmissionCpuScoreWeights.dangerCount
+          + stats.missingCount * opponentSubmissionCpuScoreWeights.missingPenalty
+          + provisionalCount * opponentSubmissionCpuScoreWeights.provisionalPenalty
+        )
+        : Number.NEGATIVE_INFINITY;
+      return {
+        ...stats,
+        provisionalCount,
+        score
+      };
+    }
+
+    function opponentSubmissionCpuCandidateSet(selfDeckIds) {
+      const byId = new Map();
+      const sourceLabels = new Set();
+      const warnings = [
+        "この提案はdeckCandidates / provisionalDecks / matchup_matrix / UI選択可能デッキを候補集合にした暫定評価です。#99の正式player_deck_status連携後に候補制約を精密化します。"
+      ];
+      function addDeck(deckId, sourceLabel) {
+        const deck = deckById(deckId);
+        if (!deck?.deckId || !deck.className) return;
+        const current = byId.get(deck.deckId) || {
+          deckId: deck.deckId,
+          className: deck.className,
+          sources: new Set()
+        };
+        current.sources.add(sourceLabel);
+        byId.set(deck.deckId, current);
+        sourceLabels.add(sourceLabel);
+      }
+      (state.dataset?.decks || []).forEach(deck => addDeck(deck.deckId, "UI選択可能デッキ"));
+      const index = state.matchupIndex || buildMatchupIndex(state.dataset || {});
+      (index?.entries || new Map()).forEach(matchup => {
+        addDeck(matchup.sourceDeckId, "matchup_matrix行/列");
+        addDeck(matchup.targetDeckId, "matchup_matrix行/列");
+      });
+      (index?.provisionalDecks || []).forEach(deck => addDeck(deck.deckId, "provisionalDecks/deckCandidates"));
+
+      const records = Array.from(byId.values()).map(record => ({
+        ...record,
+        sources: Array.from(record.sources),
+        heuristic: opponentSubmissionCpuDeckHeuristic(record.deckId, selfDeckIds)
+      })).sort((left, right) => (
+        classOrderIndex(left.className) - classOrderIndex(right.className)
+        || numericMetric(right.heuristic.score) - numericMetric(left.heuristic.score)
+        || deckIndex(left.deckId) - deckIndex(right.deckId)
+      ));
+      if (records.length < 7) {
+        warnings.push(`候補デッキ集合が7未満です。現在は${records.length}件です。`);
+      }
+      const provisionalCount = records.filter(record => deckIsProvisional(deckById(record.deckId))).length;
+      if (provisionalCount > 0) {
+        warnings.push(`provisional deckを${provisionalCount}件含むため、正式deck定義確定前の参考値です。`);
+      }
+      if (matchupStatus().fallback) {
+        warnings.push("Google Sheets相性表がfallback中のため、repo-local fixtureで評価しています。");
+      }
+      return {
+        records,
+        sourceLabels: Array.from(sourceLabels),
+        provisionalCount,
+        warnings
+      };
+    }
+
+    function opponentSubmissionCpuClassGroups(candidateSet) {
+      const expectedClasses = (state.dataset?.classDefinitions || []).map(definition => definition.className);
+      const groups = new Map(expectedClasses.map(className => [className, []]));
+      const warnings = [];
+      (candidateSet.records || []).forEach(record => {
+        if (!groups.has(record.className)) {
+          warnings.push(`${deckDisplayNameById(record.deckId)} はクラス不明または対象外のため提出案CPUから除外しました。`);
+          return;
+        }
+        groups.get(record.className).push(record);
+      });
+      expectedClasses.forEach(className => {
+        const group = groups.get(className) || [];
+        group.sort((left, right) => (
+          numericMetric(right.heuristic.score) - numericMetric(left.heuristic.score)
+          || deckIndex(left.deckId) - deckIndex(right.deckId)
+        ));
+        if (group.length > opponentSubmissionCpuLimits.maxClassCandidates) {
+          warnings.push(`${classLabel(className)}候補は${group.length}件あるため、評価上位${opponentSubmissionCpuLimits.maxClassCandidates}件に制限しています。`);
+        }
+        groups.set(className, group.slice(0, opponentSubmissionCpuLimits.maxClassCandidates));
+        if (groups.get(className).length === 0) {
+          warnings.push(`${classLabel(className)}候補がないため、7クラス重複なしの相手側7デッキ案を生成できません。`);
+        }
+      });
+      return {
+        expectedClasses,
+        groups,
+        warnings: uniqueStrings(warnings)
+      };
+    }
+
+    function generateOpponentSubmissionCpuDeckSets(classGroups) {
+      const classEntries = classGroups.expectedClasses.map(className => ({
+        className,
+        candidates: classGroups.groups.get(className) || []
+      }));
+      if (classEntries.some(entry => entry.candidates.length === 0)) {
+        return {
+          deckSets: [],
+          warnings: ["クラス重複禁止ルールを満たす7デッキ集合を作れません。"]
+        };
+      }
+      const deckSets = [];
+      function walk(classIndex, deckIds) {
+        if (deckSets.length >= opponentSubmissionCpuLimits.maxDeckSets) return;
+        if (classIndex >= classEntries.length) {
+          deckSets.push({ deckIds: [...deckIds] });
+          return;
+        }
+        classEntries[classIndex].candidates.forEach(candidate => {
+          deckIds.push(candidate.deckId);
+          walk(classIndex + 1, deckIds);
+          deckIds.pop();
+        });
+      }
+      walk(0, []);
+      const totalPossible = classEntries.reduce((total, entry) => total * entry.candidates.length, 1);
+      const warnings = totalPossible > deckSets.length
+        ? [`7デッキ集合候補は${totalPossible}通りありますが、MVPでは${deckSets.length}通りに制限しています。`]
+        : [];
+      return { deckSets, warnings };
+    }
+
+    function generateOpponentSubmissionCpuSplits(deckIds) {
+      const sortedDeckIds = sortDeckIdsByClassOrder(uniqueDeckIds(deckIds || []));
+      if (sortedDeckIds.length !== 7) {
+        return {
+          splits: [],
+          totalCount: 0,
+          warnings: [`3/2/2分割には7デッキが必要です。現在は${sortedDeckIds.length}件です。`]
+        };
+      }
+      const splits = [];
+      let totalCount = 0;
+      combinations(sortedDeckIds, 3).forEach(aDeckIds => {
+        const aSet = new Set(aDeckIds);
+        const remainingAfterA = sortedDeckIds.filter(deckId => !aSet.has(deckId));
+        combinations(remainingAfterA, 2).forEach(bDeckIds => {
+          totalCount += 1;
+          if (splits.length >= opponentSubmissionCpuLimits.maxSplitsPerDeckSet) return;
+          const bSet = new Set(bDeckIds);
+          splits.push({
+            A: [...aDeckIds],
+            B: [...bDeckIds],
+            C: remainingAfterA.filter(deckId => !bSet.has(deckId))
+          });
+        });
+      });
+      const warnings = totalCount > splits.length
+        ? [`3/2/2分割候補は${totalCount}通りありますが、この7デッキ集合では${splits.length}通りに制限しています。`]
+        : [];
+      return { splits, totalCount, warnings };
+    }
+
+    function opponentSubmissionCpuPlanIdentity(split) {
+      return roles.map(roleDef => `${roleDef.role}:${(split?.[roleDef.role] || []).join(",")}`).join("|");
+    }
+
+    function evaluateOpponentSubmissionCpuPlan(split, deckSetIndex, splitIndex) {
+      const roleEvaluations = roles.map((roleDef, index) => {
+        const roundNumber = index + 1;
+        const selfDeckIds = uniqueDeckIds(assignmentByRole(state.battle?.selfSubmission, roleDef.role)?.deckIds || []);
+        const opponentDeckIds = uniqueDeckIds(split?.[roleDef.role] || []);
+        const advice = buildBattleThrowAdvice({
+          roundNumber,
+          role: roleDef.role,
+          expectedCount: roleDef.expectedDeckCount,
+          selfDeckIds,
+          opponentDeckIds,
+          warnings: []
+        });
+        return {
+          roundNumber,
+          role: roleDef.role,
+          selfDeckIds,
+          opponentDeckIds,
+          advice,
+          opponentLikelyPick: advice.opponentLikelyPick || null
+        };
+      });
+      const details = roleEvaluations.flatMap(evaluation => evaluation.opponentLikelyPick?.details || []);
+      const rates = details.map(detail => detail.winRate);
+      const averageWinRate = rates.length
+        ? rates.reduce((total, value) => total + value, 0) / rates.length
+        : null;
+      const minWinRate = rates.length ? Math.min(...rates) : null;
+      const maxWinRate = rates.length ? Math.max(...rates) : null;
+      const categoryCounts = winRateCategoryCounts(details);
+      const dangerCount = categoryCounts.unfavorableCount;
+      const strongCount = categoryCounts.favorableCount;
+      const missingCount = details.filter(detail => detail.missing).length;
+      const deckIds = opponentSubmissionCpuDeckIdsFromSplit(split);
+      const provisionalCount = deckIds.filter(deckId => deckIsProvisional(deckById(deckId))).length;
+      const score = rates.length
+        ? (
+          averageWinRate * opponentSubmissionCpuScoreWeights.averageWinRate
+          + numericMetric(minWinRate, 0) * opponentSubmissionCpuScoreWeights.minWinRate
+          + strongCount * opponentSubmissionCpuScoreWeights.strongCount
+          + dangerCount * opponentSubmissionCpuScoreWeights.dangerCount
+          + missingCount * opponentSubmissionCpuScoreWeights.missingPenalty
+          + provisionalCount * opponentSubmissionCpuScoreWeights.provisionalPenalty
+        )
+        : null;
+      const stableScore = rates.length
+        ? numericMetric(minWinRate, 0) * 100 + numericMetric(averageWinRate, 0) * 40 - dangerCount * 5 - missingCount * 5 - provisionalCount
+        : null;
+      const attackScore = rates.length
+        ? strongCount * 4 + numericMetric(maxWinRate, 0) * 45 + numericMetric(averageWinRate, 0) * 50 - missingCount * 4 - dangerCount
+        : null;
+      const warnings = [
+        "MVPではBattle 1-3中心の評価です。Battle 4/5の使用済みデッキ制約は後続課題です。",
+        ...(missingCount > 0 ? [`matchup欠損が${missingCount}件あります。0.5 fallbackを相手側視点へ変換して扱うため参考値です。`] : []),
+        ...(provisionalCount > 0 ? [`provisional deckを${provisionalCount}件含むため参考値です。`] : []),
+        ...(rates.length ? [] : ["Battle別評価を算出できません。"])
+      ];
+      return {
+        id: `opponent-cpu-${deckSetIndex}-${splitIndex}`,
+        identity: opponentSubmissionCpuPlanIdentity(split),
+        deckIds,
+        split,
+        roleEvaluations,
+        details,
+        averageWinRate,
+        minWinRate,
+        maxWinRate,
+        ...categoryCounts,
+        dangerCount,
+        strongCount,
+        missingCount,
+        provisionalCount,
+        score,
+        stableScore,
+        attackScore,
+        warnings: uniqueStrings(warnings),
+        reason: ""
+      };
+    }
+
+    function opponentSubmissionCpuPlanReason(plan) {
+      if (!plan || !Number.isFinite(Number(plan.averageWinRate))) {
+        return "Battle 1-3の相手側想定投げ候補を算出できません。";
+      }
+      const parts = [
+        `Battle 1-3の相手側有力候補で平均${formatWinRateDecimal(plan.averageWinRate)}`,
+        `最低${formatWinRateDecimal(plan.minWinRate)}`
+      ];
+      if (plan.dangerCount === 0) parts.push("危険対面なし");
+      if (plan.strongCount > 0) parts.push(`強有利対面${plan.strongCount}`);
+      if (plan.missingCount > 0) parts.push(`データなし${plan.missingCount}`);
+      return parts.join(" / ");
+    }
+
+    function pickOpponentSubmissionCpuPlan(plans, metrics) {
+      return [...(plans || [])].filter(plan => Number.isFinite(Number(plan.averageWinRate))).sort((left, right) => {
+        for (const metric of metrics) {
+          const diff = numericMetric(metric(right)) - numericMetric(metric(left));
+          if (diff !== 0) return diff;
+        }
+        return left.identity.localeCompare(right.identity);
+      })[0] || null;
+    }
+
+    function opponentSubmissionCpuSuggestions(plans) {
+      const typeDefs = [
+        {
+          key: "balance",
+          label: "バランス案",
+          metrics: [
+            plan => plan.score,
+            plan => plan.averageWinRate,
+            plan => plan.minWinRate,
+            plan => -plan.dangerCount
+          ]
+        },
+        {
+          key: "stable",
+          label: "安定案",
+          metrics: [
+            plan => plan.stableScore,
+            plan => plan.minWinRate,
+            plan => -plan.dangerCount,
+            plan => plan.averageWinRate
+          ]
+        },
+        {
+          key: "attack",
+          label: "攻撃案",
+          metrics: [
+            plan => plan.attackScore,
+            plan => plan.strongCount,
+            plan => plan.maxWinRate,
+            plan => plan.averageWinRate
+          ]
+        }
+      ];
+      const byIdentity = new Map();
+      typeDefs.forEach(typeDef => {
+        const plan = pickOpponentSubmissionCpuPlan(plans, typeDef.metrics);
+        if (!plan) return;
+        const current = byIdentity.get(plan.identity) || {
+          ...plan,
+          labels: [],
+          typeKeys: []
+        };
+        current.labels.push(typeDef.label);
+        current.typeKeys.push(typeDef.key);
+        byIdentity.set(plan.identity, current);
+      });
+      return Array.from(byIdentity.values()).map(plan => ({
+        ...plan,
+        reason: opponentSubmissionCpuPlanReason(plan)
+      }));
+    }
+
+    function buildOpponentSubmissionCpu() {
+      if (!state.battle?.selfSubmission || !canUseBattleSubmission(state.battle.selfSubmission)) {
+        return {
+          available: false,
+          warnings: ["自分側提出案が3/2/2・7クラスで成立すると相手側想定提出案CPUを表示します。"]
+        };
+      }
+      const selfDeckIds = submissionDeckIds(state.battle.selfSubmission);
+      const candidateSet = opponentSubmissionCpuCandidateSet(selfDeckIds);
+      const classGroups = opponentSubmissionCpuClassGroups(candidateSet);
+      const deckSetResult = generateOpponentSubmissionCpuDeckSets(classGroups);
+      const plans = [];
+      const warnings = [
+        ...candidateSet.warnings,
+        ...classGroups.warnings,
+        ...deckSetResult.warnings,
+        "相手側視点は#114のbuildOpponentMatchupStatsForCandidate()で selfWinRate を 1 - selfWinRate に変換して評価します。逆向きmatchupの自動補完は行いません。"
+      ];
+      let splitLimitWarnings = [];
+      deckSetResult.deckSets.forEach((deckSet, deckSetIndex) => {
+        if (plans.length >= opponentSubmissionCpuLimits.maxEvaluatedPlans) return;
+        const splitResult = generateOpponentSubmissionCpuSplits(deckSet.deckIds);
+        splitLimitWarnings = [...splitLimitWarnings, ...splitResult.warnings];
+        splitResult.splits.forEach((split, splitIndex) => {
+          if (plans.length >= opponentSubmissionCpuLimits.maxEvaluatedPlans) return;
+          plans.push(evaluateOpponentSubmissionCpuPlan(split, deckSetIndex, splitIndex));
+        });
+      });
+      if (deckSetResult.deckSets.length && plans.length >= opponentSubmissionCpuLimits.maxEvaluatedPlans) {
+        warnings.push(`評価対象の3/2/2案は${plans.length}件で打ち切っています。`);
+      }
+      warnings.push(...splitLimitWarnings);
+      const suggestions = opponentSubmissionCpuSuggestions(plans);
+      if (!suggestions.length) {
+        warnings.push("バランス案 / 安定案 / 攻撃案を算出できません。候補集合とmatchupを確認してください。");
+      }
+      return {
+        available: true,
+        selfSubmission: state.battle.selfSubmission,
+        candidateSet,
+        evaluatedDeckSetCount: deckSetResult.deckSets.length,
+        evaluatedPlanCount: plans.length,
+        suggestions,
+        warnings: uniqueStrings(warnings)
+      };
+    }
+
+    function opponentSubmissionCpuRoleListHtml(source, options = {}) {
+      const submission = options.submission || null;
+      return `
+        <div class="opponent-cpu-role-list">
+          ${roles.map(roleDef => {
+            const deckIds = source?.assignments
+              ? (assignmentByRole(source, roleDef.role)?.deckIds || [])
+              : (source?.[roleDef.role] || []);
+            return `
+              <div class="opponent-cpu-role">
+                <span class="badge">${escapeHtml(roleDef.role)}</span>
+                <div class="deck-token-row">
+                  ${deckIds.map(deckId => deckTokenHtml(deckId, {
+                    player: submission ? playerForDeckInSubmission(submission, deckId) : null
+                  })).join("")}
+                </div>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      `;
+    }
+
+    function opponentSubmissionCpuWarningsHtml(warnings) {
+      const messages = uniqueStrings(warnings || []);
+      if (!messages.length) return "";
+      return messages.map(message => `<div class="validation-item warn">${escapeHtml(message)}</div>`).join("");
+    }
+
+    function opponentSubmissionCpuBattleListHtml(plan) {
+      return `
+        <div class="opponent-cpu-battle-list">
+          ${plan.roleEvaluations.map(evaluation => {
+            const pick = evaluation.opponentLikelyPick;
+            return `
+              <div class="opponent-cpu-battle">
+                <strong>${escapeHtml(battleLabel(evaluation.roundNumber))} / ${escapeHtml(evaluation.role)}枠</strong>
+                ${pick?.opponentDeckId ? deckTokenHtml(pick.opponentDeckId) : `<span>算出不可</span>`}
+                <span>相手側平均 ${escapeHtml(formatWinRateDecimal(pick?.averageWinRate))}</span>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      `;
+    }
+
+    function opponentSubmissionCpuPlanHtml(plan) {
+      return `
+        <section class="opponent-cpu-plan">
+          <div class="opponent-cpu-plan-head">
+            <div class="opponent-cpu-tag-row">
+              ${(plan.labels || []).map(label => `<span class="badge ok">${escapeHtml(label)}</span>`).join("")}
+            </div>
+            <span class="throw-advice-score-pill">Score ${escapeHtml(formatThrowAdviceScore(plan.score))}</span>
+          </div>
+          <div class="opponent-cpu-subsection">
+            <strong>7デッキ一覧</strong>
+            ${deckTokenListHtml(sortDeckIdsByClassOrder(plan.deckIds))}
+          </div>
+          <div class="opponent-cpu-subsection">
+            <strong>3/2/2分割</strong>
+            ${opponentSubmissionCpuRoleListHtml(plan.split)}
+          </div>
+          <div class="opponent-cpu-metrics">
+            ${throwAdviceMetricHtml("平均", formatWinRateDecimal(plan.averageWinRate))}
+            ${throwAdviceMetricHtml("最低", formatWinRateDecimal(plan.minWinRate))}
+            ${throwAdviceMetricHtml("危険対面", plan.dangerCount)}
+            ${throwAdviceMetricHtml("強有利対面", plan.strongCount)}
+            ${throwAdviceMetricHtml("データなし", plan.missingCount)}
+            ${throwAdviceMetricHtml("仮デッキ", plan.provisionalCount)}
+          </div>
+          <div class="throw-advice-candidate-reason">${escapeHtml(plan.reason)}</div>
+          ${opponentSubmissionCpuBattleListHtml(plan)}
+          ${opponentSubmissionCpuWarningsHtml(plan.warnings)}
+        </section>
+      `;
+    }
+
+    function opponentSubmissionCpuHtml(cpu) {
+      if (!cpu?.available) {
+        return `
+          <section class="opponent-cpu">
+            <div class="opponent-cpu-head">
+              <h3>相手側想定提出案CPU</h3>
+            </div>
+            ${opponentSubmissionCpuWarningsHtml(cpu?.warnings || [])}
+          </section>
+        `;
+      }
+      const candidateRecords = cpu.candidateSet?.records || [];
+      const sourceLabels = cpu.candidateSet?.sourceLabels || [];
+      return `
+        <section class="opponent-cpu">
+          <div class="opponent-cpu-head">
+            <div>
+              <h3>相手側想定提出案CPU</h3>
+              <div class="source-note">叩き台 / 参考評価。Battle 1-3の3/2/2枠ごとに評価します。</div>
+            </div>
+            <span class="badge">${escapeHtml(String(cpu.evaluatedPlanCount))}案評価</span>
+          </div>
+          <div class="opponent-cpu-grid">
+            <div class="opponent-cpu-subsection">
+              <strong>現在の自分側提出</strong>
+              ${opponentSubmissionCpuRoleListHtml(cpu.selfSubmission, { submission: cpu.selfSubmission })}
+            </div>
+            <div class="opponent-cpu-subsection">
+              <strong>候補集合</strong>
+              <div class="source-note">
+                ${escapeHtml(String(candidateRecords.length))}件を候補化 / 7デッキ集合${escapeHtml(String(cpu.evaluatedDeckSetCount))}件 / 3/2/2案${escapeHtml(String(cpu.evaluatedPlanCount))}件を評価
+              </div>
+              <div class="source-note">取得元: ${escapeHtml(sourceLabels.join(" / ") || "未取得")}</div>
+              ${cpu.candidateSet?.provisionalCount
+                ? `<div class="validation-item warn">provisional deck を${escapeHtml(String(cpu.candidateSet.provisionalCount))}件含むため、結果は参考値です。</div>`
+                : ""}
+            </div>
+          </div>
+          ${opponentSubmissionCpuWarningsHtml(cpu.warnings)}
+          <div class="opponent-cpu-suggestions">
+            ${cpu.suggestions.map(opponentSubmissionCpuPlanHtml).join("")}
+          </div>
+        </section>
+      `;
+    }
+
     function throwAdviceModalButtonHtml(summary, bodyHtml, title = summary) {
       const id = `throw-advice-modal-${throwAdviceModalEntries.length}`;
       throwAdviceModalEntries.push({ id, title, bodyHtml });
@@ -4876,6 +5527,8 @@ PS_SIMULATOR_HTML = """<!doctype html>
       const selfReady = canUseBattleSubmission(battle.selfSubmission);
       const opponentReady = canUseBattleSubmission(battle.opponentSubmission);
       if (!selfReady || !opponentReady) {
+        document.getElementById("opponent-submission-cpu").innerHTML =
+          opponentSubmissionCpuHtml(buildOpponentSubmissionCpu());
         document.getElementById("battle-status-grid").innerHTML = `
           <section class="battle-card blocked">
             <h3>ラウンド開始不可</h3>
@@ -4894,6 +5547,8 @@ PS_SIMULATOR_HTML = """<!doctype html>
       }
 
       renderBattleStatus();
+      document.getElementById("opponent-submission-cpu").innerHTML =
+        opponentSubmissionCpuHtml(buildOpponentSubmissionCpu());
       renderCurrentRound();
       renderBattleDeckLists();
       renderBattleProgress();
