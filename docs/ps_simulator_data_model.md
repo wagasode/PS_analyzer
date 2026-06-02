@@ -2,6 +2,8 @@
 
 この文書は、PS 7デッキ制シミュレーターのWebUI、将来のGoogle Sheets取込、相性表、バトルログで共有する正規化済みJSONのデータモデルを定義する。
 
+PSルールやシミュレーター上の用語・評価単位については [PSルールとPSシミュレーター仕様](ps-rules-and-simulator-spec.md) を参照する。
+
 Issue #64 の範囲では、Google Sheets API連携、提出UI、相性表読込、バトル実行は実装しない。後続Issueが同じIDとJSON形を参照できるように、repo-localのサンプルJSONを固定する。Issue #69 では、このデータモデルに基づくBattleLog構造とJSON preview / exportを固定する。
 
 ## 基本方針
